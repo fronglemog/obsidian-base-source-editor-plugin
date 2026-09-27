@@ -11,5 +11,13 @@ import type { PluginSettings } from 'src/Settings/PluginSettings';
 export default class BasesSourceEditorPlugin extends Plugin {
 	settings!: PluginSettings;
 
+  /* Load plugin */
+  override async onload(): Promise<void> {
+    
+  }
 
+  /* Unload plugin */
+  override onunload(): void {
+    
+  }
 }
