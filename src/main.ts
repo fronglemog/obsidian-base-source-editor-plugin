@@ -4,9 +4,12 @@ import {
 	Plugin,
 } from 'obsidian';
 
+/* BASES SOURCE EDITOR */
+import type { PluginSettings } from 'src/Settings/PluginSettings';
 
-export default class MyPlugin extends Plugin {
-	settings!: MyPluginSettings;
+/* ========================= BasesSourceEditorPlugin ========================= */
+export default class BasesSourceEditorPlugin extends Plugin {
+	settings!: PluginSettings;
 
 
 }
