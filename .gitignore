@@ -2,6 +2,7 @@
 .vscode 
 .claude
 node_modules
+/_local
 
 # ========== FILES ========== #
 .env
