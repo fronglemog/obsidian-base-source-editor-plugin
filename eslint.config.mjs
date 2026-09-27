@@ -7,7 +7,6 @@ import globals from 'globals';
 /* PLUGINS */
 import tseslint from 'typescript-eslint';
 import eslintPluginUnicorn from 'eslint-plugin-unicorn';
-import eslintPluginSvelte from 'eslint-plugin-svelte';
 import eslintPluginObsidianmd from 'eslint-plugin-obsidianmd';
 
 /* ========================= ESLINT CONFIG ========================= */
@@ -23,7 +22,6 @@ export default defineConfig([
   {
     files: [
       '**/*.{js,mjs,cjs,ts,mts,cts}',
-      '**/*.{svelte,svelte.js,svelte.ts}'
     ],
     plugins: {
       js,
@@ -107,28 +105,4 @@ export default defineConfig([
       // 'obsidianmd/no-console': 'off'
     },
   },
-
-  /* SVELTE */
-  {
-    files: [
-      '**/*.{svelte,svelte.js,svelte.ts}'
-    ],
-    plugins: {
-      svelte: eslintPluginSvelte,
-    },
-    extends: [
-      eslintPluginSvelte.configs.recommended
-    ],
-    languageOptions: {
-      parserOptions: {
-        projectService: true,
-        extraFileExtensions: ['.svelte'],
-        parser: tseslint.parser
-      }
-    },
-    rules: {
-      // eslint-plugin-svelte
-
-    }
-  }
 ]);
