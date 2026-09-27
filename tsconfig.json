@@ -38,9 +38,6 @@
     "scripts/**/*.ts",
     "scripts/**/*.mjs",
     "tests/**/*.ts",
-    "src/**/*.ts",
-    "src/**/*.svelte",
-    "src/**/*.svelte.js",
-    "src/**/*.svelte.ts"
+    "src/**/*.ts"
   ]
 }
