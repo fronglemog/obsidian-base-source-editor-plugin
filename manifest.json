@@ -1,11 +1,11 @@
 {
-	"id": "obsidian-plugin-template",
-	"name": "Obsidian Plugin Template",
-	"version": "1.0.0",
-	"minAppVersion": "1.0.0",
-	"description": "A template for an Obsidian plugin.",
+	"id": "bases-source-editor",
+	"name": "Bases Source Editor",
+	"version": "0.0.1",
+	"minAppVersion": "1.13.7",
+	"description": "Edit Bases (.base files) in source mode.",
 	"author": "fronglemog",
-	"authorUrl": "",
+	"authorUrl": "https://github.com/fronglemog",
 	"fundingUrl": "",
 	"isDesktopOnly": false
 }
