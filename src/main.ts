@@ -6,7 +6,6 @@ import {
 } from 'obsidian';
 import type {
   App,
-  TFile,
 	WorkspaceLeaf,
 } from 'obsidian';
 
@@ -17,7 +16,7 @@ import {
   VIEW_TYPE_BASES_SOURCE,
   BasesSourceView
 } from 'src/BaseSourceView';
-import { ActionsManager } from 'src/ActionsManager';
+import { ViewActionsManager } from 'src/ViewActionsManager';
 import { toggleSourceMode } from 'src/toggle-source-mode';
 
 /* ========================= BasesSourceEditorPlugin ========================= */
@@ -37,6 +36,10 @@ export default class BasesSourceEditorPlugin extends Plugin {
 
     /* Register commands */
     this.registerPluginCommands();
+
+    /* Register view header actions */
+    const viewActionsManager = new ViewActionsManager(this);
+    viewActionsManager.registerActions();
   }
 
   /* Unload plugin */
@@ -74,7 +77,7 @@ export default class BasesSourceEditorPlugin extends Plugin {
         }
 
         if (!checking) {
-          toggleSourceMode(this, activeView);
+          toggleSourceMode(activeView);
         }
         return true;
       }

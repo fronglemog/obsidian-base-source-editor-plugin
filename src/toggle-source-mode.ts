@@ -1,21 +1,26 @@
 /* ========================= IMPORTS ========================= */
 import type {
-  FileView
+  FileView,
+  TFile
 } from 'obsidian';
 
-import type BasesSourceEditorPlugin from "src/main";
 import { 
   VIEW_TYPE_BASES,
   VIEW_TYPE_BASES_SOURCE
 } from 'src/BaseSourceView';
 
-export function toggleSourceMode(plugin: BasesSourceEditorPlugin, view: FileView) {
-  const viewType = view.getViewType();
+export function toggleSourceMode(view: FileView) {
+  const viewType: string = view.getViewType();
+
+  const file: TFile | null = view.file;
+  if (file == null) {
+    return;
+  }
 
   void view.leaf.setViewState({
     type: viewType === VIEW_TYPE_BASES_SOURCE ? VIEW_TYPE_BASES : VIEW_TYPE_BASES_SOURCE,
     state: {
-      file: view.file?.path
+      file: file.path
     }
   });
 }
