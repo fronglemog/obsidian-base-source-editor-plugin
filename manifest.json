@@ -1,6 +1,6 @@
 {
-	"id": "bases-source-editor",
-	"name": "Bases Source Editor",
+	"id": "base-source-editor",
+	"name": "Base Source Editor",
 	"version": "0.0.1",
 	"minAppVersion": "1.13.7",
 	"description": "Edit Bases (.base files) in source mode.",
