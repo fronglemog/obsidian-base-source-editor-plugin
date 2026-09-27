@@ -8,6 +8,7 @@ import type {
 } from 'obsidian';
 
 /* BASES SOURCE EDITOR */
+import { PLUGIN_DEFAULT_SETTINGS } from 'src/Settings/PluginSettings';
 import type { PluginSettings } from 'src/Settings/PluginSettings';
 import { 
   VIEW_TYPE_BASES_SOURCE,
@@ -16,7 +17,7 @@ import {
 
 /* ========================= BasesSourceEditorPlugin ========================= */
 export default class BasesSourceEditorPlugin extends Plugin {
-	settings!: PluginSettings;
+	declare settings: PluginSettings;
 
   /* Load plugin */
   override async onload(): Promise<void> {
@@ -24,11 +25,28 @@ export default class BasesSourceEditorPlugin extends Plugin {
     this.registerView(
       VIEW_TYPE_BASES_SOURCE,
       (leaf: WorkspaceLeaf) => new BasesSourceView(leaf)
-    )
+    );
+
+    /* Load plugin settings */
+    await this.loadSettings();
   }
 
   /* Unload plugin */
   override onunload(): void {
     
+  }
+
+  /* Load settings */
+  async loadSettings(): Promise<void> {
+    this.settings = Object.assign(
+      {},
+      PLUGIN_DEFAULT_SETTINGS,
+      await this.loadData()
+    );
+  }
+
+  /* Save settings */
+  async saveSettings(): Promise<void> {
+    await this.saveData(this.settings);
   }
 }
