@@ -1,0 +1,11 @@
+{
+	"id": "obsidian-plugin-template",
+	"name": "Obsidian Plugin Template",
+	"version": "1.0.0",
+	"minAppVersion": "1.0.0",
+	"description": "A template for an Obsidian plugin.",
+	"author": "fronglemog",
+	"authorUrl": "",
+	"fundingUrl": "",
+	"isDesktopOnly": false
+}

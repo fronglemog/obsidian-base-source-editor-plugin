@@ -1,0 +1,15 @@
+# ========== FOLDERS ========== #
+.vscode 
+.claude
+node_modules
+
+# ========== FILES ========== #
+.env
+.env.*
+/build/main.js
+
+# Sourcemaps
+*.map
+
+# Exclude macOS Finder (System Explorer) View States
+.DS_Store

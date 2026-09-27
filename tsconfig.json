@@ -1,0 +1,46 @@
+{
+  "compilerOptions": {
+    "inlineSourceMap": true,
+    "inlineSources": true,
+    "module": "esnext",
+    "target": "es2023",
+    "allowJs": true,
+    "checkJs": true,
+    "noImplicitAny": true,
+    "noImplicitThis": true,
+    "noImplicitReturns": true,
+    "noImplicitOverride": true,
+    "noUncheckedIndexedAccess": true,
+    "moduleResolution": "bundler",
+    "importHelpers": true,
+    "isolatedModules": true,
+    "verbatimModuleSyntax": true,
+    "strictBindCallApply": true,
+    "strictNullChecks": true,
+    "strictFunctionTypes": true,
+    "useUnknownInCatchVariables": true,
+    "skipLibCheck": true,
+    "noFallthroughCasesInSwitch": true,
+    "forceConsistentCasingInFileNames": true,
+    "lib": [
+      "DOM",
+      "ES2023"
+    ],
+    "outDir": "build",
+    "paths": {
+      "src/*" : ["./src/*"]
+    }
+  },
+  "include": [
+    "esbuild.config.mjs",
+    "eslint.config.mjs",
+    "vitest.config.ts",
+    "scripts/**/*.ts",
+    "scripts/**/*.mjs",
+    "tests/**/*.ts",
+    "src/**/*.ts",
+    "src/**/*.svelte",
+    "src/**/*.svelte.js",
+    "src/**/*.svelte.ts"
+  ]
+}
