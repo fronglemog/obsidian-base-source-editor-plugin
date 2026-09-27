@@ -8,7 +8,10 @@ import type {
   WorkspaceLeaf
 } from 'obsidian';
 
-import { EditorState } from '@codemirror/state';
+import {
+  EditorState,
+  Transaction
+} from '@codemirror/state';
 import {
   EditorView,
   keymap,
@@ -59,24 +62,38 @@ export class BasesSourceView extends TextFileView {
   }
 
   setViewData(data: string, clear: boolean): void {
+    this.data = data;
+    
     if (this.editor == null) {
       return;
     }
 
-    this.data = data;
-
+    // Clear is set, meaning a new file has been opened
     if (clear) {
       this.editor.setState(this.createEditorState(data));
+      return;
     }
-    else {
-      this.editor.dispatch({
-        changes: {
-          from: 0,
-          to: this.editor.state.doc.length,
-          insert: data
-        }
-      })
+
+    const currentEditorData = this.editor.state.doc.toString();
+    const incomingEditorData = this.editor.state.toText(data).toString();
+
+    // Don't update the editor's data if the new data is the same as the current data
+    if (currentEditorData === incomingEditorData) {
+      return;
     }
+
+    this.editor.dispatch({
+      changes: {
+        from: 0,
+        to: this.editor.state.doc.length,
+        insert: data
+      },
+      annotations: [
+        Transaction.addToHistory.of(false),
+        Transaction.remote.of(true)
+      ]
+    })
+
   }
 
   clear(): void {
@@ -91,6 +108,7 @@ export class BasesSourceView extends TextFileView {
   }
 
   override async onClose(): Promise<void> {
+    await super.onClose();
     this.editor?.destroy();
     this.editor = null;
   }
@@ -103,7 +121,8 @@ export class BasesSourceView extends TextFileView {
         history(),
         keymap.of([...defaultKeymap, ...historyKeymap]),
         EditorView.updateListener.of((update) => {
-          if (update.docChanged) {
+          const hasLocalChange = update.transactions.some((tx) => tx.docChanged && (tx.annotation(Transaction.remote) !== true));
+          if (hasLocalChange) {
             this.requestSave();
           }
         })

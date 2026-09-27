@@ -14,10 +14,11 @@ import type {
 import { PLUGIN_DEFAULT_SETTINGS } from 'src/Settings/PluginSettings';
 import type { PluginSettings } from 'src/Settings/PluginSettings';
 import { 
-  VIEW_TYPE_BASES,
   VIEW_TYPE_BASES_SOURCE,
   BasesSourceView
-} from 'src/BaseSourceView/BaseSourceView';
+} from 'src/BaseSourceView';
+import { ActionsManager } from 'src/ActionsManager';
+import { toggleSourceMode } from 'src/toggle-source-mode';
 
 /* ========================= BasesSourceEditorPlugin ========================= */
 export default class BasesSourceEditorPlugin extends Plugin {
@@ -35,7 +36,7 @@ export default class BasesSourceEditorPlugin extends Plugin {
     await this.loadSettings();
 
     /* Register commands */
-    this.registerCommands();
+    this.registerPluginCommands();
   }
 
   /* Unload plugin */
@@ -58,7 +59,7 @@ export default class BasesSourceEditorPlugin extends Plugin {
   }
 
   /* Register commands */
-  registerCommands(): void {
+  registerPluginCommands(): void {
     /* Bases: Toggle source mode */
     this.addCommand({
       id: 'toggle-source-mode',
@@ -73,14 +74,7 @@ export default class BasesSourceEditorPlugin extends Plugin {
         }
 
         if (!checking) {
-          const activeViewType: string = activeView.getViewType();
-
-          void activeView.leaf.setViewState({
-            type: activeViewType === VIEW_TYPE_BASES_SOURCE ? 'bases' : VIEW_TYPE_BASES_SOURCE,
-            state: {
-              file: activeView.file.path
-            }
-          });
+          toggleSourceMode(this, activeView);
         }
         return true;
       }
