@@ -21,13 +21,19 @@ import {
 import {
   history,
   historyKeymap,
-  defaultKeymap
+  defaultKeymap,
+  indentWithTab
 } from '@codemirror/commands';
+
+import { 
+  indentUnit
+} from '@codemirror/language';
 
 /* ========================= BasesSourceEditorPlugin ========================= */
 
 export const VIEW_TYPE_BASES = 'bases';
 export const VIEW_TYPE_BASES_SOURCE = 'bases-source';
+const YAML_INDENT = '  ';
 
 export class BasesSourceView extends TextFileView {
 
@@ -137,7 +143,8 @@ export class BasesSourceView extends TextFileView {
       extensions: [
         lineNumbers(),
         history(),
-        keymap.of([...defaultKeymap, ...historyKeymap]),
+        indentUnit.of(YAML_INDENT),
+        keymap.of([...defaultKeymap, ...historyKeymap, indentWithTab]),
         EditorView.updateListener.of((update) => {
           const hasLocalChange = update.transactions.some((tx) => tx.docChanged && (tx.annotation(Transaction.remote) !== true));
           if (hasLocalChange) {
