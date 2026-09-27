@@ -82,18 +82,36 @@ export class BasesSourceView extends TextFileView {
       return;
     }
 
+    // Only replace the section of the current editor data that differs from the incoming data.
+    // This ensures scroll position and undo history outside of the changed section is preserved.
+    let start: number = 0;
+    const maxStart: number = Math.min(currentEditorData.length, incomingEditorData.length);
+    while (start < maxStart && currentEditorData[start] === incomingEditorData[start]) {
+      start++;
+    }
+
+    let endCurrent: number = currentEditorData.length;
+    let endIncoming: number = incomingEditorData.length;
+    while (
+      endCurrent > start &&
+      endIncoming > start &&
+      currentEditorData[endCurrent - 1] === incomingEditorData[endIncoming - 1]
+    ) {
+      endCurrent--;
+      endIncoming--;
+    }
+
     this.editor.dispatch({
       changes: {
-        from: 0,
-        to: this.editor.state.doc.length,
-        insert: data
+        from: start,
+        to: endCurrent,
+        insert: incomingEditorData.slice(start, endIncoming)
       },
       annotations: [
         Transaction.addToHistory.of(false),
         Transaction.remote.of(true)
       ]
-    })
-
+    });
   }
 
   clear(): void {
