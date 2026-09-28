@@ -12,15 +12,28 @@ import type {
 import {
   Compartment,
   EditorState,
+  RangeSet,
   Transaction
 } from '@codemirror/state';
 
-import type { Extension } from '@codemirror/state';
+import type {
+  Extension,
+  Range
+} from '@codemirror/state';
 
 import {
+  Decoration,
   EditorView,
+  GutterMarker,
+  gutterLineClass,
   keymap,
-  lineNumbers
+  lineNumbers,
+  ViewPlugin
+} from '@codemirror/view';
+
+import type {
+  DecorationSet,
+  ViewUpdate
 } from '@codemirror/view';
 
 import {
@@ -42,6 +55,62 @@ export const VIEW_TYPE_BASES = 'bases';
 export const VIEW_TYPE_BASES_SOURCE = 'bases-source';
 const YAML_INDENT = '  ';
 const NO_SCROLL_X_CLASS = 'mod-no-scroll-x';
+
+// Same as the markdown editor: lines with a cursor, and their gutter elements, get the 'cm-active' class
+// (CodeMirror's own highlightActiveLine() and highlightActiveLineGutter() use 'cm-activeLine' and 'cm-activeLineGutter' instead, which themes don't target)
+const activeLineDecoration: Decoration = Decoration.line({ class: 'cm-active' });
+
+function getActiveLineDecorations(view: EditorView): DecorationSet {
+  const decorations: Range<Decoration>[] = [];
+  let lastLineFrom: number = -1;
+
+  for (const range of view.state.selection.ranges) {
+    const lineFrom: number = view.lineBlockAt(range.head).from;
+    if (lineFrom > lastLineFrom) {
+      decorations.push(activeLineDecoration.range(lineFrom));
+      lastLineFrom = lineFrom;
+    }
+  }
+
+  return Decoration.set(decorations);
+}
+
+const activeLine: Extension = ViewPlugin.fromClass(class {
+  decorations: DecorationSet;
+
+  constructor(view: EditorView) {
+    this.decorations = getActiveLineDecorations(view);
+  }
+
+  update(update: ViewUpdate): void {
+    if (update.docChanged || update.selectionSet) {
+      this.decorations = getActiveLineDecorations(update.view);
+    }
+  }
+}, {
+  decorations: (plugin) => plugin.decorations
+});
+
+class ActiveLineGutterMarker extends GutterMarker {
+  override elementClass: string = 'cm-active';
+}
+
+const activeLineGutterMarker: GutterMarker = new ActiveLineGutterMarker();
+
+const activeLineGutter: Extension = gutterLineClass.compute(['selection'], (state) => {
+  const markers: Range<GutterMarker>[] = [];
+  let lastLineFrom: number = -1;
+
+  for (const range of state.selection.ranges) {
+    const lineFrom: number = state.doc.lineAt(range.head).from;
+    if (lineFrom > lastLineFrom) {
+      markers.push(activeLineGutterMarker.range(lineFrom));
+      lastLineFrom = lineFrom;
+    }
+  }
+
+  return RangeSet.of(markers);
+});
 
 export class BaseSourceView extends TextFileView {
 
@@ -241,6 +310,8 @@ export class BaseSourceView extends TextFileView {
       doc: doc,
       extensions: [
         lineNumbers(),
+        activeLineGutter,
+        activeLine,
         history(),
         indentUnit.of(YAML_INDENT),
         this.lineWrapCompartment.of(this.getLineWrapExtensions()),
