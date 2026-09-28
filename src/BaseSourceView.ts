@@ -1,5 +1,6 @@
 /* ========================= IMPORTS ========================= */
 import {
+  Platform,
   TextFileView
 } from 'obsidian';
 
@@ -40,6 +41,7 @@ import type BasesSourceEditorPlugin from 'src/main';
 export const VIEW_TYPE_BASES = 'bases';
 export const VIEW_TYPE_BASES_SOURCE = 'bases-source';
 const YAML_INDENT = '  ';
+const NO_SCROLL_X_CLASS = 'mod-no-scroll-x';
 
 export class BaseSourceView extends TextFileView {
 
@@ -141,6 +143,82 @@ export class BaseSourceView extends TextFileView {
     });
 
     this.wrapEditorContent(this.editor);
+    this.updateBottomPadding();
+
+    if (Platform.isMobile) {
+      this.registerDomEvent(this.editor.scrollDOM, 'touchstart', (evt) => this.onScrollerTouchStart(evt), { passive: true });
+    }
+  }
+
+  // Obsidian opens a sidebar on a horizontal swipe, unless the touched element can scroll horizontally.
+  // With line wrapping off, the scroller can, so every swipe would scroll the text. Like in a markdown view,
+  // swipes that start outside of the text should open a sidebar, so horizontal scrolling is disabled for them.
+  private onScrollerTouchStart(evt: TouchEvent): void {
+    const editor: EditorView | null = this.editor;
+    if (editor == null || evt.touches.length !== 1) {
+      return;
+    }
+
+    const scrollerEl: HTMLElement = editor.scrollDOM;
+    const canScrollHorizontally: boolean = scrollerEl.scrollWidth > scrollerEl.clientWidth;
+    if (!canScrollHorizontally || this.isOnText(editor, evt)) {
+      return;
+    }
+
+    scrollerEl.addClass(NO_SCROLL_X_CLASS);
+
+    const win: Window = scrollerEl.win;
+    const onTouchEnd = (endEvt: TouchEvent): void => {
+      if (endEvt.touches.length > 0) {
+        return;
+      }
+      scrollerEl.removeClass(NO_SCROLL_X_CLASS);
+      win.removeEventListener('touchend', onTouchEnd);
+      win.removeEventListener('touchcancel', onTouchEnd);
+    };
+    win.addEventListener('touchend', onTouchEnd);
+    win.addEventListener('touchcancel', onTouchEnd);
+  }
+
+  // Lines that are scrolled sideways sit underneath the gutter and the side margins, so the touched element alone isn't enough
+  private isOnText(editor: EditorView, evt: TouchEvent): boolean {
+    const targetNode: Node | null = evt.targetNode;
+    const lineEl: Element | null = targetNode?.instanceOf(Element) === true ? targetNode.closest('.cm-line') : null;
+    if (lineEl == null || !editor.contentDOM.contains(lineEl)) {
+      return false;
+    }
+
+    const scrollerEl: HTMLElement = editor.scrollDOM;
+    const scrollerRect: DOMRect = scrollerEl.getBoundingClientRect();
+    const scrollerStyle: CSSStyleDeclaration = getComputedStyle(scrollerEl);
+    const guttersEl: HTMLElement | null = scrollerEl.querySelector('.cm-gutters');
+
+    const textLeft: number = guttersEl?.getBoundingClientRect().right ?? scrollerRect.left + Number.parseFloat(scrollerStyle.paddingLeft);
+    const textRight: number = scrollerRect.left + scrollerEl.clientWidth - Number.parseFloat(scrollerStyle.paddingRight);
+    const touchX: number = evt.touches[0]?.clientX ?? Number.NaN;
+
+    return touchX >= textLeft && touchX <= textRight;
+  }
+
+  override onResize(): void {
+    super.onResize();
+    this.updateBottomPadding();
+  }
+
+  // Mirrors the markdown editor, which lets the last line scroll up to the middle of the view
+  // (on mobile, this also keeps the last line clear of the floating navbar and the keyboard)
+  private updateBottomPadding(): void {
+    if (this.editor == null || this.containerEl.offsetParent == null) {
+      return;
+    }
+
+    let height: number = this.containerEl.clientHeight;
+    if (Platform.isMobile) {
+      const keyboardHeight: number = Number.parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--keyboard-height')) || 0;
+      height += keyboardHeight;
+    }
+
+    this.editor.contentDOM.setCssStyles({ paddingBottom: `${Math.round(height / 2)}px` });
   }
 
   private wrapEditorContent(editor: EditorView) {

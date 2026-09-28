@@ -21,6 +21,11 @@
     background-color: var(--text-selection);
   }
 
+  /* Set while a touch that started outside of the text is active, so a horizontal swipe opens a sidebar instead of scrolling */
+  .cm-scroller.mod-no-scroll-x {
+    overflow-x: hidden;
+  }
+
   .cm-scroller {
     font-family: var(--font-monospace);
     font-size: var(--font-text-size);
@@ -89,5 +94,25 @@
 
   .cm-line {
     padding-inline: 0;
+  }
+
+  /* Phone: match the markdown view, where content scrolls underneath the floating view header */
+  .is-phone .mod-root & {
+    --view-top-spacing: 0;
+  }
+
+  .is-phone .mod-root & .view-content > .cm-editor > .cm-scroller {
+    padding-top: var(--view-top-spacing-markdown);
+  }
+
+  .is-phone.is-floating-nav .mod-root & .view-content,
+  .is-phone.auto-full-screen .mod-root & .view-content {
+    mask-image: var(--view-top-fade-mask);
+  }
+
+  /* Same offset as the markdown editor's gutter on phones. The gutter is sticky, so its inset must match the margin */
+  .is-phone & .cm-gutters {
+    margin-inline-start: -18px;
+    inset-inline-start: -18px;
   }
 }
