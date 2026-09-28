@@ -53,7 +53,7 @@ import {
 
 import type BasesSourceEditorPlugin from 'src/main';
 
-/* ========================= BasesSourceEditorPlugin ========================= */
+/* ========================= BaseSourceView ========================= */
 
 export const VIEW_TYPE_BASES = 'bases';
 export const VIEW_TYPE_BASES_SOURCE = 'bases-source';
