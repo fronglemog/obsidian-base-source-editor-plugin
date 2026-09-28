@@ -9,6 +9,7 @@ import {
   VIEW_TYPE_BASES_SOURCE
 } from 'src/BaseSourceView';
 
+/* ======================================================= */
 export function toggleSourceMode(view: FileView) {
   const viewType: string = view.getViewType();
 
