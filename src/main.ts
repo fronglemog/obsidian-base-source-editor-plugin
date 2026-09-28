@@ -1,5 +1,4 @@
 /* ========================= IMPORTS ========================= */
-/* OBSIDIAN */
 import {
   FileView,
 	Plugin,
@@ -9,7 +8,6 @@ import type {
 	WorkspaceLeaf,
 } from 'obsidian';
 
-/* BASES SOURCE EDITOR */
 import { PLUGIN_DEFAULT_SETTINGS } from 'src/Settings/PluginSettings';
 import type { PluginSettings } from 'src/Settings/PluginSettings';
 import { BasesSourceEditorPluginSettingsTab } from 'src/Settings/SettingsTab';
