@@ -17,6 +17,7 @@ import {
 } from '@codemirror/state';
 
 import type {
+  ChangeSpec,
   Extension,
   Range
 } from '@codemirror/state';
@@ -66,8 +67,6 @@ export const VIEW_TYPE_BASES = 'bases';
 export const VIEW_TYPE_BASES_SOURCE = 'bases-source';
 const YAML_INDENT = '  ';
 
-// Same as the markdown editor: lines with a cursor, and their gutter elements, get the 'cm-active' class
-// (CodeMirror's own highlightActiveLine() and highlightActiveLineGutter() use 'cm-activeLine' and 'cm-activeLineGutter' instead, which themes don't target)
 const activeLineDecoration: Decoration = Decoration.line({ class: 'cm-active' });
 
 function getActiveLineDecorations(view: EditorView): DecorationSet {
@@ -148,7 +147,7 @@ export class BaseSourceView extends TextFileView {
     return VIEW_TYPE_BASES_SOURCE;
   }
 
-  override getIcon (): IconName {
+  override getIcon(): IconName {
     const iconName: string = 'code-xml';
     return iconName;
   }
@@ -158,6 +157,13 @@ export class BaseSourceView extends TextFileView {
     return viewData;
   }
 
+  /**
+   * Updates the view after file contents change.
+   * Handles content changes while preserving undo history.
+   *
+   * @param data - File contents.
+   * @param clear - Whether to reset editor state history.
+   */
   setViewData(data: string, clear: boolean): void {
     this.data = data;
     
@@ -171,44 +177,71 @@ export class BaseSourceView extends TextFileView {
       return;
     }
 
-    const currentEditorData = this.editor.state.doc.toString();
-    const incomingEditorData = this.editor.state.toText(data).toString();
+    const currentEditorData: string = this.editor.state.doc.toString();
+    const incomingEditorData: string = this.editor.state.toText(data).toString();
+    const docChange: ChangeSpec | null = this.getDocumentChange(currentEditorData, incomingEditorData);
 
-    // Don't update the editor's data if the new data is the same as the current data
-    if (currentEditorData === incomingEditorData) {
+    if (docChange == null) {
       return;
     }
 
-    // Only replace the section of the current editor data that differs from the incoming data.
-    // This ensures scroll position and undo history outside of the changed section is preserved.
-    let start: number = 0;
-    const maxStart: number = Math.min(currentEditorData.length, incomingEditorData.length);
-    while (start < maxStart && currentEditorData[start] === incomingEditorData[start]) {
-      start++;
-    }
-
-    let endCurrent: number = currentEditorData.length;
-    let endIncoming: number = incomingEditorData.length;
-    while (
-      endCurrent > start &&
-      endIncoming > start &&
-      currentEditorData[endCurrent - 1] === incomingEditorData[endIncoming - 1]
-    ) {
-      endCurrent--;
-      endIncoming--;
-    }
-
     this.editor.dispatch({
-      changes: {
-        from: start,
-        to: endCurrent,
-        insert: incomingEditorData.slice(start, endIncoming)
-      },
+      changes: docChange,
       annotations: [
         Transaction.addToHistory.of(false),
         Transaction.remote.of(true)
       ]
     });
+  }
+
+  /**
+   * Finds a single replacement that transforms the current text into
+   * the incoming text, excluding their shared prefix and suffix.
+   *
+   * @param currentData - The Base Source editor's current document data.
+   * @param incomingData - Replacement data, with normalised line endings.
+   * @returns The change to apply to the document, or null if `currentData` is the same as `incomingData`.
+   */
+  private getDocumentChange(currentData: string, incomingData: string): ChangeSpec | null {
+    if (currentData === incomingData) {
+      return null;
+    }
+
+    let changeStart: number = 0;
+
+    const sharedLength: number = Math.min(
+      currentData.length,
+      incomingData.length
+    );
+
+    while (
+      changeStart < sharedLength &&
+      currentData[changeStart] === incomingData[changeStart]
+    ) {
+      changeStart++;
+    }
+
+    let currentChangeEnd: number = currentData.length;
+    let incomingChangeEnd: number = incomingData.length;
+
+    while (
+      currentChangeEnd > changeStart &&
+      incomingChangeEnd > changeStart &&
+      currentData[currentChangeEnd - 1] === incomingData[incomingChangeEnd - 1]
+    ) {
+      currentChangeEnd--;
+      incomingChangeEnd--;
+    }
+
+    const replacementData: string = incomingData.slice(changeStart, incomingChangeEnd);
+
+    const documentChange: ChangeSpec = {
+      from: changeStart,
+      to: currentChangeEnd,
+      insert: replacementData
+    };
+
+    return documentChange;
   }
 
   clear(): void {
@@ -227,6 +260,25 @@ export class BaseSourceView extends TextFileView {
     if (Platform.isMobile) {
       this.registerDomEvent(this.editor.scrollDOM, 'touchstart', (evt) => this.onScrollerTouchStart(evt), { passive: true });
     }
+  }
+
+  /**
+   * Wraps the editor content and gutter in Obsidian's editor layout elements.
+   * Uses the class names expected by Obsidian's editor styles and themes.
+   *
+   * @param editor - Editor whose content should be wrapped.
+   */
+  private wrapEditorContent(editor: EditorView): void {
+    const scrollerEl: HTMLElement = editor.scrollDOM;
+    const sizerEl: HTMLElement = scrollerEl.createDiv('cm-sizer');
+    const contentContainerEl: HTMLElement = sizerEl.createDiv('cm-contentContainer');
+    const guttersEl: HTMLElement | null = scrollerEl.querySelector('.cm-gutters');
+
+    if (guttersEl != null) {
+      contentContainerEl.appendChild(guttersEl);
+    }
+
+    contentContainerEl.appendChild(editor.contentDOM);
   }
 
   // Obsidian opens a sidebar on a horizontal swipe, unless the touched element can scroll horizontally.
@@ -286,29 +338,29 @@ export class BaseSourceView extends TextFileView {
     this.updateBottomPadding();
   }
 
-  // Mirrors the markdown editor, which lets the last line scroll up to the middle of the view
-  // (on mobile, this also keeps the last line clear of the floating navbar and the keyboard)
+  /**
+   * Adds space below the document so the last line can scroll towards the middle of the view.
+   * Accounts for height of the keyboard on mobile.
+   */
   private updateBottomPadding(): void {
     if (this.editor == null || this.containerEl.offsetParent == null) {
       return;
     }
 
-    let height: number = this.containerEl.clientHeight;
+    let viewHeight: number = this.containerEl.clientHeight;
     if (Platform.isMobile) {
-      const keyboardHeight: number = Number.parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--keyboard-height')) || 0;
-      height += keyboardHeight;
+      const documentStyle: CSSStyleDeclaration = getComputedStyle(document.documentElement);
+      const keyboardHeightValue: string = documentStyle.getPropertyValue('--keyboard-height');
+
+      const keyboardHeight: number = Number.parseFloat(keyboardHeightValue) || 0;
+      viewHeight += keyboardHeight;
     }
 
-    this.editor.contentDOM.setCssStyles({ paddingBottom: `${Math.round(height / 2)}px` });
-  }
+    const bottomPadding: number = Math.round(viewHeight / 2);
 
-  private wrapEditorContent(editor: EditorView) {
-    const contentContainerEl: HTMLElement = editor.scrollDOM.createDiv('cm-sizer').createDiv('cm-contentContainer');
-    const guttersEl: HTMLElement | null = editor.scrollDOM.querySelector('.cm-gutters');
-    if (guttersEl != null) {
-      contentContainerEl.appendChild(guttersEl);
-    }
-    contentContainerEl.appendChild(editor.contentDOM);
+    this.editor.contentDOM.setCssStyles({
+      paddingBottom: `${bottomPadding}px`
+    });
   }
 
   override async onClose(): Promise<void> {
@@ -318,7 +370,7 @@ export class BaseSourceView extends TextFileView {
   }
 
   private createEditorState(doc: string): EditorState {
-    const state = EditorState.create({
+    const editorState: EditorState = EditorState.create({
       doc: doc,
       extensions: [
         this.plugin.baseYamlLanguage.getLanguageSupport(),
@@ -337,16 +389,32 @@ export class BaseSourceView extends TextFileView {
           ...historyKeymap,
           indentWithTab
         ]),
-        EditorView.updateListener.of((update) => {
-          const hasLocalChange = update.transactions.some((tx) => tx.docChanged && (tx.annotation(Transaction.remote) !== true));
-          if (hasLocalChange) {
-            this.requestSave();
-          }
-        })
+        EditorView.updateListener.of((update: ViewUpdate) => this.onEditorUpdate(update))
       ]
     });
 
-    return state;
+    return editorState;
+  }
+
+  /**
+   * Requests a save when an editor update contains a local document change.
+   * Transactions marked as remote are ignored to avoid saving changes
+   * made outside of the Base Source editor.
+   *
+   * @param update - Editor update to inspect.
+   */
+  private onEditorUpdate(update: ViewUpdate): void {
+    const hasLocalChange: boolean = update.transactions.some((tx: Transaction): boolean => {
+      const documentChanged: boolean = tx.docChanged;
+      const isRemoteChange: boolean = tx.annotation(Transaction.remote) === true;
+
+      const isLocalChange: boolean = (documentChanged === true) && (isRemoteChange === false);
+      return isLocalChange;
+    });
+
+    if (hasLocalChange === true) {
+      this.requestSave();
+    }
   }
 
   updateLineWrap(): void {
