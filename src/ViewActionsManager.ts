@@ -12,7 +12,7 @@ import {
   VIEW_TYPE_BASES,
   VIEW_TYPE_BASES_SOURCE
 } from 'src/BaseSourceView';
-import { toggleSourceMode } from 'src/toggle-source-mode';
+import { toggleSourceMode } from 'src/toggleSourceMode';
 
 /* ========================= ActionsManager ========================= */
 

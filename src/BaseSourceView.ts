@@ -47,6 +47,10 @@ import {
   indentUnit
 } from '@codemirror/language';
 
+import {
+  yaml
+} from '@codemirror/lang-yaml';
+
 import type BasesSourceEditorPlugin from 'src/main';
 
 /* ========================= BasesSourceEditorPlugin ========================= */
@@ -309,6 +313,7 @@ export class BaseSourceView extends TextFileView {
     const state = EditorState.create({
       doc: doc,
       extensions: [
+        yaml(),
         lineNumbers(),
         activeLineGutter,
         activeLine,

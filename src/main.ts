@@ -18,7 +18,7 @@ import {
   BaseSourceView
 } from 'src/BaseSourceView';
 import { ViewActionsManager } from 'src/ViewActionsManager';
-import { toggleSourceMode } from 'src/toggle-source-mode';
+import { toggleSourceMode } from 'src/toggleSourceMode';
 
 /* ========================= BasesSourceEditorPlugin ========================= */
 export default class BasesSourceEditorPlugin extends Plugin {
