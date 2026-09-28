@@ -1,11 +1,22 @@
 # Base Source Editor
 
-> [!CAUTION]
-> **This plugin in beta.**
-
 This is a plugin for [Obsidian](https://obsidian.md) that provides a 'source mode' for editing [Bases](https://obsidian.md/help/bases).
 
-This plugin adds a new view for editing the YAML source code of Bases directly within Obsidian. 
+This plugin adds a new **Base Source mode** view for editing the YAML source code of Bases directly within Obsidian. 
+
+## Features
+
+- Edit Base files as plain-text YAML without leaving Obsidian!
+- Theme-aware YAML syntax highlighting, utilising Obsidian's built-in CSS variables.
+- Full mobile support!
+
+## Usage
+
+Base Source mode can be toggled using:
+- The command 'Toggle source mode' from the Command palette.
+- The 'Source mode/Base mode' toggle visible when a Base is open.
+
+Line wrapping can be toggled within the plugin settings.
 
 ## Installation
 
@@ -19,14 +30,6 @@ This plugin adds a new view for editing the YAML source code of Bases directly w
 1. Open the plugin browser inside Obsidian, and search for `base source editor`.
 2. Select the `Base Source Editor` plugin.
 3. Click `Install`.
-
-## Usage
-
-Source mode can be toggled using:
-- The command 'Toggle source mode' from the Command palette.
-- The 'source mode/Bases mode' toggle visible when a Base file is open.
-
-Line wrapping can be toggled within the plugin settings.
 
 ## Developing
 
@@ -46,7 +49,7 @@ I'm more than happy to accept feedback, issues, bug reports and pull requests.
 
 ### AI policy
 
-I myself use AI tools to support my learning and development - it's a great tool. I welcome those who identify and raise issues or submit pull requests who have done so with considered and appropriate use of AI.
+I use AI as a tool to support my learning and development. I welcome those who identify and raise issues or submit pull requests who have done so with considered and appropriate use of AI.
 
 However, AI **slop** is not welcome here. Issues or pull requests written or submitted by AI agents are not welcome here.
 
