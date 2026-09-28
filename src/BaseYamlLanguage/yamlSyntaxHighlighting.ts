@@ -43,6 +43,22 @@ const yamlHighlightStyle = HighlightStyle.define([
     tag: [tags.separator, tags.punctuation, tags.squareBracket, tags.brace],
     color: 'var(--code-punctuation)'
   },
+  { 
+    tag: tags.propertyName,
+    class: 'token property'
+  },
+  { 
+    tag: tags.number,
+    class: 'token number'
+  },
+  { 
+    tag: tags.arithmeticOperator,
+    class: 'token operator'
+  },
+  { 
+    tag: tags.paren,
+    class: 'token punctuation'
+  },
 ]);
 
 export const yamlSyntaxHighlighting = syntaxHighlighting(yamlHighlightStyle);

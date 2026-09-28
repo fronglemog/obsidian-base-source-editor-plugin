@@ -7,7 +7,6 @@ import type {
   Parser 
 } from '@lezer/common';
 
-
 /* ======================================================= */
 
 /**
@@ -24,7 +23,8 @@ export function getBaseFormulaParser(): Parser | null {
   }
 
   try {
-    return proto.getEditorLanguageSupport.call({ mockContext: null }).language.parser;
+    const parser: Parser = proto.getEditorLanguageSupport.call({ mockContext: null }).language.parser;
+    return parser;
   } catch {
     return null;
   }

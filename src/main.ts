@@ -17,10 +17,13 @@ import {
 } from 'src/BaseSourceView';
 import { ViewActionsManager } from 'src/ViewActionsManager';
 import { toggleSourceMode } from 'src/toggleSourceMode';
+import { BaseYamlLanguage } from 'src/BaseYamlLanguage/BaseYamlLanguage';
 
 /* ========================= BasesSourceEditorPlugin ========================= */
 export default class BasesSourceEditorPlugin extends Plugin {
 	declare settings: PluginSettings;
+
+  baseYamlLanguage!: BaseYamlLanguage;
 
   /* Load plugin */
   override async onload(): Promise<void> {
@@ -29,6 +32,9 @@ export default class BasesSourceEditorPlugin extends Plugin {
 
     /* Register settings tab */
     this.addSettingTab(new BasesSourceEditorPluginSettingsTab(this));
+
+    /* Register Base YAML language support */
+    this.baseYamlLanguage = new BaseYamlLanguage();
 
     /* Register view */
     this.registerView(

@@ -49,17 +49,16 @@ import {
 } from '@codemirror/language';
 
 import {
-  yaml
-} from '@codemirror/lang-yaml';
-
-import {
   closeBrackets,
   closeBracketsKeymap
 } from '@codemirror/autocomplete';
 
-import { yamlSyntaxHighlighting } from 'src/yamlSyntaxHighlighting';
+import {
+  yamlSyntaxHighlighting
+} from 'src/BaseYamlLanguage/yamlSyntaxHighlighting';
 
 import type BasesSourceEditorPlugin from 'src/main';
+
 
 /* ========================= BaseSourceView ========================= */
 
@@ -322,7 +321,7 @@ export class BaseSourceView extends TextFileView {
     const state = EditorState.create({
       doc: doc,
       extensions: [
-        yaml(),
+        this.plugin.baseYamlLanguage.getLanguageSupport(),
         yamlSyntaxHighlighting,
         bracketMatching(),
         closeBrackets(),
