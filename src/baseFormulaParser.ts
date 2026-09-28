@@ -4,10 +4,6 @@ import {
 } from 'obsidian';
 
 import type { 
-  LanguageSupport 
-} from '@codemirror/language';
-
-import type { 
   Parser 
 } from '@lezer/common';
 
@@ -15,11 +11,14 @@ import type {
 /* ======================================================= */
 
 /**
- * Get the parser used by Obsidian for parsing Base formulas
- * @returns 
+ * Get the parser used by Obsidian for parsing Base formulas.
+ * Accesses undocumented parts of the Obsidian API.
+ * 
+ * @returns `Parser`
  */
 export function getBaseFormulaParser(): Parser | null {
   const proto = QueryController.prototype;
+  // Accessing undocumented API... keep this guard.
   if (typeof proto.getEditorLanguageSupport !== 'function') {
     return null;
   }

@@ -1,8 +1,6 @@
 /* ========================= IMPORTS ========================= */
 import type {
-  App,
-  Component,
-  RenderContext
+  Component 
 } from 'obsidian';
 
 import type {
@@ -13,12 +11,12 @@ import type {
 
 declare module 'obsidian' {
   export interface QueryController extends Component {
-		/**
-		 * The mock context used to evaluate identifiers and resolve widget types.
-		 *
-		 * @unofficial
-		 */
-		mockContext: BasesMockContext;
+    /**
+     * The mock context used to evaluate identifiers and resolve widget types.
+     *
+     * @unofficial
+     */
+    mockContext: BasesMockContext;
 
     /**
      * Gets the editor language support used for the query editor.
@@ -36,5 +34,4 @@ declare module 'obsidian' {
  * @public
  * @unofficial
  */
-export interface BasesMockContext {
-}
+export interface BasesMockContext {}
