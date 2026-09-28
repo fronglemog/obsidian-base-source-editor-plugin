@@ -1,5 +1,4 @@
 .workspace-leaf-content[data-type="bases-source"] {
-  /* Fill the pane and let CodeMirror scroll itself, the same as the core Bases view */
   .view-content {
     padding: 0;
     display: flex;
@@ -26,24 +25,69 @@
     font-family: var(--font-monospace);
     font-size: var(--font-text-size);
     line-height: var(--line-height-normal);
+    padding: var(--file-margins);
   }
 
+  .cm-sizer {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+    min-height: 100%;
+    max-width: var(--file-line-width);
+    margin-inline: auto;
+  }
+  
   .cm-content {
     caret-color: var(--caret-color);
+    flex-basis: unset !important;
+    width: 0;
+    padding-block: 0;
   }
 
-  /* Match the markdown editor's gutter: transparent, faint numbers, no border */
+  .cm-contentContainer {
+    flex: 1 1 auto;
+    display: flex;
+    align-items: stretch;
+    overflow-x: visible;
+  }
+
+ .cm-contentContainer::after {
+    content: "";
+    position: sticky;
+    right: 0;
+    flex: 0 0 0;
+    z-index: 1;
+    box-shadow: var(--file-margins) 0 0 var(--file-margins) var(--background-primary);
+  }
+
   .cm-gutters {
+    flex: 0 0 auto;
     background-color: var(--background-primary);
     color: var(--text-faint);
     border-right: none;
-    padding-inline-end: var(--size-4-3);
+    /* Same gap as the markdown editor, but as padding so the gap stays solid when scrolling sideways */
+    padding-inline-end: var(--file-folding-offset);
+    font-size: var(--font-ui-smaller);
+    font-variant: tabular-nums;
+    z-index: 1;
+    box-shadow: calc(-1 * var(--file-margins)) 0 0 var(--file-margins) var(--background-primary);
   }
 
+  .cm-contentContainer:has(> .cm-content:not(.cm-lineWrapping)) {
+    width: max-content;
+    min-width: 100%;
+  }
 
-  /* Only used if you later add drawSelection(), which draws its own cursor and selection */
+  .cm-content:not(.cm-lineWrapping) {
+    width: auto;
+  }
+
   .cm-cursor {
     border-left-color: var(--caret-color);
   }
 
+  .cm-line {
+    padding-inline: 0;
+  }
 }

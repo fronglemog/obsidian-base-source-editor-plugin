@@ -12,9 +12,10 @@ import type {
 /* BASES SOURCE EDITOR */
 import { PLUGIN_DEFAULT_SETTINGS } from 'src/Settings/PluginSettings';
 import type { PluginSettings } from 'src/Settings/PluginSettings';
+import { BasesSourceEditorPluginSettingsTab } from 'src/Settings/SettingsTab';
 import { 
   VIEW_TYPE_BASES_SOURCE,
-  BasesSourceView
+  BaseSourceView
 } from 'src/BaseSourceView';
 import { ViewActionsManager } from 'src/ViewActionsManager';
 import { toggleSourceMode } from 'src/toggle-source-mode';
@@ -25,14 +26,17 @@ export default class BasesSourceEditorPlugin extends Plugin {
 
   /* Load plugin */
   override async onload(): Promise<void> {
+    /* Load plugin settings */
+    await this.loadSettings();
+
+    /* Register settings tab */
+    this.addSettingTab(new BasesSourceEditorPluginSettingsTab(this));
+
     /* Register view */
     this.registerView(
       VIEW_TYPE_BASES_SOURCE,
-      (leaf: WorkspaceLeaf) => new BasesSourceView(leaf)
+      (leaf: WorkspaceLeaf) => new BaseSourceView(this, leaf)
     );
-
-    /* Load plugin settings */
-    await this.loadSettings();
 
     /* Register commands */
     this.registerPluginCommands();
@@ -82,5 +86,16 @@ export default class BasesSourceEditorPlugin extends Plugin {
         return true;
       }
     });
+  }
+
+  // Helper method - called when a view needs to be updated.
+  updateBaseSourceViews(): void {
+    const app: App = this.app;
+
+    for (const leaf of app.workspace.getLeavesOfType(VIEW_TYPE_BASES_SOURCE)) {
+      if (leaf.view instanceof BaseSourceView) {
+        leaf.view.updateLineWrap();
+      }
+    }
   }
 }

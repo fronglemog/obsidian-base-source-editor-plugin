@@ -9,9 +9,13 @@ import type {
 } from 'obsidian';
 
 import {
+  Compartment,
   EditorState,
   Transaction
 } from '@codemirror/state';
+
+import type { Extension } from '@codemirror/state';
+
 import {
   EditorView,
   keymap,
@@ -29,18 +33,24 @@ import {
   indentUnit
 } from '@codemirror/language';
 
+import type BasesSourceEditorPlugin from 'src/main';
+
 /* ========================= BasesSourceEditorPlugin ========================= */
 
 export const VIEW_TYPE_BASES = 'bases';
 export const VIEW_TYPE_BASES_SOURCE = 'bases-source';
 const YAML_INDENT = '  ';
 
-export class BasesSourceView extends TextFileView {
+export class BaseSourceView extends TextFileView {
 
+  private plugin: BasesSourceEditorPlugin;
   private editor: EditorView | null = null
+  private lineWrapCompartment: Compartment = new Compartment();
 
-  constructor(leaf: WorkspaceLeaf) {
+  constructor(plugin: BasesSourceEditorPlugin, leaf: WorkspaceLeaf) {
     super(leaf);
+
+    this.plugin = plugin;
   }
 
   override canAcceptExtension(extension: string): boolean {
@@ -129,6 +139,17 @@ export class BasesSourceView extends TextFileView {
       state: this.createEditorState(this.data ?? ''),
       parent: this.contentEl
     });
+
+    this.wrapEditorContent(this.editor);
+  }
+
+  private wrapEditorContent(editor: EditorView) {
+    const contentContainerEl: HTMLElement = editor.scrollDOM.createDiv('cm-sizer').createDiv('cm-contentContainer');
+    const guttersEl: HTMLElement | null = editor.scrollDOM.querySelector('.cm-gutters');
+    if (guttersEl != null) {
+      contentContainerEl.appendChild(guttersEl);
+    }
+    contentContainerEl.appendChild(editor.contentDOM);
   }
 
   override async onClose(): Promise<void> {
@@ -144,6 +165,7 @@ export class BasesSourceView extends TextFileView {
         lineNumbers(),
         history(),
         indentUnit.of(YAML_INDENT),
+        this.lineWrapCompartment.of(this.getLineWrapExtensions()),
         keymap.of([...defaultKeymap, ...historyKeymap, indentWithTab]),
         EditorView.updateListener.of((update) => {
           const hasLocalChange = update.transactions.some((tx) => tx.docChanged && (tx.annotation(Transaction.remote) !== true));
@@ -155,5 +177,25 @@ export class BasesSourceView extends TextFileView {
     });
 
     return state;
+  }
+
+  updateLineWrap(): void {
+    this.editor?.dispatch({
+      effects: this.lineWrapCompartment.reconfigure(this.getLineWrapExtensions())
+    });
+  }
+
+  private getLineWrapExtensions(): Extension {
+    const lineWrapEnabled: boolean = this.plugin.settings.lineWrapEnabled;
+
+    if (lineWrapEnabled === false) {
+      return [];
+    }
+
+    const extensions: Extension = [
+      EditorView.lineWrapping
+    ];
+
+    return extensions;
   }
 }
