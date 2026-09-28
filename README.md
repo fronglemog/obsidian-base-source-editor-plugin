@@ -44,4 +44,10 @@ This project uses [pnpm](https://pnpm.io) as its package manager instead of `npm
 
 I'm more than happy to accept feedback, issues, bug reports and pull requests.
 
-**HOWEVER** - I reserve the right to decline and reject any issues or pull requests that I judge to be **AI slop**. Judgement of issues or pull requests as **AI slop** will be made at my sole discretion, without mercy. 
+### AI policy
+
+I myself use AI tools to support my learning and development - it's a great tool. I welcome those who identify and raise issues or submit pull requests who have done so with considered and appropriate use of AI.
+
+However, AI **slop** is not welcome here. Issues or pull requests written or submitted by AI agents are not welcome here.
+
+I reserve the right to decline and reject any issues or pull requests that I judge to be **AI slop**. Judgement of issues or pull requests as **AI slop** will be made at my sole discretion, without mercy. 
