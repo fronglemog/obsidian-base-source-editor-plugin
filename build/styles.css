@@ -1,8 +1,49 @@
-/*
+.workspace-leaf-content[data-type="bases-source"] {
+  /* Fill the pane and let CodeMirror scroll itself, the same as the core Bases view */
+  .view-content {
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
 
-This CSS file will be included with your plugin, and
-available in the app when your plugin is enabled.
+  .cm-editor {
+    flex: 1 1 auto;
+    min-height: 0;
+    background-color: var(--background-primary);
+    color: var(--code-normal);
+  }
 
-If your plugin does not need CSS, delete this file.
+  .cm-editor.cm-focused {
+    outline: none;
+  }
 
-*/
+  .cm-editor > .cm-scroller > .cm-selectionLayer > .cm-selectionBackground {
+    background-color: var(--text-selection);
+  }
+
+  .cm-scroller {
+    font-family: var(--font-monospace);
+    font-size: var(--font-text-size);
+    line-height: var(--line-height-normal);
+  }
+
+  .cm-content {
+    caret-color: var(--caret-color);
+  }
+
+  /* Match the markdown editor's gutter: transparent, faint numbers, no border */
+  .cm-gutters {
+    background-color: var(--background-primary);
+    color: var(--text-faint);
+    border-right: none;
+    padding-inline-end: var(--size-4-3);
+  }
+
+
+  /* Only used if you later add drawSelection(), which draws its own cursor and selection */
+  .cm-cursor {
+    border-left-color: var(--caret-color);
+  }
+
+}
