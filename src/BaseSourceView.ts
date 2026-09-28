@@ -44,12 +44,20 @@ import {
 } from '@codemirror/commands';
 
 import { 
+  bracketMatching,
   indentUnit
 } from '@codemirror/language';
 
 import {
   yaml
 } from '@codemirror/lang-yaml';
+
+import {
+  closeBrackets,
+  closeBracketsKeymap
+} from '@codemirror/autocomplete';
+
+import { yamlSyntaxHighlighting } from 'src/yamlSyntaxHighlighting';
 
 import type BasesSourceEditorPlugin from 'src/main';
 
@@ -58,7 +66,6 @@ import type BasesSourceEditorPlugin from 'src/main';
 export const VIEW_TYPE_BASES = 'bases';
 export const VIEW_TYPE_BASES_SOURCE = 'bases-source';
 const YAML_INDENT = '  ';
-const NO_SCROLL_X_CLASS = 'mod-no-scroll-x';
 
 // Same as the markdown editor: lines with a cursor, and their gutter elements, get the 'cm-active' class
 // (CodeMirror's own highlightActiveLine() and highlightActiveLineGutter() use 'cm-activeLine' and 'cm-activeLineGutter' instead, which themes don't target)
@@ -227,6 +234,8 @@ export class BaseSourceView extends TextFileView {
   // With line wrapping off, the scroller can, so every swipe would scroll the text. Like in a markdown view,
   // swipes that start outside of the text should open a sidebar, so horizontal scrolling is disabled for them.
   private onScrollerTouchStart(evt: TouchEvent): void {
+    const NO_SCROLL_X_CLASS = 'mod-no-scroll-x';
+
     const editor: EditorView | null = this.editor;
     if (editor == null || evt.touches.length !== 1) {
       return;
@@ -314,13 +323,21 @@ export class BaseSourceView extends TextFileView {
       doc: doc,
       extensions: [
         yaml(),
+        yamlSyntaxHighlighting,
+        bracketMatching(),
+        closeBrackets(),
         lineNumbers(),
         activeLineGutter,
         activeLine,
         history(),
         indentUnit.of(YAML_INDENT),
         this.lineWrapCompartment.of(this.getLineWrapExtensions()),
-        keymap.of([...defaultKeymap, ...historyKeymap, indentWithTab]),
+        keymap.of([
+          ...closeBracketsKeymap,
+          ...defaultKeymap,
+          ...historyKeymap,
+          indentWithTab
+        ]),
         EditorView.updateListener.of((update) => {
           const hasLocalChange = update.transactions.some((tx) => tx.docChanged && (tx.annotation(Transaction.remote) !== true));
           if (hasLocalChange) {
