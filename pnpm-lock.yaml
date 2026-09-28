@@ -38,6 +38,9 @@ importers:
       '@eslint/js':
         specifier: 10.0.1
         version: 10.0.1(eslint@10.11.0)
+      '@lezer/common':
+        specifier: 1.5.0
+        version: 1.5.0
       '@lezer/highlight':
         specifier: 1.2.3
         version: 1.2.3
