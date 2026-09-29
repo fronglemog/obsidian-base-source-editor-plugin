@@ -268,6 +268,7 @@ export class BaseSourceView extends TextFileView {
     this.wrapEditorContent(this.editor);
     this.updateBottomPadding();
     this.updateReadableLineWidth();
+    this.updateWhitespaceOpacity();
 
     // While open, the search bar's key bindings take over the view's scope
     this.searchBar = new BaseSourceSearchBar(this.plugin, this.editor, this.contentEl, (scope: Scope | null) => this.applyScope(scope));
@@ -537,6 +538,20 @@ export class BaseSourceView extends TextFileView {
   updateRenderWhitespace(): void {
     this.editor?.dispatch({
       effects: this.renderWhitespaceCompartment.reconfigure(this.getRenderWhitespaceExtensions())
+    });
+
+    this.updateWhitespaceOpacity();
+  }
+
+  /**
+   * Sets the CSS variable for the opacity of rendered whitespace from the plugin's settings.
+   * It's inline on the view, so it takes priority over values set in CSS snippets.
+   */
+  private updateWhitespaceOpacity(): void {
+    const whitespaceOpacity: number = this.plugin.settings.whitespaceOpacity;
+
+    this.contentEl.setCssProps({
+      '--bse-whitespace-opacity': `${whitespaceOpacity}%`
     });
   }
 

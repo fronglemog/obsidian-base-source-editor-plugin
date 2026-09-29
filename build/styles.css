@@ -1,3 +1,8 @@
+/* 
+CSS variables defined by this plugin must be prefixed with 'bse'.
+eg: --bse-text-color
+*/
+
 .workspace-leaf-content[data-type="bases-source"] {
   --search-match-ring-width: 3px;
 
@@ -108,10 +113,47 @@
     padding-inline: 0;
   }
 
+  /*
+  Original: keep for reference
   .cm-highlightSpace {
     background-image: radial-gradient(circle at 50% 55%, var(--text-faint) 20%, transparent 5%);
-    /* Obsidian's CodeMirror sets 'min(50%, 0px)', which resolves to 0px and puts the dot at the left edge of the space */
     background-position: center;
+  }
+  */
+
+  .cm-highlightSpace,
+  .cm-highlightTab {
+    --bse-whitespace-color: color-mix(in srgb, var(--text-faint) var(--bse-whitespace-opacity, 100%), transparent);
+  }
+
+  .cm-highlightSpace {
+    background-image: radial-gradient(circle at 50% 55%, var(--bse-whitespace-color) 20%, transparent 5%);
+    background-position: center;
+  }
+
+  /*
+  Original: keep for reference
+  .cm-highlightTab {
+    background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="20"><path stroke="%23888" stroke-width="1" fill="none" d="M1 10H196L190 5M190 15L196 10M197 4L197 16"/></svg>');
+    background-size: auto 100%;
+    background-position: right 90%;
+    background-repeat: no-repeat;
+  }
+  */
+
+  /* Default CodeMirror whitespace tab arrow is an image with a fixed colour. Redraw as a stylable mask. */
+  .cm-highlightTab {
+    position: relative;
+    background-image: none;
+  }
+
+  .cm-highlightTab::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background-color: var(--bse-whitespace-color);
+    mask: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="20"><path stroke="black" stroke-width="1" fill="none" d="M1 10H196L190 5M190 15L196 10M197 4L197 16"/></svg>') right 90% / auto 100% no-repeat;
   }
 
   .is-phone .mod-root & {

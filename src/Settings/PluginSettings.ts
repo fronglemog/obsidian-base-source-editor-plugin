@@ -2,13 +2,15 @@
 export const PLUGIN_DEFAULT_SETTINGS: PluginSettings = {
   lineWrap: false,
   readableLineLength: false,
-  renderWhitespace: false
+  renderWhitespace: false,
+  whitespaceOpacity: 50,
 }
 
 export interface PluginSettings {
   lineWrap: boolean;
   readableLineLength: boolean;
   renderWhitespace: boolean;
+  whitespaceOpacity: number;
 }
 
 

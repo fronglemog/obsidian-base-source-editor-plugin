@@ -2,7 +2,7 @@
 import { PluginSettingTab, type SettingDefinitionItem } from 'obsidian';
 
 import type BasesSourceEditorPlugin from 'src/main';
-import { getPluginSettingPath, setPluginSettingPath } from 'src/Settings/PluginSettings';
+import { getPluginSettingPath, PLUGIN_DEFAULT_SETTINGS, setPluginSettingPath } from 'src/Settings/PluginSettings';
 import type { PluginSettingPath } from 'src/Settings/PluginSettings';
 
 /* ========================= BasesSourceEditorPluginTab ========================= */
@@ -59,6 +59,21 @@ export class BasesSourceEditorPluginSettingsTab extends PluginSettingTab {
             control: {
               key: 'renderWhitespace',
               type: 'toggle'
+            }
+          },
+          {
+            name: 'Whitespace opacity',
+            desc: 'Fine-tune the visibility of whitespace characters.',
+            searchable: true,
+            control: {
+              key: 'whitespaceOpacity',
+              type: 'slider',
+              defaultValue: PLUGIN_DEFAULT_SETTINGS.whitespaceOpacity,
+              min: 30,
+              max: 100,
+              step: 10,
+              displayFormat: (value: number): string => `${value}%`,
+              disabled: () => this.plugin.settings.renderWhitespace === false
             }
           }
         ]
