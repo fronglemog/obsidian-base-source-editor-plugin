@@ -1,12 +1,20 @@
 /* ========================= IMPORTS ========================= */
-import type { Component } from 'obsidian';
+import type { App, Command, Component, Debouncer, KeymapInfo } from 'obsidian';
 
 import type { LanguageSupport as EditorLanguageSupport } from '@codemirror/language';
 
 /* ========================= OBSIDIAN TYPES ========================= */
+// Credit for undocumented Obsidian API typings: https://github.com/obsidian-typings/obsidian-typings
 
 declare module 'obsidian' {
   interface App {
+    /**
+     * Contains all registered commands.
+     *
+     * @tutorial Can be used to manually invoke the functionality of a specific command.
+     * @unofficial
+     */
+    commands: Commands;
     /**
      * Manages global hotkeys.
      *
@@ -41,6 +49,97 @@ declare module 'obsidian' {
  * @unofficial
  */
 export interface BasesMockContext {}
+
+/**
+ * @todo Documentation incomplete.
+ * @public
+ * @unofficial
+ */
+export interface Commands {
+  /**
+   * Reference to App.
+   */
+  app: App;
+  /**
+   * Commands *without* editor callback, will always be available in the command palette.
+   *
+   * @example `app:open-vault` or `app:reload`.
+   */
+  commands: CommandsCommandsRecord;
+  /**
+   * Commands *with* editor callback, will only be available when editor is active and callback returns.
+   * true.
+   *
+   * @example `editor:fold-all` or `command-palette:open`.
+   */
+  editorCommands: CommandsEditorCommandsRecord;
+  /**
+   * Add a command to the command registry.
+   *
+   * @param command - Command to add.
+   */
+  addCommand(command: Command): void;
+  /**
+   * Execute a command by reference.
+   *
+   * @param command - Command to execute.
+   */
+  executeCommand(command: Command, event?: Event): boolean;
+  /**
+   * Execute a command by ID.
+   *
+   * @param commandId - ID of command to execute.
+   */
+  executeCommandById(commandId: string, event?: Event): boolean;
+  /**
+   * Find a command by ID.
+   *
+   * @param commandId - ID of command to find.
+   */
+  findCommand(commandId: string): Command | undefined;
+  /**
+   * Lists **all** commands, both with and without editor callback.
+   */
+  listCommands(): Command[];
+  /**
+   * Remove a command from the command registry.
+   *
+   * @param commandId - ID of command to remove.
+   */
+  removeCommand(commandId: string): void;
+}
+
+/**
+ * Record mapping command IDs to {@link obsidian#Command} objects without editor callbacks.
+ *
+ * @public
+ * @unofficial
+ */
+export interface CommandsCommandsRecord extends Record<string, Command> {}
+
+/**
+ * Record mapping command IDs to {@link obsidian#Command} objects with editor callbacks.
+ *
+ * @public
+ * @unofficial
+ */
+export interface CommandsEditorCommandsRecord extends Record<string, Command> {}
+
+/**
+ * Record mapping command IDs to their user-customized hotkey bindings.
+ *
+ * @public
+ * @unofficial
+ */
+export interface HotkeyManagerCustomKeysRecord extends Record<string, KeymapInfo[]> {}
+
+/**
+ * Record mapping command IDs to their default hotkey bindings.
+ *
+ * @public
+ * @unofficial
+ */
+export interface HotkeyManagerDefaultKeysRecord extends Record<string, KeymapInfo[]> {}
 
 /**
  * Manager for keyboard shortcut registration, storage, and triggering.
