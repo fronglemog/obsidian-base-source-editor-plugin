@@ -56,3 +56,7 @@ I use AI as a tool to support my learning and development. I welcome those who i
 However, AI **slop** is not welcome here. Issues or pull requests written or submitted by AI agents are not welcome here.
 
 I reserve the right to decline and reject any issues or pull requests that I judge to be **AI slop**. Judgement of issues or pull requests as **AI slop** will be made at my sole discretion, without mercy. 
+
+## License
+
+[MIT](./LICENSE) © fronglemog
