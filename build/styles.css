@@ -63,7 +63,7 @@
     right: 0;
     flex: 0 0 0;
     z-index: 1;
-    box-shadow: var(--file-margins) 0 0 var(--file-margins) var(--background-primary);
+    box-shadow: var(--file-margins-x) 0 0 var(--file-margins-x) var(--background-primary);
   }
 
   .cm-gutters {
@@ -76,7 +76,8 @@
     font-size: var(--font-ui-smaller);
     font-variant: tabular-nums;
     z-index: 1;
-    box-shadow: calc(-1 * var(--file-margins)) 0 0 var(--file-margins) var(--background-primary);
+    /* --file-margins is "y x", which is invalid in a shadow, so use the horizontal margin only */
+    box-shadow: calc(-1 * var(--file-margins-x)) 0 0 var(--file-margins-x) var(--background-primary);
   }
 
   .cm-contentContainer:has(> .cm-content:not(.cm-lineWrapping)) {
