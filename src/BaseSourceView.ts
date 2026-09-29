@@ -6,6 +6,7 @@ import {
 
 import type {
   IconName,
+  Scope,
   WorkspaceLeaf
 } from 'obsidian';
 
@@ -57,6 +58,11 @@ import {
 import {
   yamlSyntaxHighlighting
 } from 'src/BaseYamlLanguage/yamlSyntaxHighlighting';
+
+import {
+  BaseSourceSearchBar,
+  searchHighlightField
+} from 'src/BaseSourceSearchBar';
 
 import type BasesSourceEditorPlugin from 'src/main';
 
@@ -126,6 +132,7 @@ export class BaseSourceView extends TextFileView {
   private plugin: BasesSourceEditorPlugin;
   private editor: EditorView | null = null
   private lineWrapCompartment: Compartment = new Compartment();
+  private searchBar: BaseSourceSearchBar | null = null;
 
   constructor(plugin: BasesSourceEditorPlugin, leaf: WorkspaceLeaf) {
     super(leaf);
@@ -258,9 +265,24 @@ export class BaseSourceView extends TextFileView {
     this.updateBottomPadding();
     this.updateReadableLineWidth();
 
+    // While open, the search bar's key bindings take over the view's scope
+    this.searchBar = new BaseSourceSearchBar(this.plugin, this.editor, this.contentEl, (scope: Scope | null) => {
+      this.scope = scope;
+    });
+
     if (Platform.isMobile) {
       this.registerDomEvent(this.editor.scrollDOM, 'touchstart', (evt) => this.onScrollerTouchStart(evt), { passive: true });
     }
+  }
+
+  /**
+   * Opens the search bar. Obsidian's "Search current file" command calls this
+   * on any active view that has a `showSearch` method.
+   *
+   * @param replace - Whether to show the replace row.
+   */
+  showSearch(replace: boolean = false): void {
+    this.searchBar?.show(replace);
   }
 
   /**
@@ -393,6 +415,7 @@ export class BaseSourceView extends TextFileView {
           ...historyKeymap,
           indentWithTab
         ]),
+        searchHighlightField,
         EditorView.updateListener.of((update: ViewUpdate) => this.onEditorUpdate(update))
       ]
     });

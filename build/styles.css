@@ -130,4 +130,10 @@
     margin-inline-start: -18px;
     inset-inline-start: calc(var(--sizer-inset) - 18px);
   }
+
+  .document-search-button.clickable-icon.is-active,
+  .document-search-button.clickable-icon.is-active:hover {
+    color: var(--icon-color-active);
+    background-color: var(--background-modifier-active-hover);
+  }
 }
