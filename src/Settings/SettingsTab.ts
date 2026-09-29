@@ -35,11 +35,20 @@ export class BasesSourceEditorPluginSettingsTab extends PluginSettingTab {
         type: 'group',
         items: [
           {
-            name: 'Enable line wrapping',
-            desc: '',
+            name: 'Line wrapping',
+            desc: 'Enable line wrapping. ',
             searchable: true,
             control: {
-              key: 'lineWrapEnabled',
+              key: 'lineWrap',
+              type: 'toggle'
+            }
+          },
+          {
+            name: 'Readable line length',
+            desc: 'Limit maximum line length, based on Obsidian\'s CSS variable \'--file-line-width\'.',
+            searchable: true,
+            control: {
+              key: 'readableLineLength',
               type: 'toggle'
             }
           }

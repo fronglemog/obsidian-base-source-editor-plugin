@@ -256,6 +256,7 @@ export class BaseSourceView extends TextFileView {
 
     this.wrapEditorContent(this.editor);
     this.updateBottomPadding();
+    this.updateReadableLineWidth();
 
     if (Platform.isMobile) {
       this.registerDomEvent(this.editor.scrollDOM, 'touchstart', (evt) => this.onScrollerTouchStart(evt), { passive: true });
@@ -325,9 +326,12 @@ export class BaseSourceView extends TextFileView {
     const scrollerRect: DOMRect = scrollerEl.getBoundingClientRect();
     const scrollerStyle: CSSStyleDeclaration = getComputedStyle(scrollerEl);
     const guttersEl: HTMLElement | null = scrollerEl.querySelector('.cm-gutters');
+    // The column is inset from the scroller's padding by the same space on either side
+    const contentContainerEl: HTMLElement | null = editor.contentDOM.parentElement;
+    const columnInset: number = contentContainerEl == null ? 0 : Number.parseFloat(getComputedStyle(contentContainerEl).marginInlineStart) || 0;
 
-    const textLeft: number = guttersEl?.getBoundingClientRect().right ?? scrollerRect.left + Number.parseFloat(scrollerStyle.paddingLeft);
-    const textRight: number = scrollerRect.left + scrollerEl.clientWidth - Number.parseFloat(scrollerStyle.paddingRight);
+    const textLeft: number = guttersEl?.getBoundingClientRect().right ?? scrollerRect.left + Number.parseFloat(scrollerStyle.paddingLeft) + columnInset;
+    const textRight: number = scrollerRect.left + scrollerEl.clientWidth - Number.parseFloat(scrollerStyle.paddingRight) - columnInset;
     const touchX: number = evt.touches[0]?.clientX ?? Number.NaN;
 
     return touchX >= textLeft && touchX <= textRight;
@@ -417,14 +421,8 @@ export class BaseSourceView extends TextFileView {
     }
   }
 
-  updateLineWrap(): void {
-    this.editor?.dispatch({
-      effects: this.lineWrapCompartment.reconfigure(this.getLineWrapExtensions())
-    });
-  }
-
   private getLineWrapExtensions(): Extension {
-    const lineWrapEnabled: boolean = this.plugin.settings.lineWrapEnabled;
+    const lineWrapEnabled: boolean = this.plugin.settings.lineWrap;
 
     if (lineWrapEnabled === false) {
       return [];
@@ -435,5 +433,19 @@ export class BaseSourceView extends TextFileView {
     ];
 
     return extensions;
+  }
+
+  updateLineWrap(): void {
+    this.editor?.dispatch({
+      effects: this.lineWrapCompartment.reconfigure(this.getLineWrapExtensions())
+    });
+  }
+
+  /**
+   * Limits the text to `--file-line-width` when the plugin's "Readable line length" setting is on.
+   */
+  updateReadableLineWidth(): void {
+    const isReadableLineWidth: boolean = this.plugin.settings.readableLineLength;
+    this.contentEl.toggleClass('is-readable-line-width', isReadableLineWidth);
   }
 }

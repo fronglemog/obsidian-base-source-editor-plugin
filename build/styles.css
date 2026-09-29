@@ -39,8 +39,8 @@
     align-items: stretch;
     width: 100%;
     min-height: 100%;
-    max-width: var(--file-line-width);
-    margin-inline: auto;
+    /* Container for the column inset. Not the scroller, because its container width includes the scrollbar */
+    container-type: inline-size;
   }
   
   .cm-content {
@@ -51,18 +51,28 @@
   }
 
   .cm-contentContainer {
+    --sizer-inset: 0px;
+
     flex: 1 1 auto;
     display: flex;
     align-items: stretch;
     overflow-x: visible;
+    margin-inline-start: var(--sizer-inset);
   }
 
+  /* Space on either side of the readable-width column, when the "Readable line length" setting is on */
+  .is-readable-line-width .cm-contentContainer {
+    --sizer-inset: max(0px, (100cqw - var(--file-line-width)) / 2);
+  }
+
+  /* The right side of the column. Masks text that is scrolled sideways, and lets the end of the longest line scroll into the column */
  .cm-contentContainer::after {
     content: "";
     position: sticky;
     right: 0;
-    flex: 0 0 0;
+    flex: 0 0 var(--sizer-inset);
     z-index: 1;
+    background-color: var(--background-primary);
     box-shadow: var(--file-margins-x) 0 0 var(--file-margins-x) var(--background-primary);
   }
 
@@ -71,22 +81,26 @@
     background-color: var(--background-primary);
     color: var(--text-faint);
     border-right: none;
-    /* Same gap as the markdown editor, but as padding so the gap stays solid when scrolling sideways */
     padding-inline-end: var(--file-folding-offset);
     font-size: var(--font-ui-smaller);
     font-variant: tabular-nums;
     z-index: 1;
-    /* --file-margins is "y x", which is invalid in a shadow, so use the horizontal margin only */
-    box-shadow: calc(-1 * var(--file-margins-x)) 0 0 var(--file-margins-x) var(--background-primary);
+    /* Sticks where the column starts, so the gutter doesn't move when scrolling sideways */
+    inset-inline-start: var(--sizer-inset);
+    box-shadow:
+      calc(-1 * (var(--file-margins-x) + var(--sizer-inset))) 0 0 calc(var(--file-margins-x) + var(--sizer-inset))
+      var(--background-primary);
   }
 
   .cm-contentContainer:has(> .cm-content:not(.cm-lineWrapping)) {
     width: max-content;
-    min-width: 100%;
+    min-width: calc(100% - var(--sizer-inset));
   }
 
+  /* The scroller's end padding isn't part of the scroll width, so without this the end of the longest line stays under the right mask */
   .cm-content:not(.cm-lineWrapping) {
     width: auto;
+    padding-inline-end: var(--file-margins-x);
   }
 
   .cm-cursor {
@@ -114,6 +128,6 @@
   /* Same offset as the markdown editor's gutter on phones. The gutter is sticky, so its inset must match the margin */
   .is-phone & .cm-gutters {
     margin-inline-start: -18px;
-    inset-inline-start: -18px;
+    inset-inline-start: calc(var(--sizer-inset) - 18px);
   }
 }
