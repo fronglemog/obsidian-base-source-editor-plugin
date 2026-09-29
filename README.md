@@ -18,8 +18,6 @@ Base Source mode can be toggled using:
 - The command 'Toggle source mode' from the Command palette.
 - The 'Source mode/Base mode' toggle visible when a Base is open.
 
-Line wrapping can be toggled within the plugin settings.
-
 ## Installation
 
 ### Obsidian Community Directory
