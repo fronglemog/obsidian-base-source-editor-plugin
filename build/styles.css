@@ -1,5 +1,4 @@
 .workspace-leaf-content[data-type="bases-source"] {
-  /* Width of the ring around the current search match, same as the markdown editor's */
   --search-match-ring-width: 3px;
 
   .view-content {
@@ -24,7 +23,6 @@
     background-color: var(--text-selection);
   }
 
-  /* Set while a touch that started outside of the text is active, so a horizontal swipe opens a sidebar instead of scrolling */
   .cm-scroller.mod-no-scroll-x {
     overflow-x: hidden;
   }
@@ -42,7 +40,6 @@
     align-items: stretch;
     width: 100%;
     min-height: 100%;
-    /* Container for the column inset. Not the scroller, because its container width includes the scrollbar */
     container-type: inline-size;
   }
   
@@ -51,7 +48,6 @@
     flex-basis: unset !important;
     width: 0;
     padding-block: 0;
-    /* Part of the gap after the gutter, so the gutter doesn't cover the search match ring at the start of a line */
     padding-inline-start: var(--search-match-ring-width);
   }
 
@@ -65,12 +61,10 @@
     margin-inline-start: var(--sizer-inset);
   }
 
-  /* Space on either side of the readable-width column, when the "Readable line length" setting is on */
   .is-readable-line-width .cm-contentContainer {
     --sizer-inset: max(0px, (100cqw - var(--file-line-width)) / 2);
   }
 
-  /* The right side of the column. Masks text that is scrolled sideways, and lets the end of the longest line scroll into the column */
  .cm-contentContainer::after {
     content: "";
     position: sticky;
@@ -86,12 +80,10 @@
     background-color: var(--background-primary);
     color: var(--text-faint);
     border-right: none;
-    /* The rest of the gap is in .cm-content */
     padding-inline-end: calc(var(--file-folding-offset) - var(--search-match-ring-width));
     font-size: var(--font-ui-smaller);
     font-variant: tabular-nums;
     z-index: 1;
-    /* Sticks where the column starts, so the gutter doesn't move when scrolling sideways */
     inset-inline-start: var(--sizer-inset);
     box-shadow:
       calc(-1 * (var(--file-margins-x) + var(--sizer-inset))) 0 0 calc(var(--file-margins-x) + var(--sizer-inset))
@@ -103,7 +95,6 @@
     min-width: calc(100% - var(--sizer-inset));
   }
 
-  /* The scroller's end padding isn't part of the scroll width, so without this the end of the longest line stays under the right mask */
   .cm-content:not(.cm-lineWrapping) {
     width: auto;
     padding-inline-end: var(--file-margins-x);
@@ -117,7 +108,12 @@
     padding-inline: 0;
   }
 
-  /* Phone: match the markdown view, where content scrolls underneath the floating view header */
+  .cm-highlightSpace {
+    background-image: radial-gradient(circle at 50% 55%, var(--text-faint) 20%, transparent 5%);
+    /* Obsidian's CodeMirror sets 'min(50%, 0px)', which resolves to 0px and puts the dot at the left edge of the space */
+    background-position: center;
+  }
+
   .is-phone .mod-root & {
     --view-top-spacing: 0;
   }
@@ -131,7 +127,6 @@
     mask-image: var(--view-top-fade-mask);
   }
 
-  /* Same offset as the markdown editor's gutter on phones. The gutter is sticky, so its inset must match the margin */
   .is-phone & .cm-gutters {
     margin-inline-start: -18px;
     inset-inline-start: calc(var(--sizer-inset) - 18px);
@@ -143,7 +138,6 @@
     background-color: var(--background-modifier-active-hover);
   }
 
-  /* Same as the markdown editor's current search match. */
   span.obsidian-search-match-highlight {
     box-shadow: 0 0 0 var(--search-match-ring-width) var(--text-accent);
     mix-blend-mode: var(--highlight-mix-blend-mode);

@@ -30,6 +30,7 @@ import {
   EditorView,
   GutterMarker,
   gutterLineClass,
+  highlightWhitespace,
   keymap,
   lineNumbers,
   ViewPlugin
@@ -134,6 +135,7 @@ export class BaseSourceView extends TextFileView {
   private plugin: BasesSourceEditorPlugin;
   private editor: EditorView | null = null
   private lineWrapCompartment: Compartment = new Compartment();
+  private renderWhitespaceCompartment: Compartment = new Compartment();
   private searchBar: BaseSourceSearchBar | null = null;
 
   constructor(plugin: BasesSourceEditorPlugin, leaf: WorkspaceLeaf) {
@@ -440,6 +442,7 @@ export class BaseSourceView extends TextFileView {
         history(),
         indentUnit.of(YAML_INDENT),
         this.lineWrapCompartment.of(this.getLineWrapExtensions()),
+        this.renderWhitespaceCompartment.of(this.getRenderWhitespaceExtensions()),
         keymap.of([
           ...closeBracketsKeymap,
           ...defaultKeymap,
@@ -476,6 +479,14 @@ export class BaseSourceView extends TextFileView {
   }
 
   /**
+   * Limits the text to `--file-line-width` when the plugin's "Readable line length" setting is on.
+   */
+  updateReadableLineWidth(): void {
+    const isReadableLineWidth: boolean = this.plugin.settings.readableLineLength;
+    this.contentEl.toggleClass('is-readable-line-width', isReadableLineWidth);
+  }
+
+  /**
    * 
    * @returns 
    */
@@ -503,11 +514,30 @@ export class BaseSourceView extends TextFileView {
   }
 
   /**
-   * Limits the text to `--file-line-width` when the plugin's "Readable line length" setting is on.
+   *
+   * @returns 
    */
-  updateReadableLineWidth(): void {
-    const isReadableLineWidth: boolean = this.plugin.settings.readableLineLength;
-    this.contentEl.toggleClass('is-readable-line-width', isReadableLineWidth);
+  private getRenderWhitespaceExtensions(): Extension {
+    const renderWhitespaceEnabled: boolean = this.plugin.settings.renderWhitespace;
+
+    if (renderWhitespaceEnabled === false) {
+      return [];
+    }
+
+    const extensions: Extension = [
+      highlightWhitespace()
+    ];
+
+    return extensions;
+  }
+
+  /**
+   * 
+   */
+  updateRenderWhitespace(): void {
+    this.editor?.dispatch({
+      effects: this.renderWhitespaceCompartment.reconfigure(this.getRenderWhitespaceExtensions())
+    });
   }
 
   /**

@@ -1,12 +1,14 @@
 /* ========================= SETTINGS ========================= */
 export const PLUGIN_DEFAULT_SETTINGS: PluginSettings = {
   lineWrap: false,
-  readableLineLength: false
+  readableLineLength: false,
+  renderWhitespace: false
 }
 
 export interface PluginSettings {
   lineWrap: boolean;
   readableLineLength: boolean;
+  renderWhitespace: boolean;
 }
 
 

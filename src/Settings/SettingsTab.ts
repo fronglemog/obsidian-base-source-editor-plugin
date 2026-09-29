@@ -51,6 +51,15 @@ export class BasesSourceEditorPluginSettingsTab extends PluginSettingTab {
               key: 'readableLineLength',
               type: 'toggle'
             }
+          },
+          {
+            name: 'Render whitespace',
+            desc: 'Show spaces as dots and tabs as arrows.',
+            searchable: true,
+            control: {
+              key: 'renderWhitespace',
+              type: 'toggle'
+            }
           }
         ]
       }

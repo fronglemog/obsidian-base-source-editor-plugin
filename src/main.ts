@@ -104,6 +104,7 @@ export default class BasesSourceEditorPlugin extends Plugin {
       if (leaf.view instanceof BaseSourceView) {
         leaf.view.updateLineWrap();
         leaf.view.updateReadableLineWidth();
+        leaf.view.updateRenderWhitespace();
       }
     }
   }
