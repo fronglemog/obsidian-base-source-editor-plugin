@@ -4,7 +4,7 @@
   "author": "fronglemog",
   "license": "MIT",
 	"type": "module",
-	"main": "plugin/main.js",
+	"main": "build/main.js",
   "devEngines": {
     "packageManager": {
       "name": "pnpm"
