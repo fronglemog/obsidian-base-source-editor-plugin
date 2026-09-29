@@ -5,7 +5,7 @@ This is a good place to start if you'd like to contribute to this plugin.
 
 ## Editor
 
-- [ ] Find/replace
+- [x] Find/replace
 - [ ] Folding/unfolding
 
 ## YAML

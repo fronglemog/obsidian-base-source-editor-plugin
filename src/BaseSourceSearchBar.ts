@@ -1,6 +1,7 @@
 /* ========================= IMPORTS ========================= */
 import {
   ButtonComponent,
+  Keymap,
   Scope,
   setIcon,
   setTooltip,
@@ -8,7 +9,8 @@ import {
 } from 'obsidian';
 
 import type {
-  IconName
+  IconName,
+  KeymapContext
 } from 'obsidian';
 
 import {
@@ -82,6 +84,7 @@ export class BaseSourceSearchBar {
   private caseSensitiveButtonEl: HTMLButtonElement;
 
   private isActive: boolean = false;
+  private isReplace: boolean = false;
   private caseSensitive: boolean = false;
   private currentMatch: SearchMatch | null = null;
 
@@ -149,6 +152,9 @@ export class BaseSourceSearchBar {
     
     this.createButton(replaceButtonsEl, 'lucide-replace', 'Replace\nEnter', () => this.replaceCurrentMatch());
     this.createButton(replaceButtonsEl, 'lucide-replace-all', 'Replace all\nCtrl + Alt + Enter', () => this.replaceAll());
+
+    // Null modifiers and key match every key press, like Obsidian's own scope for hotkeys
+    this.scope.register(null, null, (evt: KeyboardEvent, ctx: KeymapContext) => this.handleKeyDown(evt, ctx));
   }
 
   /**
@@ -158,6 +164,7 @@ export class BaseSourceSearchBar {
    */
   show(replace: boolean): void {
     this.isActive = true;
+    this.isReplace = replace;
     this.containerEl.toggleClass('mod-replace-mode', replace);
     this.parentEl.prepend(this.containerEl);
 
@@ -172,6 +179,10 @@ export class BaseSourceSearchBar {
     this.onSearchInput();
   }
 
+  /**
+   * 
+   * @returns 
+   */
   hide(): void {
     if (!this.isActive) {
       return;
@@ -179,8 +190,7 @@ export class BaseSourceSearchBar {
     this.isActive = false;
 
     // Like the markdown editor, closing from the inputs leaves the current match selected
-    const inputFocused: boolean = this.searchInputEl.isActiveElement() || this.replaceInputEl.isActiveElement();
-    if (this.currentMatch != null && inputFocused) {
+    if (this.currentMatch != null && this.isInputFocused()) {
       this.editor.dispatch({ selection: EditorSelection.range(this.currentMatch.from, this.currentMatch.to) });
     }
 
@@ -194,8 +204,108 @@ export class BaseSourceSearchBar {
     this.editor.focus();
   }
 
+  /* ========================= Keys ========================= */
+
+  /**
+   * Handles key presses while the search bar is open.
+   *
+   * @param evt - Key press event.
+   * @param ctx - The pressed key. `vkey` is used because `key` is lowercase for letters.
+   * @returns false if the key was handled, or undefined to pass it on to Obsidian's hotkeys.
+   */
+  private handleKeyDown(evt: KeyboardEvent, ctx: KeymapContext): false | undefined {
+    // Handle instances where IME (input method editor) is composing - for non-English languages.
+    if (evt.isComposing) {
+      return undefined;
+    }
+
+    // Names of the held modifier keys. 'Mod' is Cmd on macOS and Ctrl elsewhere
+    const modifierNames: string[] = [];
+    if (Keymap.isModifier(evt, 'Mod')) {
+      modifierNames.push('Mod');
+    }
+    if (evt.altKey) {
+      modifierNames.push('Alt');
+    }
+    if (evt.shiftKey) {
+      modifierNames.push('Shift');
+    }
+
+    const modifiers: string = modifierNames.join('+');
+
+    // Use `vkey` instead of `key` - Otherwise, held modifier keys will affect the letter casing
+    const key: string = ctx.vkey;
+
+    const inputFocused: boolean = this.isInputFocused();
+
+    // Next match: F3 or Mod + G
+    if ((modifiers === '' && key === 'F3') || (modifiers === 'Mod' && key === 'G')) {
+      this.findNext();
+      return false;
+    }
+
+    // Previous match: Shift + F3 or Mod + Shift + G
+    if ((modifiers === 'Shift' && key === 'F3') || (modifiers === 'Mod+Shift' && key === 'G')) {
+      this.findPrevious();
+      return false;
+    }
+
+    // Close: Escape
+    if (modifiers === '' && key === 'Escape') {
+      this.hide();
+      return false;
+    }
+
+    // Enter keys only act while typing in the search bar, so they still reach the editor otherwise
+
+    // Next match or replace: Enter
+    if (modifiers === '' && key === 'Enter' && inputFocused) {
+      // Like the markdown editor, Enter replaces only from a non-empty replace input
+      if (this.replaceInputEl.isActiveElement() && this.replaceInputEl.value !== '') {
+        this.replaceCurrentMatch();
+      }
+      else {
+        this.findNext();
+      }
+      return false;
+    }
+
+    // Previous match: Shift + Enter
+    if (modifiers === 'Shift' && key === 'Enter' && inputFocused) {
+      this.findPrevious();
+      return false;
+    }
+
+    // Replace all: Mod + Alt + Enter, from the replace input
+    if (modifiers === 'Mod+Alt' && key === 'Enter' && this.isReplace && this.replaceInputEl.isActiveElement()) {
+      this.replaceAll();
+      return false;
+    }
+
+    // Switch between the two inputs: Tab or Shift + Tab
+    if ((modifiers === '' || modifiers === 'Shift') && key === 'Tab' && this.isReplace && inputFocused) {
+      if (this.searchInputEl.isActiveElement()) {
+        this.replaceInputEl.focus();
+      }
+      else {
+        this.searchInputEl.focus();
+      }
+      return false;
+    }
+
+    // Not a search bar key, so let Obsidian's hotkeys handle it
+    return undefined;
+  }
+
+  private isInputFocused(): boolean {
+    return this.searchInputEl.isActiveElement() || this.replaceInputEl.isActiveElement();
+  }
+
   /* ========================= Find ========================= */
 
+  /**
+   * 
+   */
   private onSearchInput(): void {
     const selection = this.editor.state.selection.main;
     this.searchFrom = selection.from;
@@ -207,18 +317,28 @@ export class BaseSourceSearchBar {
     this.searchInputEl.toggleClass('mod-no-match', query !== '' && this.currentMatch == null);
   }
 
+  /**
+   * 
+   */
   private findNext(): void {
     const matches: SearchMatch[] = this.getMatches();
     const match: SearchMatch | null = matches.find((m: SearchMatch) => m.from >= this.searchTo) ?? matches[0] ?? null;
     this.setCurrentMatch(match, matches);
   }
 
+  /**
+   * 
+   */
   private findPrevious(): void {
     const matches: SearchMatch[] = this.getMatches();
     const match: SearchMatch | null = matches.findLast((m: SearchMatch) => m.to <= this.searchFrom) ?? matches.at(-1) ?? null;
     this.setCurrentMatch(match, matches);
   }
 
+  /**
+   * 
+   * @returns 
+   */
   private getMatches(): SearchMatch[] {
     const query: string = this.searchInputEl.value;
     if (query === '') {
@@ -236,6 +356,11 @@ export class BaseSourceSearchBar {
     return matches;
   }
 
+  /**
+   * 
+   * @param match -
+   * @param matches -
+   */
   private setCurrentMatch(match: SearchMatch | null, matches: SearchMatch[]): void {
     this.currentMatch = match;
     if (match != null) {
@@ -247,6 +372,10 @@ export class BaseSourceSearchBar {
     this.updateCount(match, matches);
   }
 
+  /**
+   * 
+   * @param matches -
+   */
   private highlight(matches: SearchMatch[]): void {
     const effects: StateEffect<unknown>[] = [setSearchHighlights.of(matches)];
 
@@ -268,6 +397,10 @@ export class BaseSourceSearchBar {
 
   /* ========================= Replace ========================= */
 
+  /**
+   * 
+   * @returns 
+   */
   private replaceCurrentMatch(): void {
     const match: SearchMatch | null = this.currentMatch;
     if (match == null) {
@@ -292,6 +425,10 @@ export class BaseSourceSearchBar {
     this.findNext();
   }
 
+  /**
+   * 
+   * @returns 
+   */
   private replaceAll(): void {
     const replacement: string = this.replaceInputEl.value;
     const changes: ChangeSpec[] = this.getMatches().map((m: SearchMatch) => ({ from: m.from, to: m.to, insert: replacement }));
@@ -303,6 +440,11 @@ export class BaseSourceSearchBar {
     this.setCurrentMatch(null, []);
   }
 
+  /**
+   * 
+   * @param text -
+   * @returns 
+   */
   private matchesQuery(text: string): boolean {
     const query: string = this.searchInputEl.value;
 
@@ -312,6 +454,14 @@ export class BaseSourceSearchBar {
     return text.toLowerCase() === query.toLowerCase();
   }
 
+  /**
+   * 
+   * @param parentEl -
+   * @param icon -
+   * @param tooltip -
+   * @param onClick -
+   * @returns 
+   */
   private createButton(parentEl: HTMLElement, icon: IconName, tooltip: string, onClick: () => void): ButtonComponent {
     const button: ButtonComponent = new ButtonComponent(parentEl);
     button.setIcon(icon);
@@ -326,6 +476,9 @@ export class BaseSourceSearchBar {
     return button;
   }
 
+  /**
+   * 
+   */
   private toggleCaseSensitive(): void {
     this.caseSensitive = !this.caseSensitive;
     this.caseSensitiveButtonEl.toggleClass('is-active', this.caseSensitive);

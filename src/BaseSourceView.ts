@@ -6,6 +6,8 @@ import {
 
 import type {
   IconName,
+  Menu,
+  MenuItem,
   Scope,
   WorkspaceLeaf
 } from 'obsidian';
@@ -266,9 +268,7 @@ export class BaseSourceView extends TextFileView {
     this.updateReadableLineWidth();
 
     // While open, the search bar's key bindings take over the view's scope
-    this.searchBar = new BaseSourceSearchBar(this.plugin, this.editor, this.contentEl, (scope: Scope | null) => {
-      this.scope = scope;
-    });
+    this.searchBar = new BaseSourceSearchBar(this.plugin, this.editor, this.contentEl, (scope: Scope | null) => this.applyScope(scope));
 
     if (Platform.isMobile) {
       this.registerDomEvent(this.editor.scrollDOM, 'touchstart', (evt) => this.onScrollerTouchStart(evt), { passive: true });
@@ -276,13 +276,23 @@ export class BaseSourceView extends TextFileView {
   }
 
   /**
-   * Opens the search bar. Obsidian's "Search current file" command calls this
-   * on any active view that has a `showSearch` method.
+   * Makes a scope handle key presses, like the markdown view does for its search.
+   * Only setting `this.scope` isn't enough, because Obsidian doesn't push a view's scope when it becomes active.
    *
-   * @param replace - Whether to show the replace row.
+   * @param scope - Scope to push, or null to pop the current one.
    */
-  showSearch(replace: boolean = false): void {
-    this.searchBar?.show(replace);
+  private applyScope(scope: Scope | null): void {
+    if (scope === this.scope) {
+      return;
+    }
+
+    if (this.scope != null) {
+      this.app.keymap.popScope(this.scope);
+    }
+    if (scope != null) {
+      this.app.keymap.pushScope(scope);
+    }
+    this.scope = scope;
   }
 
   /**
@@ -307,6 +317,11 @@ export class BaseSourceView extends TextFileView {
   // Obsidian opens a sidebar on a horizontal swipe, unless the touched element can scroll horizontally.
   // With line wrapping off, the scroller can, so every swipe would scroll the text. Like in a markdown view,
   // swipes that start outside of the text should open a sidebar, so horizontal scrolling is disabled for them.
+  /**
+   * 
+   * @param evt -
+   * @returns 
+   */
   private onScrollerTouchStart(evt: TouchEvent): void {
     const NO_SCROLL_X_CLASS = 'mod-no-scroll-x';
 
@@ -336,7 +351,12 @@ export class BaseSourceView extends TextFileView {
     win.addEventListener('touchcancel', onTouchEnd);
   }
 
-  // Lines that are scrolled sideways sit underneath the gutter and the side margins, so the touched element alone isn't enough
+  /**
+   * 
+   * @param editor -
+   * @param evt -
+   * @returns 
+   */
   private isOnText(editor: EditorView, evt: TouchEvent): boolean {
     const targetNode: Node | null = evt.targetNode;
     const lineEl: Element | null = targetNode?.instanceOf(Element) === true ? targetNode.closest('.cm-line') : null;
@@ -389,12 +409,23 @@ export class BaseSourceView extends TextFileView {
     });
   }
 
+  /**
+   * 
+   */
   override async onClose(): Promise<void> {
+    this.applyScope(null);
+    this.searchBar = null;
+
     await super.onClose();
     this.editor?.destroy();
     this.editor = null;
   }
 
+  /**
+   * 
+   * @param doc -
+   * @returns 
+   */
   private createEditorState(doc: string): EditorState {
     const editorState: EditorState = EditorState.create({
       doc: doc,
@@ -444,6 +475,10 @@ export class BaseSourceView extends TextFileView {
     }
   }
 
+  /**
+   * 
+   * @returns 
+   */
   private getLineWrapExtensions(): Extension {
     const lineWrapEnabled: boolean = this.plugin.settings.lineWrap;
 
@@ -458,6 +493,9 @@ export class BaseSourceView extends TextFileView {
     return extensions;
   }
 
+  /**
+   * 
+   */
   updateLineWrap(): void {
     this.editor?.dispatch({
       effects: this.lineWrapCompartment.reconfigure(this.getLineWrapExtensions())
@@ -470,5 +508,39 @@ export class BaseSourceView extends TextFileView {
   updateReadableLineWidth(): void {
     const isReadableLineWidth: boolean = this.plugin.settings.readableLineLength;
     this.contentEl.toggleClass('is-readable-line-width', isReadableLineWidth);
+  }
+
+  /**
+   * Adds actions to the Base Source Editor pane menu.
+   * 
+   * @param menu -
+   * @param source -
+   */
+  override onPaneMenu(menu: Menu, source: string): void {
+    super.onPaneMenu(menu, source);
+
+    menu.addItem((item: MenuItem) => {
+      item.setSection('find');
+      item.setTitle('Find...');
+      item.setIcon('lucide-file-search');
+      item.onClick(() => this.showSearch(false));
+    });
+
+    menu.addItem((item: MenuItem) => {
+      item.setSection('find');
+      item.setTitle('Replace...');
+      item.setIcon('lucide-file-search');
+      item.onClick(() => this.showSearch(true));
+    });
+  }
+
+  /**
+   * Opens the search bar. 
+   * Obsidian's "Search current file" command calls this on any active view that has a `showSearch` method.
+   *
+   * @param replace - Whether to show the replace row.
+   */
+  showSearch(replace: boolean = false): void {
+    this.searchBar?.show(replace);
   }
 }

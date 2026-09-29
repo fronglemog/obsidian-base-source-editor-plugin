@@ -5,6 +5,7 @@ import {
 } from 'obsidian';
 import type {
   App,
+  Command,
 	WorkspaceLeaf,
 } from 'obsidian';
 
@@ -44,6 +45,7 @@ export default class BasesSourceEditorPlugin extends Plugin {
 
     /* Register commands */
     this.registerPluginCommands();
+    this.extendSearchReplaceCommand();
 
     /* Register view header actions */
     const viewActionsManager = new ViewActionsManager(this);
@@ -92,7 +94,9 @@ export default class BasesSourceEditorPlugin extends Plugin {
     });
   }
 
-  // Helper method - called when a view needs to be updated.
+  /**
+   * 
+   */
   updateBaseSourceViews(): void {
     const app: App = this.app;
 
@@ -102,5 +106,39 @@ export default class BasesSourceEditorPlugin extends Plugin {
         leaf.view.updateReadableLineWidth();
       }
     }
+  }
+
+  /**
+   * Patches Obsidian's built-in 'Search & replace in current file' command to support Base Source Editor views.
+   */
+  private extendSearchReplaceCommand(): void {
+    const command: Command | undefined = this.app.commands.findCommand('editor:open-search-replace');
+    const originalCheckCallback: Command['checkCallback'] = command?.checkCallback;
+
+    // Accessing undocumented API... keep this guard.
+    if (command == null || originalCheckCallback == null) {
+      return;
+    }
+
+    const extendedCheckCallback = (checking: boolean) => {
+      const view: BaseSourceView | null = this.app.workspace.getActiveViewOfType(BaseSourceView);
+
+      if (view == null) {
+        return originalCheckCallback(checking);
+      }
+
+      if (!checking) {
+        view.showSearch(true);
+      }
+      return true;
+    };
+
+    command.checkCallback = extendedCheckCallback;
+
+    this.register(() => {
+      if (command.checkCallback === extendedCheckCallback) {
+        command.checkCallback = originalCheckCallback;
+      }
+    });
   }
 }

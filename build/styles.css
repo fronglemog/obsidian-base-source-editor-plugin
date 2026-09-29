@@ -1,4 +1,7 @@
 .workspace-leaf-content[data-type="bases-source"] {
+  /* Width of the ring around the current search match, same as the markdown editor's */
+  --search-match-ring-width: 3px;
+
   .view-content {
     padding: 0;
     display: flex;
@@ -48,6 +51,8 @@
     flex-basis: unset !important;
     width: 0;
     padding-block: 0;
+    /* Part of the gap after the gutter, so the gutter doesn't cover the search match ring at the start of a line */
+    padding-inline-start: var(--search-match-ring-width);
   }
 
   .cm-contentContainer {
@@ -81,7 +86,8 @@
     background-color: var(--background-primary);
     color: var(--text-faint);
     border-right: none;
-    padding-inline-end: var(--file-folding-offset);
+    /* The rest of the gap is in .cm-content */
+    padding-inline-end: calc(var(--file-folding-offset) - var(--search-match-ring-width));
     font-size: var(--font-ui-smaller);
     font-variant: tabular-nums;
     z-index: 1;
@@ -135,5 +141,12 @@
   .document-search-button.clickable-icon.is-active:hover {
     color: var(--icon-color-active);
     background-color: var(--background-modifier-active-hover);
+  }
+
+  /* Same as the markdown editor's current search match. */
+  span.obsidian-search-match-highlight {
+    box-shadow: 0 0 0 var(--search-match-ring-width) var(--text-accent);
+    mix-blend-mode: var(--highlight-mix-blend-mode);
+    border-radius: 2px;
   }
 }
