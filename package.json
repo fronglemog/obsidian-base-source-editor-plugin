@@ -1,6 +1,6 @@
 {
 	"name": "obsidian-base-source-editor-plugin",
-	"version": "0.2.0",
+	"version": "0.3.0",
   "author": "fronglemog",
   "license": "MIT",
 	"type": "module",
