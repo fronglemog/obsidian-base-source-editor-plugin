@@ -10,6 +10,8 @@ This plugin adds a new **Base Source mode** view for editing the YAML source cod
 - Theme-aware YAML syntax highlighting, utilising Obsidian's built-in CSS variables.
 - Full mobile support!
 
+View the [Roadmap](./ROADMAP.md) to see planned features.
+
 ## Usage
 
 Base Source mode can be toggled using:
