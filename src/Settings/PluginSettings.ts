@@ -1,7 +1,7 @@
 /* ========================= SETTINGS ========================= */
 export const PLUGIN_DEFAULT_SETTINGS: PluginSettings = {
   lineWrap: false,
-  readableLineLength: true
+  readableLineLength: false
 }
 
 export interface PluginSettings {
