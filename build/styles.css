@@ -113,6 +113,7 @@ eg: --bse-text-color
 
   .cm-line {
     padding-inline: 0;
+    position: relative;
   }
 
   /*
@@ -186,5 +187,28 @@ eg: --bse-text-color
     box-shadow: 0 0 0 var(--search-match-ring-width) var(--text-accent);
     mix-blend-mode: var(--highlight-mix-blend-mode);
     border-radius: 2px;
+  }
+
+  .cm-indent {
+    display: inline-block;
+  }
+
+  .cm-indent::before {
+    content: "\200B";
+    display: block;
+    width: 0;
+    border-inline-end: var(--indentation-guide-width) solid var(--indentation-guide-color);
+    color: transparent;
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    /* Default from Obsidian: margin-inline-start: var(--indentation-guide-source-indent); */
+    /* margin-inline-start: 0; */
+    margin-inline-start: calc(var(--indentation-guide-width) / -2);
+  }
+
+  .cm-active-indent::before {
+    border-inline-end: var(--indentation-guide-width-active) solid var(--indentation-guide-color-active);
+    margin-inline-start: calc(var(--indentation-guide-width-active) / -2);
   }
 }

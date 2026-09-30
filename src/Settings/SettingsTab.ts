@@ -54,7 +54,7 @@ export class BasesSourceEditorPluginSettingsTab extends PluginSettingTab {
           },
           {
             name: 'Indentation guides',
-            desc: 'Show vertical lines indicating the relationship between YAML keys.',
+            desc: 'Show vertical lines indicating the relationship between YAML keys and values.',
             searchable: true,
             control: {
               key: 'indentationGuides',
