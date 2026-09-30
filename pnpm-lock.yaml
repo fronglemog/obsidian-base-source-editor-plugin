@@ -44,6 +44,9 @@ importers:
       '@lezer/highlight':
         specifier: 1.2.3
         version: 1.2.3
+      '@obsidian-typings/obsidian-public-1.13.7':
+        specifier: latest
+        version: 1.11.0(@types/node@24.13.3)
       '@types/codemirror':
         specifier: 5.60.17
         version: 5.60.17
@@ -570,6 +573,11 @@ packages:
 
   '@napi-rs/wasm-runtime@0.2.12':
     resolution: {integrity: sha512-ZVWUcfwY4E/yPitQJl481FjFo3K22D6qF0DuFH6Y/nbnE11GY5uguDxZMGXPQ8WQ0128MXQD7TnfHyK4oWoIJQ==}
+
+  '@obsidian-typings/obsidian-public-1.13.7@1.11.0':
+    resolution: {integrity: sha512-r7QULLeatsXahMQvEUbWBJQl2Of85MTlDeqI+QKFF4Kf6OT48eY7azAow+6RPPvwoxc1ZSW96mHwi+EVUqvAnw==}
+    peerDependencies:
+      '@types/node': '>=16.0.0'
 
   '@pkgr/core@0.1.2':
     resolution: {integrity: sha512-fdDH1LSGfZdTH2sxdpVMw31BanV28K/Gry0cVFxaNP77neJSkd82mM8ErPNYs9e+0O7SdHBLTDzDgwUuy18RnQ==}
@@ -2661,6 +2669,10 @@ snapshots:
       '@emnapi/runtime': 1.7.1
       '@tybys/wasm-util': 0.10.1
     optional: true
+
+  '@obsidian-typings/obsidian-public-1.13.7@1.11.0(@types/node@24.13.3)':
+    dependencies:
+      '@types/node': 24.13.3
 
   '@pkgr/core@0.1.2': {}
 
