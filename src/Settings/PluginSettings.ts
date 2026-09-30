@@ -3,6 +3,9 @@ export const PLUGIN_DEFAULT_SETTINGS: PluginSettings = {
   lineWrap: false,
   readableLineLength: false,
   indentationGuides: false,
+  indentationGuideCustomStyle: false,
+  indentationGuideColour: '#808080',
+  indentationGuideOpacity: 25,
   renderWhitespace: false,
   whitespaceOpacity: 30,
 }
@@ -11,6 +14,9 @@ export interface PluginSettings {
   lineWrap: boolean;
   readableLineLength: boolean;
   indentationGuides: boolean;
+  indentationGuideCustomStyle: boolean;
+  indentationGuideColour: string;
+  indentationGuideOpacity: number;
   renderWhitespace: boolean;
   whitespaceOpacity: number;
 }

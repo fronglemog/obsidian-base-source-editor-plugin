@@ -376,6 +376,7 @@ export class BaseSourceView extends TextFileView {
     this.wrapEditorContent(this.editor);
     this.updateBottomPadding();
     this.updateReadableLineWidth();
+    this.updateIndentationGuideColour();
     this.updateWhitespaceOpacity();
 
     // While open, the search bar's key bindings take over the view's scope
@@ -650,6 +651,24 @@ export class BaseSourceView extends TextFileView {
   updateIndentationGuides(): void {
     this.editor?.dispatch({
       effects: this.indentationGuidesCompartment.reconfigure(this.getIndentationGuidesExtensions())
+    });
+
+    this.updateIndentationGuideColour();
+  }
+
+  /**
+   * Replaces the theme's indentation guide colour with the plugin's custom colour and opacity
+   * when the plugin's "Custom indentation guide colour" setting is on.
+   */
+  private updateIndentationGuideColour(): void {
+    const isCustomStyle: boolean = this.plugin.settings.indentationGuideCustomStyle;
+    const colour: string = this.plugin.settings.indentationGuideColour;
+    const opacity: number = this.plugin.settings.indentationGuideOpacity;
+
+    this.contentEl.toggleClass('bse-custom-indentation-guide-style', isCustomStyle);
+    this.contentEl.setCssProps({
+      '--bse-indentation-guide-colour': colour,
+      '--bse-indentation-guide-opacity': `${opacity}%`
     });
   }
 

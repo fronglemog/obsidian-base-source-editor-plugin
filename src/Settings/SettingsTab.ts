@@ -31,7 +31,7 @@ export class BasesSourceEditorPluginSettingsTab extends PluginSettingTab {
   override getSettingDefinitions (): SettingDefinitionItem<PluginSettingPath>[] {
     const settingsDefinitions: SettingDefinitionItem<PluginSettingPath>[] = [
       {
-        heading: 'Editor settings',
+        heading: 'Line length and wrapping',
         type: 'group',
         items: [
           {
@@ -52,6 +52,12 @@ export class BasesSourceEditorPluginSettingsTab extends PluginSettingTab {
               type: 'toggle'
             }
           },
+        ]
+      },
+      {
+        heading: 'Indentation guides',
+        type: 'group',
+        items: [
           {
             name: 'Indentation guides',
             desc: 'Show vertical lines indicating the relationship between YAML keys and values.',
@@ -61,6 +67,56 @@ export class BasesSourceEditorPluginSettingsTab extends PluginSettingTab {
               type: 'toggle'
             }
           },
+          {
+            name: 'Indentation guide style',
+            desc: 'Set indentation guide colour and opacity.',
+            searchable: true,
+            type: 'page',
+            items: [
+              {
+                name: 'Enable custom indentation guide style',
+                desc: 'Use a custom indentation guide style instead of the one set by your theme.',
+                searchable: true,
+                control: {
+                  key: 'indentationGuideCustomStyle',
+                  type: 'toggle',
+                  disabled: () => this.plugin.settings.indentationGuides === false
+                }
+              },
+              {
+                name: 'Indentation guide colour',
+                desc: 'Colour of the indentation guides.',
+                searchable: true,
+                control: {
+                  key: 'indentationGuideColour',
+                  type: 'color',
+                  defaultValue: PLUGIN_DEFAULT_SETTINGS.indentationGuideColour,
+                  disabled: () => (this.plugin.settings.indentationGuides && this.plugin.settings.indentationGuideCustomStyle) === false
+                }
+              },
+              {
+                name: 'Indentation guide opacity',
+                desc: 'Fine-tune the visibility of the indentation guides.',
+                searchable: true,
+                control: {
+                  key: 'indentationGuideOpacity',
+                  type: 'slider',
+                  defaultValue: PLUGIN_DEFAULT_SETTINGS.indentationGuideOpacity,
+                  min: 10,
+                  max: 100,
+                  step: 5,
+                  displayFormat: (value: number): string => `${value}%`,
+                  disabled: () => (this.plugin.settings.indentationGuides && this.plugin.settings.indentationGuideCustomStyle) === false
+                }
+              }
+            ]
+          },
+        ]
+      },
+      {
+        heading: 'Whitespace',
+        type: 'group',
+        items: [
           {
             name: 'Render whitespace characters',
             desc: 'Show spaces as dots and tabs as arrows.',

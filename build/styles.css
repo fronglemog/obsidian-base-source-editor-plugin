@@ -1,8 +1,10 @@
 /* stylelint-disable selector-class-pattern -- CodeMirror uses camelCase classes */
 
 /* 
-CSS variables defined by this plugin must be prefixed with 'bse'.
-eg: --bse-text-color
+Variables and classes defined by this plugin must be prefixed with 'bse'.
+eg: 
+- Variables: --bse-variable-name
+- Classes: .bse-class-name
 */
 
 .workspace-leaf-content[data-type="bases-source"] {
@@ -210,5 +212,9 @@ eg: --bse-text-color
   .cm-active-indent::before {
     border-inline-end: var(--indentation-guide-width-active) solid var(--indentation-guide-color-active);
     margin-inline-start: calc(var(--indentation-guide-width-active) / -2);
+  }
+
+  .bse-custom-indentation-guide-style {
+    --indentation-guide-color: color-mix(in srgb, var(--bse-indentation-guide-colour) var(--bse-indentation-guide-opacity), transparent);
   }
 }
