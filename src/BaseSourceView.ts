@@ -31,7 +31,6 @@ import type {
 
 import {
   Decoration,
-  drawSelection,
   EditorView,
   GutterMarker,
   gutterLineClass,
@@ -549,8 +548,6 @@ export class BaseSourceView extends TextFileView {
         lineNumbers(),
         activeLineGutter,
         activeLine,
-        // Use CodeMirror caret/cursor instead of native browser caret
-        drawSelection(),
         history(),
         indentUnit.of(YAML_INDENT),
         this.lineWrapCompartment.of(this.getLineWrapExtensions()),

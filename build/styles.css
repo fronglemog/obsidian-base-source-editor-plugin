@@ -28,10 +28,6 @@ eg:
     outline: none;
   }
 
-  .cm-editor > .cm-scroller > .cm-selectionLayer > .cm-selectionBackground {
-    background-color: var(--text-selection);
-  }
-
   .cm-scroller.mod-no-scroll-x {
     overflow-x: hidden;
   }
@@ -107,10 +103,6 @@ eg:
   .cm-content:not(.cm-lineWrapping) {
     width: auto;
     padding-inline-end: var(--file-margins-x);
-  }
-
-  .cm-cursor {
-    border-left-color: var(--caret-color);
   }
 
   .cm-line {
