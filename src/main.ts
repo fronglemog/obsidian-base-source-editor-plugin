@@ -3,6 +3,7 @@ import {
   FileView,
 	Plugin,
 } from 'obsidian';
+
 import type {
   App,
   Command,

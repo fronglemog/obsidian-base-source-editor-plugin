@@ -13,9 +13,7 @@ import type {
   KeymapContext
 } from 'obsidian';
 
-import {
-  SearchCursor
-} from '@codemirror/search';
+import { SearchCursor } from '@codemirror/search';
 
 import {
   EditorSelection,
@@ -33,9 +31,7 @@ import {
   EditorView
 } from '@codemirror/view';
 
-import type {
-  DecorationSet
-} from '@codemirror/view';
+import type { DecorationSet } from '@codemirror/view';
 
 import type BasesSourceEditorPlugin from 'src/main';
 

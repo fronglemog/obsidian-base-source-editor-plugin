@@ -10,6 +10,12 @@ import {
 } from 'src/BaseSourceView';
 
 /* ======================================================= */
+
+/**
+ * 
+ * @param view - 
+ * @returns 
+ */
 export function toggleSourceMode(view: FileView) {
   const viewType: string = view.getViewType();
 

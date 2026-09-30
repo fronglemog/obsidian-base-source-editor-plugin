@@ -1,11 +1,6 @@
 /* ========================= IMPORTS ========================= */
-import { 
-  QueryController 
-} from 'obsidian';
-
-import type { 
-  Parser 
-} from '@lezer/common';
+import { QueryController } from 'obsidian';
+import type { Parser } from '@lezer/common';
 
 /* ======================================================= */
 

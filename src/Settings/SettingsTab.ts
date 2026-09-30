@@ -1,5 +1,6 @@
 /* ========================= IMPORTS ========================= */
-import { PluginSettingTab, type SettingDefinitionItem } from 'obsidian';
+import { PluginSettingTab } from 'obsidian';
+import type {SettingDefinitionItem } from 'obsidian';
 
 import type BasesSourceEditorPlugin from 'src/main';
 import { getPluginSettingPath, PLUGIN_DEFAULT_SETTINGS, setPluginSettingPath } from 'src/Settings/PluginSettings';

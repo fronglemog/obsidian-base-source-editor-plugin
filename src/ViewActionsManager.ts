@@ -1,7 +1,6 @@
 /* ========================= IMPORTS ========================= */
-import {
-  FileView
-} from 'obsidian';
+import { FileView } from 'obsidian';
+
 import type {
   App,
   IconName
@@ -12,11 +11,14 @@ import {
   VIEW_TYPE_BASES,
   VIEW_TYPE_BASES_SOURCE
 } from 'src/BaseSourceView';
+
 import { toggleSourceMode } from 'src/toggleSourceMode';
 
 /* ========================= ActionsManager ========================= */
 
-// Header action shown on each view type, pointing at the view it switches to
+/**
+ * Header action shown on each view type, pointing at the view it switches to
+ */
 const VIEW_ACTIONS: Record<string, ViewAction> = {
   [VIEW_TYPE_BASES]: { 
     icon: 'code-xml',

@@ -83,6 +83,13 @@ type ObjectKeyPath<O, T> = O extends readonly unknown[] ? never
 /* ========================= HELPERS ========================= */
 
 /* ===== SETTINGS CONFIG PARSING ===== */
+
+/**
+ * 
+ * @param settings - 
+ * @param path - 
+ * @returns 
+ */
 export function getPluginSettingPath(settings: PluginSettings, path: string): unknown {
   const parts = getSettingPathParts(path);
   if (!parts) return undefined;
@@ -95,6 +102,12 @@ export function getPluginSettingPath(settings: PluginSettings, path: string): un
   return cursor;
 }
 
+/**
+ * 
+ * @param settings - 
+ * @param path - 
+ * @param value 
+ */
 export function setPluginSettingPath(settings: PluginSettings, path: string, value: unknown): void {
   const parts = getSettingPathParts(path);
   const last = parts?.pop();
@@ -117,11 +130,11 @@ export function setPluginSettingPath(settings: PluginSettings, path: string, val
   cursor[last] = value;
 }
 
-export function isSettingsObject(value: unknown): value is Record<string, unknown> {
+function isSettingsObject(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === 'object' && !Array.isArray(value);
 }
 
-export function getSettingPathParts(path: string): string[] | undefined {
+function getSettingPathParts(path: string): string[] | undefined {
   const parts = path.split('.');
   // Validate the entire path before a write can create any intermediate objects.
   if (parts.some((part) => part === '' || part === '__proto__' || part === 'constructor' || part === 'prototype')) {

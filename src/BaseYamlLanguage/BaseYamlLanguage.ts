@@ -1,20 +1,13 @@
 /* ========================= IMPORTS ========================= */
-import {
-  LanguageSupport,
-} from '@codemirror/language';
-
-import type {
-  LRLanguage
-} from '@codemirror/language';
+import { LanguageSupport } from '@codemirror/language';
+import type { LRLanguage } from '@codemirror/language';
 
 import {
   yaml,
   yamlLanguage
 } from '@codemirror/lang-yaml';
 
-import {
-  parseMixed
-} from '@lezer/common';
+import { parseMixed } from '@lezer/common';
 
 import type {
   Input,

@@ -4,9 +4,7 @@ import {
   syntaxHighlighting
 } from '@codemirror/language';
 
-import { 
-  tags
-} from '@lezer/highlight';
+import { tags } from '@lezer/highlight';
 
 /* ======================================================= */
 
