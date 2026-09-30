@@ -53,7 +53,7 @@ export class BasesSourceEditorPluginSettingsTab extends PluginSettingTab {
             }
           },
           {
-            name: 'Render whitespace',
+            name: 'Render whitespace characters',
             desc: 'Show spaces as dots and tabs as arrows.',
             searchable: true,
             control: {
@@ -69,7 +69,7 @@ export class BasesSourceEditorPluginSettingsTab extends PluginSettingTab {
               key: 'whitespaceOpacity',
               type: 'slider',
               defaultValue: PLUGIN_DEFAULT_SETTINGS.whitespaceOpacity,
-              min: 30,
+              min: 10,
               max: 100,
               step: 10,
               displayFormat: (value: number): string => `${value}%`,
