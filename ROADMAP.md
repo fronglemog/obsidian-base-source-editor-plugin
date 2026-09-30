@@ -7,7 +7,7 @@ This is a good place to start if you'd like to contribute to this plugin.
 
 - [x] Search/replace
 - [ ] Folding/unfolding
-- [ ] Render whitespace characters
+- [x] Render whitespace characters
 
 ## YAML
 
