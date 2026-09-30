@@ -1,3 +1,5 @@
+/* stylelint-disable selector-class-pattern -- CodeMirror uses camelCase classes */
+
 /* 
 CSS variables defined by this plugin must be prefixed with 'bse'.
 eg: --bse-text-color
