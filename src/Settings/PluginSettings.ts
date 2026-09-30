@@ -2,6 +2,7 @@
 export const PLUGIN_DEFAULT_SETTINGS: PluginSettings = {
   lineWrap: false,
   readableLineLength: false,
+  indentationGuides: false,
   renderWhitespace: false,
   whitespaceOpacity: 30,
 }
@@ -9,6 +10,7 @@ export const PLUGIN_DEFAULT_SETTINGS: PluginSettings = {
 export interface PluginSettings {
   lineWrap: boolean;
   readableLineLength: boolean;
+  indentationGuides: boolean;
   renderWhitespace: boolean;
   whitespaceOpacity: number;
 }

@@ -53,6 +53,15 @@ export class BasesSourceEditorPluginSettingsTab extends PluginSettingTab {
             }
           },
           {
+            name: 'Indentation guides',
+            desc: 'Show vertical lines indicating the relationship between YAML keys.',
+            searchable: true,
+            control: {
+              key: 'indentationGuides',
+              type: 'toggle'
+            }
+          },
+          {
             name: 'Render whitespace characters',
             desc: 'Show spaces as dots and tabs as arrows.',
             searchable: true,
