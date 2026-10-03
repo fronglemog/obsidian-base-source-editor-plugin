@@ -420,14 +420,6 @@ export class BaseSourceView extends TextFileView {
   }
 
   /**
-   * Limits the text to `--file-line-width` when the plugin's "Readable line length" setting is on.
-   */
-  updateReadableLineWidth(): void {
-    const isReadableLineWidth: boolean = this.plugin.settings.readableLineLength;
-    this.contentEl.toggleClass('is-readable-line-width', isReadableLineWidth);
-  }
-
-  /**
    * 
    * @returns 
    */
@@ -452,6 +444,14 @@ export class BaseSourceView extends TextFileView {
     this.editor?.dispatch({
       effects: this.lineWrapCompartment.reconfigure(this.getLineWrapExtensions())
     });
+  }
+
+  /**
+   * Limits the text to `--file-line-width` when the plugin's "Readable line length" setting is on.
+   */
+  updateReadableLineWidth(): void {
+    const isReadableLineWidth: boolean = this.plugin.settings.readableLineLength;
+    this.contentEl.toggleClass('is-readable-line-width', isReadableLineWidth);
   }
 
   /**
