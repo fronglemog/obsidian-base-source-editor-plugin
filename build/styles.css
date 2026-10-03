@@ -209,4 +209,15 @@ eg:
   .bse-custom-indentation-guide-style {
     --indentation-guide-color: color-mix(in srgb, var(--bse-indentation-guide-colour) var(--bse-indentation-guide-opacity), transparent);
   }
+
+  .bse-custom-font-size {
+    .cm-scroller {
+      font-size: var(--bse-font-size);
+    }
+
+    .cm-gutters,
+    .cm-gutterElement {
+      font-size: calc(var(--bse-font-size) * 0.75);
+    }
+  }
 }

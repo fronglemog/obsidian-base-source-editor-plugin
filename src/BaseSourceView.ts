@@ -5,6 +5,7 @@ import {
 } from 'obsidian';
 
 import type {
+  App,
   IconName,
   Menu,
   MenuItem,
@@ -75,6 +76,7 @@ export class BaseSourceView extends TextFileView {
   private lineWrapCompartment: Compartment = new Compartment();
   private indentationGuidesCompartment: Compartment = new Compartment();
   private renderWhitespaceCompartment: Compartment = new Compartment();
+  private remeasureCompartment: Compartment = new Compartment();
   private searchBar: BaseSourceSearchBar | null = null;
 
   constructor(plugin: BasesSourceEditorPlugin, leaf: WorkspaceLeaf) {
@@ -199,16 +201,23 @@ export class BaseSourceView extends TextFileView {
   }
 
   override async onOpen(): Promise<void> {
+    const app: App = this.plugin.app;
+
     this.editor = new EditorView({
       state: this.createEditorState(this.data ?? ''),
       parent: this.contentEl
     });
+
+    this.registerEvent(
+      app.workspace.on('css-change', () => this.remeasureLayout())
+    );
 
     this.wrapEditorContent(this.editor);
     this.updateBottomPadding();
     this.updateReadableLineWidth();
     this.updateIndentationGuideColour();
     this.updateWhitespaceOpacity();
+    this.updateFontSize();
 
     // While open, the search bar's key bindings take over the view's scope
     this.searchBar = new BaseSourceSearchBar(this.plugin, this.editor, this.contentEl, (scope: Scope | null) => this.applyScope(scope));
@@ -225,15 +234,17 @@ export class BaseSourceView extends TextFileView {
    * @param scope - Scope to push, or null to pop the current one.
    */
   private applyScope(scope: Scope | null): void {
+    const app: App = this.plugin.app;
+
     if (scope === this.scope) {
       return;
     }
 
     if (this.scope != null) {
-      this.app.keymap.popScope(this.scope);
+      app.keymap.popScope(this.scope);
     }
     if (scope != null) {
-      this.app.keymap.pushScope(scope);
+      app.keymap.pushScope(scope);
     }
     this.scope = scope;
   }
@@ -384,6 +395,7 @@ export class BaseSourceView extends TextFileView {
         this.lineWrapCompartment.of(this.getLineWrapExtensions()),
         this.indentationGuidesCompartment.of(this.getIndentationGuidesExtensions()),
         this.renderWhitespaceCompartment.of(this.getRenderWhitespaceExtensions()),
+        this.remeasureCompartment.of([]),
         keymap.of([
           ...closeBracketsKeymap,
           ...defaultKeymap,
@@ -417,6 +429,32 @@ export class BaseSourceView extends TextFileView {
     if (hasLocalChange === true) {
       this.requestSave();
     }
+  }
+
+  /**
+   * 
+   */
+  updateFontSize(): void {
+    const isCustomFontSize: boolean = this.plugin.settings.fontCustomSize;
+    const fontSize: number = this.plugin.settings.fontSize;
+
+    this.contentEl.toggleClass('bse-custom-font-size', isCustomFontSize);
+    this.contentEl.setCssProps({
+      '--bse-font-size': `${fontSize}px`
+    });
+
+    this.remeasureLayout();
+  }
+
+  /**
+   * Force the CodeMirror editor to re-measure layout after any CSS changes it can't auto-detect.
+   * Required to remeasure line height after changes to font size.
+   * Takes advantage of the fact that changes to a theme forces re-measure, by swapping in an empty theme.
+   */
+  private remeasureLayout(): void {
+    this.editor?.dispatch({
+      effects: this.remeasureCompartment.reconfigure(EditorView.theme({}))
+    });
   }
 
   /**

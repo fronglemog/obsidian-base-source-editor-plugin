@@ -1,5 +1,7 @@
 /* ========================= SETTINGS ========================= */
 export const PLUGIN_DEFAULT_SETTINGS: PluginSettings = {
+  fontCustomSize: false,
+  fontSize: 16,
   lineWrap: false,
   readableLineLength: false,
   indentationGuides: false,
@@ -11,6 +13,8 @@ export const PLUGIN_DEFAULT_SETTINGS: PluginSettings = {
 }
 
 export interface PluginSettings {
+  fontCustomSize: boolean;
+  fontSize: number;
   lineWrap: boolean;
   readableLineLength: boolean;
   indentationGuides: boolean;

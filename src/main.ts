@@ -103,6 +103,7 @@ export default class BasesSourceEditorPlugin extends Plugin {
 
     for (const leaf of app.workspace.getLeavesOfType(VIEW_TYPE_BASES_SOURCE)) {
       if (leaf.view instanceof BaseSourceView) {
+        leaf.view.updateFontSize();
         leaf.view.updateLineWrap();
         leaf.view.updateReadableLineWidth();
         leaf.view.updateIndentationGuides();

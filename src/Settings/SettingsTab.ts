@@ -32,6 +32,36 @@ export class BasesSourceEditorPluginSettingsTab extends PluginSettingTab {
   override getSettingDefinitions (): SettingDefinitionItem<PluginSettingPath>[] {
     const settingsDefinitions: SettingDefinitionItem<PluginSettingPath>[] = [
       {
+        heading: 'Font size',
+        type: 'group',
+        items: [
+          {
+            name: 'Custom font size',
+            desc: 'Set font size for the Base Source editor independently of Obsidian\'s core settings.',
+            searchable: true,
+            control: {
+              key: 'fontCustomSize',
+              type: 'toggle'
+            }
+          },
+          {
+            name: 'Font size',
+            desc: 'Font size for the Base Source editor.',
+            searchable: true,
+            control: {
+              key: 'fontSize',
+              type: 'slider',
+              defaultValue: PLUGIN_DEFAULT_SETTINGS.fontSize,
+              min: 10,
+              max: 30,
+              step: 1,
+              displayFormat: (value: number): string => `${value}px`,
+              disabled: () => this.plugin.settings.fontCustomSize === false
+            }
+          }
+        ]
+      },
+      {
         heading: 'Line length and wrapping',
         type: 'group',
         items: [
