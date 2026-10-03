@@ -110,7 +110,8 @@ export class BasesSourceEditorPluginSettingsTab extends PluginSettingTab {
                   disabled: () => (this.plugin.settings.indentationGuides && this.plugin.settings.indentationGuideCustomStyle) === false
                 }
               }
-            ]
+            ],
+            visible: () => this.plugin.settings.indentationGuides
           },
         ]
       },
