@@ -28,7 +28,9 @@
     ],
     "outDir": "build",
     "paths": {
-      "src/*" : ["./src/*"]
+      "src/*": [
+        "./src/*"
+      ]
     }
   },
   "include": [
