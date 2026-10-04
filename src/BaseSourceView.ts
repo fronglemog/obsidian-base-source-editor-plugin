@@ -70,8 +70,8 @@ export const VIEW_TYPE_BASES_SOURCE = 'bases-source';
 const YAML_INDENT = '  ';
 
 export class BaseSourceView extends TextFileView {
-
   private plugin: BasesSourceEditorPlugin;
+  
   private editor: EditorView | null = null
   private lineWrapCompartment: Compartment = new Compartment();
   private indentationGuidesCompartment: Compartment = new Compartment();
@@ -81,7 +81,6 @@ export class BaseSourceView extends TextFileView {
 
   constructor(plugin: BasesSourceEditorPlugin, leaf: WorkspaceLeaf) {
     super(leaf);
-
     this.plugin = plugin;
   }
 
@@ -118,7 +117,7 @@ export class BaseSourceView extends TextFileView {
    */
   setViewData(data: string, clear: boolean): void {
     this.data = data;
-    
+
     if (this.editor == null) {
       return;
     }
@@ -186,7 +185,6 @@ export class BaseSourceView extends TextFileView {
     }
 
     const replacementData: string = incomingData.slice(changeStart, incomingChangeEnd);
-
     const documentChange: ChangeSpec = {
       from: changeStart,
       to: currentChangeEnd,
@@ -264,7 +262,6 @@ export class BaseSourceView extends TextFileView {
     if (guttersEl != null) {
       contentContainerEl.appendChild(guttersEl);
     }
-
     contentContainerEl.appendChild(editor.contentDOM);
   }
 
@@ -322,6 +319,7 @@ export class BaseSourceView extends TextFileView {
     const scrollerRect: DOMRect = scrollerEl.getBoundingClientRect();
     const scrollerStyle: CSSStyleDeclaration = getComputedStyle(scrollerEl);
     const guttersEl: HTMLElement | null = scrollerEl.querySelector('.cm-gutters');
+    
     // The column is inset from the scroller's padding by the same space on either side
     const contentContainerEl: HTMLElement | null = editor.contentDOM.parentElement;
     const columnInset: number = contentContainerEl == null ? 0 : Number.parseFloat(getComputedStyle(contentContainerEl).marginInlineStart) || 0;
@@ -329,7 +327,6 @@ export class BaseSourceView extends TextFileView {
     const textLeft: number = guttersEl?.getBoundingClientRect().right ?? scrollerRect.left + Number.parseFloat(scrollerStyle.paddingLeft) + columnInset;
     const textRight: number = scrollerRect.left + scrollerEl.clientWidth - Number.parseFloat(scrollerStyle.paddingRight) - columnInset;
     const touchX: number = evt.touches[0]?.clientX ?? Number.NaN;
-
     return touchX >= textLeft && touchX <= textRight;
   }
 
@@ -357,7 +354,6 @@ export class BaseSourceView extends TextFileView {
     }
 
     const bottomPadding: number = Math.round(viewHeight / 2);
-
     this.editor.contentDOM.setCssStyles({
       paddingBottom: `${bottomPadding}px`
     });
@@ -442,7 +438,6 @@ export class BaseSourceView extends TextFileView {
     this.contentEl.setCssProps({
       '--bse-font-size': `${fontSize}px`
     });
-
     this.remeasureLayout();
   }
 
@@ -463,7 +458,6 @@ export class BaseSourceView extends TextFileView {
    */
   private getLineWrapExtensions(): Extension {
     const lineWrapEnabled: boolean = this.plugin.settings.lineWrap;
-
     if (lineWrapEnabled === false) {
       return [];
     }
@@ -471,7 +465,6 @@ export class BaseSourceView extends TextFileView {
     const extensions: Extension = [
       EditorView.lineWrapping
     ];
-
     return extensions;
   }
 
@@ -498,7 +491,6 @@ export class BaseSourceView extends TextFileView {
    */
   private getIndentationGuidesExtensions(): Extension {
     const indentationGuidesEnabled: boolean = this.plugin.settings.indentationGuides;
-
     if (indentationGuidesEnabled === false) {
       return [];
     }
@@ -507,7 +499,6 @@ export class BaseSourceView extends TextFileView {
       // Ensures indentation guides wrap the whitespace marks rather than the other way around
       Prec.lowest(indentationGuides)
     ];
-
     return extensions;
   }
 
@@ -518,7 +509,6 @@ export class BaseSourceView extends TextFileView {
     this.editor?.dispatch({
       effects: this.indentationGuidesCompartment.reconfigure(this.getIndentationGuidesExtensions())
     });
-
     this.updateIndentationGuideColour();
   }
 
@@ -544,7 +534,6 @@ export class BaseSourceView extends TextFileView {
    */
   private getRenderWhitespaceExtensions(): Extension {
     const renderWhitespaceEnabled: boolean = this.plugin.settings.renderWhitespace;
-
     if (renderWhitespaceEnabled === false) {
       return [];
     }
@@ -552,7 +541,6 @@ export class BaseSourceView extends TextFileView {
     const extensions: Extension = [
       highlightWhitespace()
     ];
-
     return extensions;
   }
 
@@ -563,7 +551,6 @@ export class BaseSourceView extends TextFileView {
     this.editor?.dispatch({
       effects: this.renderWhitespaceCompartment.reconfigure(this.getRenderWhitespaceExtensions())
     });
-
     this.updateWhitespaceOpacity();
   }
 
@@ -573,7 +560,6 @@ export class BaseSourceView extends TextFileView {
    */
   private updateWhitespaceOpacity(): void {
     const whitespaceOpacity: number = this.plugin.settings.whitespaceOpacity;
-
     this.contentEl.setCssProps({
       '--bse-whitespace-opacity': `${whitespaceOpacity}%`
     });

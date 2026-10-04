@@ -23,7 +23,6 @@ export function toggleSourceMode(view: FileView) {
   if (file == null) {
     return;
   }
-
   void view.leaf.setViewState({
     type: viewType === VIEW_TYPE_BASES_SOURCE ? VIEW_TYPE_BASES : VIEW_TYPE_BASES_SOURCE,
     state: {

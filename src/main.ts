@@ -54,9 +54,7 @@ export default class BasesSourceEditorPlugin extends Plugin {
   }
 
   /* Unload plugin */
-  override onunload(): void {
-    
-  }
+  override onunload(): void {}
 
   /* Load settings */
   async loadSettings(): Promise<void> {
@@ -82,7 +80,6 @@ export default class BasesSourceEditorPlugin extends Plugin {
         const app: App = this.app;
 
         const activeView: FileView | null = app.workspace.getActiveViewOfType(FileView);
-        
         if (activeView == null || activeView.file?.extension !== 'base') {
           return false;
         }
@@ -126,11 +123,9 @@ export default class BasesSourceEditorPlugin extends Plugin {
 
     const extendedCheckCallback = (checking: boolean) => {
       const view: BaseSourceView | null = this.app.workspace.getActiveViewOfType(BaseSourceView);
-
       if (view == null) {
         return originalCheckCallback(checking);
       }
-
       if (!checking) {
         view.showSearch(true);
       }
@@ -138,7 +133,6 @@ export default class BasesSourceEditorPlugin extends Plugin {
     };
 
     command.checkCallback = extendedCheckCallback;
-
     this.register(() => {
       if (command.checkCallback === extendedCheckCallback) {
         command.checkCallback = originalCheckCallback;

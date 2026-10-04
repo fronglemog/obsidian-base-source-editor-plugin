@@ -64,13 +64,15 @@ export class ViewActionsManager {
 
     for (const [viewType, action] of Object.entries(VIEW_ACTIONS)) {
       for (const leaf of app.workspace.getLeavesOfType(viewType)) {
-        const view = leaf.view;
-        if (!(view instanceof FileView) || this.actionEls.has(view)) {
+        if (!(leaf.view instanceof FileView) || this.actionEls.has(leaf.view)) {
           continue;
         }
-
-        const actionEl = view.addAction(action.icon, action.title, () => action.callback(view));
-        this.actionEls.set(view, actionEl);
+        const actionEl = leaf.view.addAction(
+          action.icon,
+          action.title,
+          () => action.callback(leaf.view)
+        );
+        this.actionEls.set(leaf.view, actionEl);
       }
     }
   }
@@ -80,13 +82,11 @@ export class ViewActionsManager {
 
     for (const viewType of Object.keys(VIEW_ACTIONS)) {
       for (const leaf of app.workspace.getLeavesOfType(viewType)) {
-        const view = leaf.view;
-        if (!(view instanceof FileView)) {
+        if (!(leaf.view instanceof FileView)) {
           continue;
         }
-
-        this.actionEls.get(view)?.remove();
-        this.actionEls.delete(view);
+        this.actionEls.get(leaf.view)?.remove();
+        this.actionEls.delete(leaf.view);
       }
     }
   }
