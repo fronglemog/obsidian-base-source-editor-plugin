@@ -24,8 +24,6 @@
   },
   "devDependencies": {
     "@types/node": "24.13.3",
-    "@types/eslint": "9.6.1",
-    "@types/codemirror": "5.60.17",
     "@codemirror/autocomplete": "6.20.0",
     "@codemirror/collab": "6.1.1",
     "@codemirror/commands": "6.8.1",

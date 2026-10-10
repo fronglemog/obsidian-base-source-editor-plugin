@@ -51,12 +51,6 @@ importers:
       '@obsidian-typings/obsidian-public-1.13.7':
         specifier: latest
         version: 1.11.0(@types/node@24.13.3)
-      '@types/codemirror':
-        specifier: 5.60.17
-        version: 5.60.17
-      '@types/eslint':
-        specifier: 9.6.1
-        version: 9.6.1
       '@types/node':
         specifier: 24.13.3
         version: 24.13.3
@@ -733,9 +727,6 @@ packages:
 
   '@types/chai@5.2.3':
     resolution: {integrity: sha512-Mw558oeA9fFbv65/y4mHtXDs9bPnFMZAL/jxdPFUpOHHIXX91mcgEHbS5Lahr+pwZFR8A7GQleRWeI6cGFC2UA==}
-
-  '@types/codemirror@5.60.17':
-    resolution: {integrity: sha512-AZq2FIsUHVMlp7VSe2hTfl5w4pcUkoFkM3zVsRKsn1ca8CXRDYvnin04+HP2REkwsxemuHqvDofdlhUWNpbwfw==}
 
   '@types/codemirror@5.60.8':
     resolution: {integrity: sha512-VjFgDF/eB+Aklcy15TtOTLQeMjTo07k7KAjql8OK5Dirr7a6sJY4T1uVBDuTVG9VEmn1uUsohOpYnVfgC6/jyw==}
@@ -2766,10 +2757,6 @@ snapshots:
     dependencies:
       '@types/deep-eql': 4.0.2
       assertion-error: 2.0.1
-
-  '@types/codemirror@5.60.17':
-    dependencies:
-      '@types/tern': 0.23.9
 
   '@types/codemirror@5.60.8':
     dependencies:
