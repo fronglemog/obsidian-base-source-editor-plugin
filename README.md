@@ -44,6 +44,7 @@ This project uses the [pnpm](https://pnpm.io) package manager instead of `npm`.
 	 git clone https://github.com/fronglemog/obsidian-base-source-editor-plugin
 	 cd obsidian-base-source-editor-plugin
 	 ```
+
 3. Run `pnpm install` to install dependencies.
 
 ## Contributing
