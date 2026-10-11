@@ -7,7 +7,7 @@ This plugin adds a new **Base Source mode** view for editing the YAML source cod
 ## Features
 
 - Edit Base files as plain-text YAML without leaving Obsidian.
-- Search & replace, mirroring Obsidian's native behaviour. Supports case-sensitive search!
+- Search & replace, mirroring Obsidian's native behaviour. Supports case-sensitive search.
 	- The search/replace command is accessed the same way as for native Markdown notes, either from the Command palette or the file menu.
 - Theme-aware YAML syntax highlighting, utilising Obsidian's built-in CSS variables.
 - Full mobile support.
@@ -18,7 +18,7 @@ View the [Roadmap](./ROADMAP.md) to see planned features.
 
 Base Source mode can be toggled using:
 - The command 'Toggle source mode' from the Command palette.
-- The 'Source mode/Base mode' toggle visible when a Base is open.
+- The 'Source mode/Base mode' toggle visible when the Base is open, similar to the 'Source mode/Reading mode' toggle for Markdown notes
 
 ## Installation
 
