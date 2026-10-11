@@ -52,13 +52,14 @@ export default defineConfig([
     },
     rules: {
       // ESLint
+      'eslint-comments/require-description': 'off',
       'no-empty': 'warn',
       'no-prototype-builtins': 'off',
+      'no-return-assign': 'warn',
+      'no-throw-literal': 'off',
       'no-undef': 'off',
       'no-unused-vars': 'off',
       'no-var': 'error',
-      'eslint-comments/require-description': 'off',
-      'no-throw-literal': 'off',
 
       // TypeScript ESLint
       '@typescript-eslint/ban-ts-comment' : 'off',
@@ -89,6 +90,7 @@ export default defineConfig([
       'unicorn/no-array-reverse': 'warn',
       'unicorn/no-array-sort': 'warn',
       'unicorn/no-declarations-before-early-exit': 'off',
+      'unicorn/no-empty-file': 'off',
       'unicorn/no-for-each': 'error',
       'unicorn/no-for-loop': 'warn',
       'unicorn/no-global-object-property-assignment': 'off',
