@@ -35,7 +35,7 @@ Base Source mode can be toggled using:
 
 ## Developing
 
-This project uses [pnpm](https://pnpm.io) as its package manager instead of `npm`.
+This project uses the [pnpm](https://pnpm.io) package manager instead of `npm`.
 
 1. [Install pnpm](https://pnpm.io/installation).
 2. Clone this repo:
