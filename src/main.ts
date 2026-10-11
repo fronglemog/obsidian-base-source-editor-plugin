@@ -46,7 +46,7 @@ export default class BasesSourceEditorPlugin extends Plugin {
 
     /* Register commands */
     this.registerPluginCommands();
-    this.extendSearchReplaceCommand();
+    this.patchSearchReplaceCommand();
 
     /* Register view header actions */
     const viewActionsManager = new ViewActionsManager(this);
@@ -112,7 +112,7 @@ export default class BasesSourceEditorPlugin extends Plugin {
   /**
    * Patches Obsidian's built-in 'Search & replace in current file' command to support Base Source Editor views.
    */
-  private extendSearchReplaceCommand(): void {
+  private patchSearchReplaceCommand(): void {
     const command: Command | undefined = this.app.commands.findCommand('editor:open-search-replace');
     const originalCheckCallback: Command['checkCallback'] = command?.checkCallback;
 
