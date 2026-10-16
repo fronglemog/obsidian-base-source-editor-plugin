@@ -48,7 +48,7 @@ declare module 'obsidian' {
  * @public
  * @unofficial
  */
-export interface BasesMockContext {}
+export type BasesMockContext = object;
 
 /**
  * @todo Documentation incomplete.
@@ -115,7 +115,7 @@ export interface Commands {
  * @public
  * @unofficial
  */
-export interface CommandsCommandsRecord extends Record<string, Command> {}
+export type CommandsCommandsRecord = Record<string, Command>;
 
 /**
  * Record mapping command IDs to {@link obsidian#Command} objects with editor callbacks.
@@ -123,7 +123,7 @@ export interface CommandsCommandsRecord extends Record<string, Command> {}
  * @public
  * @unofficial
  */
-export interface CommandsEditorCommandsRecord extends Record<string, Command> {}
+export type CommandsEditorCommandsRecord = Record<string, Command>;
 
 /**
  * Record mapping command IDs to their user-customized hotkey bindings.
@@ -131,7 +131,7 @@ export interface CommandsEditorCommandsRecord extends Record<string, Command> {}
  * @public
  * @unofficial
  */
-export interface HotkeyManagerCustomKeysRecord extends Record<string, KeymapInfo[]> {}
+export type HotkeyManagerCustomKeysRecord = Record<string, KeymapInfo[]>;
 
 /**
  * Record mapping command IDs to their default hotkey bindings.
@@ -139,7 +139,7 @@ export interface HotkeyManagerCustomKeysRecord extends Record<string, KeymapInfo
  * @public
  * @unofficial
  */
-export interface HotkeyManagerDefaultKeysRecord extends Record<string, KeymapInfo[]> {}
+export type HotkeyManagerDefaultKeysRecord = Record<string, KeymapInfo[]>;
 
 /**
  * Manager for keyboard shortcut registration, storage, and triggering.
