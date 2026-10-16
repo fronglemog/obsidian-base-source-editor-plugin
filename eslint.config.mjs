@@ -34,7 +34,7 @@ export default defineConfig([
       tseslint.configs.eslintRecommended,
       tseslint.configs.recommended,
       tseslint.configs.recommendedTypeCheckedOnly,
-      // eslintPluginUnicorn.configs.recommended,
+      eslintPluginUnicorn.configs.recommended,
       eslintPluginObsidianmd.configs.recommended
     ],
     languageOptions: {
@@ -119,7 +119,7 @@ export default defineConfig([
       'unicorn/prefer-optional-catch-binding': 'off',
       'unicorn/prefer-set-has': 'off',
       'unicorn/prefer-ternary': 'off',
-      'unicorn/require-module-specifiers': 'off',
+      'unicorn/require-module-specifiers': 'error',
       'unicorn/single-line-block-comment-style': 'off',
 
       // eslint-plugin-obsidianmd
