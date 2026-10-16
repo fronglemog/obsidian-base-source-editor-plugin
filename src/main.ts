@@ -61,7 +61,7 @@ export default class BasesSourceEditorPlugin extends Plugin {
     this.settings = Object.assign(
       {},
       PLUGIN_DEFAULT_SETTINGS,
-      await this.loadData()
+      (await this.loadData()) as Partial<PluginSettings>
     );
   }
 
