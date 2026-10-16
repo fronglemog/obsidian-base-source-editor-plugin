@@ -32,6 +32,5 @@ jobs:
         with:
           mode: release
           build: 'false'
-
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
