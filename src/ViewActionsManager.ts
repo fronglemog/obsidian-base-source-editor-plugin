@@ -85,11 +85,13 @@ export class ViewActionsManager {
 
     for (const viewType of Object.keys(VIEW_ACTIONS)) {
       for (const leaf of app.workspace.getLeavesOfType(viewType)) {
-        if (!(leaf.view instanceof FileView)) {
+        const view: View = leaf.view;
+
+        if (!(view instanceof FileView) || !this.actionEls.has(view)) {
           continue;
         }
-        this.actionEls.get(leaf.view)?.remove();
-        this.actionEls.delete(leaf.view);
+        this.actionEls.get(view)?.remove();
+        this.actionEls.delete(view);
       }
     }
   }
