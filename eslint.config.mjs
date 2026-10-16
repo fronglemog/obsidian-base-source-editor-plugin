@@ -73,7 +73,7 @@ export default defineConfig([
       '@typescript-eslint/no-namespace' : 'warn',
       '@typescript-eslint/no-redundant-type-constituents' : 'off',
       '@typescript-eslint/no-unnecessary-type-assertion': 'warn',
-      '@typescript-eslint/no-unsafe-assignment' : 'off',
+      '@typescript-eslint/no-unsafe-assignment' : 'warn',
       '@typescript-eslint/no-unsafe-member-access': 'warn',
       '@typescript-eslint/no-unused-vars' : 'warn',
       '@typescript-eslint/only-throw-error': 'error',
