@@ -3,7 +3,8 @@ import { FileView } from 'obsidian';
 
 import type {
   App,
-  IconName
+  IconName,
+  View
 } from 'obsidian';
 
 import type BasesSourceEditorPlugin from "src/main";
@@ -64,15 +65,17 @@ export class ViewActionsManager {
 
     for (const [viewType, action] of Object.entries(VIEW_ACTIONS)) {
       for (const leaf of app.workspace.getLeavesOfType(viewType)) {
-        if (!(leaf.view instanceof FileView) || this.actionEls.has(leaf.view)) {
+        const view: View = leaf.view;
+
+        if (!(view instanceof FileView) || this.actionEls.has(view)) {
           continue;
         }
-        const actionEl = leaf.view.addAction(
+        const actionEl = view.addAction(
           action.icon,
           action.title,
-          () => action.callback(leaf.view)
+          () => action.callback(view)
         );
-        this.actionEls.set(leaf.view, actionEl);
+        this.actionEls.set(view, actionEl);
       }
     }
   }
