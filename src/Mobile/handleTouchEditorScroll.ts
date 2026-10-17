@@ -15,7 +15,7 @@ const NO_SCROLL_X_CLASS = 'mod-no-scroll-x';
  * @param evt -
  * @returns 
  */
-export function onScrollerTouchStart(editor: EditorView, evt: TouchEvent): void {
+export function handleTouchEditorScroll(editor: EditorView, evt: TouchEvent): void {
   if (editor == null || evt.touches.length !== 1) {
     return;
   }

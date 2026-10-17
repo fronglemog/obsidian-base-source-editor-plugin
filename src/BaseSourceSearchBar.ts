@@ -32,11 +32,9 @@ import {
 } from '@codemirror/view';
 
 import type { DecorationSet } from '@codemirror/view';
-
 import type BasesSourceEditorPlugin from 'src/main';
 
 /* ========================= BaseSourceSearchBar ========================= */
-
 interface SearchMatch {
   from: number;
   to: number;

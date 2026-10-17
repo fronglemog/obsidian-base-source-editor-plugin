@@ -19,10 +19,6 @@ class CommandSuggester extends FuzzySuggestModal<Command> {
   private resolve!: (command: Command) => void;
   private reject!: (reason?: Error) => void;
 
-  /**
-   * @param plugin - Plugin opening the modal.
-   * @param commands - Commands to choose from.
-   */
   constructor(plugin: BasesSourceEditorPlugin, commands: Command[]) {
     super(plugin.app);
 

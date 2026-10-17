@@ -67,7 +67,7 @@ import { getIndentationGuidesExtensions } from 'src/EditorExtensions/indentation
 import { getLineWrapExtensions } from 'src/EditorExtensions/lineWrap';
 import { getRenderWhitespaceExtensions } from 'src/EditorExtensions/renderWhitespace';
 import { getDocumentChange } from 'src/getDocumentChange';
-import { onScrollerTouchStart } from 'src/Mobile/mobileTouchHandler';
+import { handleTouchEditorScroll } from 'src/Mobile/handleTouchEditorScroll';
 
 /* ========================= BaseSourceView ========================= */
 
@@ -182,7 +182,7 @@ export class BaseSourceView extends TextFileView {
       this.registerDomEvent(
         editor.scrollDOM,
         'touchstart',
-        (evt) => onScrollerTouchStart(editor, evt),
+        (evt) => handleTouchEditorScroll(editor, evt),
         { passive: true }
       );
     }
