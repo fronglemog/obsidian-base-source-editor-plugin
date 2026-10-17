@@ -22,6 +22,7 @@ import { toggleSourceMode } from 'src/toggleSourceMode';
 import { BaseYamlLanguage } from 'src/BaseYamlLanguage/BaseYamlLanguage';
 import { BaseSourceMobileToolbar } from 'src/Mobile/BaseSourceMobileToolbar';
 import { patchEditorCommands } from 'src/EditorCommands/patchEditorCommands';
+import { objectMerge } from 'src/Util/objectMerge';
 
 /* ========================= BasesSourceEditorPlugin ========================= */
 export default class BasesSourceEditorPlugin extends Plugin {
@@ -66,10 +67,10 @@ export default class BasesSourceEditorPlugin extends Plugin {
 
   /* Load settings */
   async loadSettings(): Promise<void> {
-    this.settings = Object.assign(
+    this.settings = objectMerge(
       {},
       structuredClone(PLUGIN_DEFAULT_SETTINGS),
-      (await this.loadData()) as Partial<PluginSettings>
+      (await this.loadData() ?? {}) as Partial<PluginSettings>
     );
   }
 
