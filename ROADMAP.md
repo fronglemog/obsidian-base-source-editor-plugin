@@ -26,4 +26,4 @@ I intend to keep this plugin limited in scope - focused purely on the experience
 
 ## UX
 
-- [ ] Add a command toolbar, similar to Obsidian's mobile toolbar for Markdown notes.
+- [ ] Add a command toolbar on mobile, similar to Obsidian's mobile toolbar for Markdown notes.
