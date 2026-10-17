@@ -42,6 +42,8 @@ import {
  * Commands that don't exist on this platform, such as Copy on desktop, are skipped.
  */
 const PATCHED_COMMANDS: Record<string, (view: BaseSourceView) => void> = {
+  // 'editor:open-search' does not need to be patched - Obsidian already runs it on any active view with a `showSearch` method.
+  // 'editor:open-search-replace' only checks for a markdown editor, so it needs patching.
   'editor:open-search-replace': (view) => view.showSearch(true),
   'editor:toggle-keyboard': (view) => view.runEditorCommand(toggleKeyboard),
 
