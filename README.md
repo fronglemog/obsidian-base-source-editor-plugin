@@ -1,8 +1,6 @@
 # Base Source Editor
 
-This is a plugin for [Obsidian](https://obsidian.md) that provides a 'source mode' for editing [Bases](https://obsidian.md/help/bases).
-
-This plugin adds a new **Base Source mode** view for editing the YAML source code of Bases directly within Obsidian. 
+An [Obsidian](https://obsidian.md) plugin that adds a **Base Source Editor**, for editing the YAML source code of [Bases](https://obsidian.md/help/bases).
 
 ## Features
 
