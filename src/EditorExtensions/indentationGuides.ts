@@ -1,5 +1,9 @@
 /* ========================= IMPORTS ========================= */
-import { RangeSetBuilder } from '@codemirror/state';
+/* CODEMIRROR */
+import {
+  Prec,
+  RangeSetBuilder
+} from '@codemirror/state';
 
 import type {
   Extension,
@@ -19,7 +23,6 @@ import type {
 } from '@codemirror/view';
 
 import { getIndentUnit } from '@codemirror/language';
-
 
 /* ================================================== */
 
@@ -107,7 +110,7 @@ function getIndentDecorations(view: EditorView): DecorationSet {
 /**
  *
  */
-export const indentationGuides: Extension = ViewPlugin.fromClass(class {
+const indentationGuides: Extension = ViewPlugin.fromClass(class {
   decorations: DecorationSet;
 
   constructor(view: EditorView) {
@@ -123,3 +126,19 @@ export const indentationGuides: Extension = ViewPlugin.fromClass(class {
 {
   decorations: (plugin) => plugin.decorations
 });
+
+/**
+ * 
+ * @returns 
+ */
+export function getIndentationGuidesExtensions(extensionEnabled: boolean): Extension {
+  if (extensionEnabled === false) {
+    return [];
+  }
+
+  const extensions: Extension = [
+    // Ensures indentation guides wrap the whitespace marks rather than the other way around
+    Prec.lowest(indentationGuides)
+  ];
+  return extensions;
+}

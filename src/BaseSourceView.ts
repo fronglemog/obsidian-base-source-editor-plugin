@@ -1,4 +1,5 @@
 /* ========================= IMPORTS ========================= */
+/* OBSIDIAN */
 import {
   Platform,
   TextFileView
@@ -13,21 +14,19 @@ import type {
   WorkspaceLeaf
 } from 'obsidian';
 
+/* CODEMIRROR */
 import {
   Compartment,
   EditorState,
-  Prec,
   Transaction
 } from '@codemirror/state';
 
 import type {
-  ChangeSpec,
-  Extension
+  ChangeSpec
 } from '@codemirror/state';
 
 import {
   EditorView,
-  highlightWhitespace,
   keymap,
   lineNumbers
 } from '@codemirror/view';
@@ -51,6 +50,8 @@ import {
   closeBracketsKeymap
 } from '@codemirror/autocomplete';
 
+/* PLUGIN */
+import type BasesSourceEditorPlugin from 'src/main';
 import { yamlSyntaxHighlighting } from 'src/BaseYamlLanguage/yamlSyntaxHighlighting';
 
 import {
@@ -59,9 +60,11 @@ import {
 } from 'src/BaseSourceSearchBar';
 
 import { activeLineHighlight } from 'src/EditorExtensions/activeLine';
-import { indentationGuides } from 'src/EditorExtensions/indentationGuides';
-
-import type BasesSourceEditorPlugin from 'src/main';
+import { getIndentationGuidesExtensions } from 'src/EditorExtensions/indentationGuides';
+import { getLineWrapExtensions } from 'src/EditorExtensions/lineWrap';
+import { getRenderWhitespaceExtensions } from 'src/EditorExtensions/renderWhitespace';
+import { getDocumentChange } from 'src/getDocumentChange';
+import { onScrollerTouchStart } from 'src/Mobile/mobileTouchHandler';
 
 /* ========================= BaseSourceView ========================= */
 
@@ -130,7 +133,7 @@ export class BaseSourceView extends TextFileView {
 
     const currentEditorData: string = this.editor.state.doc.toString();
     const incomingEditorData: string = this.editor.state.toText(data).toString();
-    const docChange: ChangeSpec | null = this.getDocumentChange(currentEditorData, incomingEditorData);
+    const docChange: ChangeSpec | null = getDocumentChange(currentEditorData, incomingEditorData);
 
     if (docChange == null) {
       return;
@@ -143,55 +146,6 @@ export class BaseSourceView extends TextFileView {
         Transaction.remote.of(true)
       ]
     });
-  }
-
-  /**
-   * Finds a single replacement that transforms the current text into
-   * the incoming text, excluding their shared prefix and suffix.
-   *
-   * @param currentData - The Base Source editor's current document data.
-   * @param incomingData - Replacement data, with normalised line endings.
-   * @returns The change to apply to the document, or null if `currentData` is the same as `incomingData`.
-   */
-  private getDocumentChange(currentData: string, incomingData: string): ChangeSpec | null {
-    if (currentData === incomingData) {
-      return null;
-    }
-
-    let changeStart: number = 0;
-
-    const sharedLength: number = Math.min(
-      currentData.length,
-      incomingData.length
-    );
-
-    while (
-      changeStart < sharedLength &&
-      currentData[changeStart] === incomingData[changeStart]
-    ) {
-      changeStart++;
-    }
-
-    let currentChangeEnd: number = currentData.length;
-    let incomingChangeEnd: number = incomingData.length;
-
-    while (
-      currentChangeEnd > changeStart &&
-      incomingChangeEnd > changeStart &&
-      currentData[currentChangeEnd - 1] === incomingData[incomingChangeEnd - 1]
-    ) {
-      currentChangeEnd--;
-      incomingChangeEnd--;
-    }
-
-    const replacementData: string = incomingData.slice(changeStart, incomingChangeEnd);
-    const documentChange: ChangeSpec = {
-      from: changeStart,
-      to: currentChangeEnd,
-      insert: replacementData
-    };
-
-    return documentChange;
   }
 
   clear(): void {
@@ -221,7 +175,13 @@ export class BaseSourceView extends TextFileView {
     this.searchBar = new BaseSourceSearchBar(this.plugin, this.editor, this.contentEl, (scope: Scope | null) => this.applyScope(scope));
 
     if (Platform.isMobile) {
-      this.registerDomEvent(this.editor.scrollDOM, 'touchstart', (evt) => this.onScrollerTouchStart(evt), { passive: true });
+      const editor: EditorView = this.editor;
+      this.registerDomEvent(
+        editor.scrollDOM,
+        'touchstart',
+        (evt) => onScrollerTouchStart(editor, evt),
+        { passive: true }
+      );
     }
   }
 
@@ -263,71 +223,6 @@ export class BaseSourceView extends TextFileView {
       contentContainerEl.appendChild(guttersEl);
     }
     contentContainerEl.appendChild(editor.contentDOM);
-  }
-
-  // Obsidian opens a sidebar on a horizontal swipe, unless the touched element can scroll horizontally.
-  // With line wrapping off, the scroller can, so every swipe would scroll the text. Like in a markdown view,
-  // swipes that start outside of the text should open a sidebar, so horizontal scrolling is disabled for them.
-  /**
-   * 
-   * @param evt -
-   * @returns 
-   */
-  private onScrollerTouchStart(evt: TouchEvent): void {
-    const NO_SCROLL_X_CLASS = 'mod-no-scroll-x';
-
-    const editor: EditorView | null = this.editor;
-    if (editor == null || evt.touches.length !== 1) {
-      return;
-    }
-
-    const scrollerEl: HTMLElement = editor.scrollDOM;
-    const canScrollHorizontally: boolean = scrollerEl.scrollWidth > scrollerEl.clientWidth;
-    if (!canScrollHorizontally || this.isOnText(editor, evt)) {
-      return;
-    }
-
-    scrollerEl.addClass(NO_SCROLL_X_CLASS);
-
-    const win: Window = scrollerEl.win;
-    const onTouchEnd = (endEvt: TouchEvent): void => {
-      if (endEvt.touches.length > 0) {
-        return;
-      }
-      scrollerEl.removeClass(NO_SCROLL_X_CLASS);
-      win.removeEventListener('touchend', onTouchEnd);
-      win.removeEventListener('touchcancel', onTouchEnd);
-    };
-    win.addEventListener('touchend', onTouchEnd);
-    win.addEventListener('touchcancel', onTouchEnd);
-  }
-
-  /**
-   * 
-   * @param editor -
-   * @param evt -
-   * @returns 
-   */
-  private isOnText(editor: EditorView, evt: TouchEvent): boolean {
-    const targetNode: Node | null = evt.targetNode;
-    const lineEl: Element | null = targetNode?.instanceOf(Element) === true ? targetNode.closest('.cm-line') : null;
-    if (lineEl == null || !editor.contentDOM.contains(lineEl)) {
-      return false;
-    }
-
-    const scrollerEl: HTMLElement = editor.scrollDOM;
-    const scrollerRect: DOMRect = scrollerEl.getBoundingClientRect();
-    const scrollerStyle: CSSStyleDeclaration = getComputedStyle(scrollerEl);
-    const guttersEl: HTMLElement | null = scrollerEl.querySelector('.cm-gutters');
-    
-    // The column is inset from the scroller's padding by the same space on either side
-    const contentContainerEl: HTMLElement | null = editor.contentDOM.parentElement;
-    const columnInset: number = contentContainerEl == null ? 0 : Number.parseFloat(getComputedStyle(contentContainerEl).marginInlineStart) || 0;
-
-    const textLeft: number = guttersEl?.getBoundingClientRect().right ?? scrollerRect.left + Number.parseFloat(scrollerStyle.paddingLeft) + columnInset;
-    const textRight: number = scrollerRect.left + scrollerEl.clientWidth - Number.parseFloat(scrollerStyle.paddingRight) - columnInset;
-    const touchX: number = evt.touches[0]?.clientX ?? Number.NaN;
-    return touchX >= textLeft && touchX <= textRight;
   }
 
   override onResize(): void {
@@ -388,9 +283,9 @@ export class BaseSourceView extends TextFileView {
         activeLineHighlight,
         history(),
         indentUnit.of(YAML_INDENT),
-        this.lineWrapCompartment.of(this.getLineWrapExtensions()),
-        this.indentationGuidesCompartment.of(this.getIndentationGuidesExtensions()),
-        this.renderWhitespaceCompartment.of(this.getRenderWhitespaceExtensions()),
+        this.lineWrapCompartment.of(getLineWrapExtensions(this.plugin.settings.lineWrap)),
+        this.indentationGuidesCompartment.of(getIndentationGuidesExtensions(this.plugin.settings.indentationGuides)),
+        this.renderWhitespaceCompartment.of(getRenderWhitespaceExtensions(this.plugin.settings.renderWhitespace)),
         this.remeasureCompartment.of([]),
         keymap.of([
           ...closeBracketsKeymap,
@@ -454,26 +349,10 @@ export class BaseSourceView extends TextFileView {
 
   /**
    * 
-   * @returns 
-   */
-  private getLineWrapExtensions(): Extension {
-    const lineWrapEnabled: boolean = this.plugin.settings.lineWrap;
-    if (lineWrapEnabled === false) {
-      return [];
-    }
-
-    const extensions: Extension = [
-      EditorView.lineWrapping
-    ];
-    return extensions;
-  }
-
-  /**
-   * 
    */
   updateLineWrap(): void {
     this.editor?.dispatch({
-      effects: this.lineWrapCompartment.reconfigure(this.getLineWrapExtensions())
+      effects: this.lineWrapCompartment.reconfigure(getLineWrapExtensions(this.plugin.settings.lineWrap))
     });
   }
 
@@ -487,27 +366,10 @@ export class BaseSourceView extends TextFileView {
 
   /**
    * 
-   * @returns 
-   */
-  private getIndentationGuidesExtensions(): Extension {
-    const indentationGuidesEnabled: boolean = this.plugin.settings.indentationGuides;
-    if (indentationGuidesEnabled === false) {
-      return [];
-    }
-
-    const extensions: Extension = [
-      // Ensures indentation guides wrap the whitespace marks rather than the other way around
-      Prec.lowest(indentationGuides)
-    ];
-    return extensions;
-  }
-
-  /**
-   * 
    */
   updateIndentationGuides(): void {
     this.editor?.dispatch({
-      effects: this.indentationGuidesCompartment.reconfigure(this.getIndentationGuidesExtensions())
+      effects: this.indentationGuidesCompartment.reconfigure(getIndentationGuidesExtensions(this.plugin.settings.indentationGuides))
     });
     this.updateIndentationGuideColour();
   }
@@ -529,27 +391,11 @@ export class BaseSourceView extends TextFileView {
   }
 
   /**
-   *
-   * @returns 
-   */
-  private getRenderWhitespaceExtensions(): Extension {
-    const renderWhitespaceEnabled: boolean = this.plugin.settings.renderWhitespace;
-    if (renderWhitespaceEnabled === false) {
-      return [];
-    }
-
-    const extensions: Extension = [
-      highlightWhitespace()
-    ];
-    return extensions;
-  }
-
-  /**
    * 
    */
   updateRenderWhitespace(): void {
     this.editor?.dispatch({
-      effects: this.renderWhitespaceCompartment.reconfigure(this.getRenderWhitespaceExtensions())
+      effects: this.renderWhitespaceCompartment.reconfigure(getRenderWhitespaceExtensions(this.plugin.settings.renderWhitespace))
     });
     this.updateWhitespaceOpacity();
   }
