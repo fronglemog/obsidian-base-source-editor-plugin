@@ -10,7 +10,17 @@ This plugin adds a new **Base Source mode** view for editing the YAML source cod
 - Search & replace, mirroring Obsidian's native behaviour. Supports case-sensitive search.
 	- The search/replace command is accessed the same way as for native Markdown notes, either from the Command palette or the file menu.
 - Theme-aware YAML syntax highlighting, utilising Obsidian's built-in CSS variables.
-- Full mobile support.
+- Obsidian's editor commands work in Base Source mode, including:
+	- Undo/Redo.
+	- Indent/Unindent.
+	- Move line up/down.
+	- Delete current line.
+- Editor settings
+	- Font size, independent of Obsidian's core font size setting.
+	- Line wrapping and readable line length.
+	- Indentation guides, with an optional custom colour and opacity.
+	- Render whitespace characters, with adjustable opacity.
+- Full mobile support - including a mobile toolbar with customisable commands.
 
 View the [Roadmap](./ROADMAP.md) to see planned features.
 
