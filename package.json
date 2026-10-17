@@ -7,7 +7,8 @@
   "main": "build/main.js",
   "devEngines": {
     "packageManager": {
-      "name": "pnpm"
+      "name": "pnpm",
+      "version": "^12.9.0"
     }
   },
   "scripts": {
