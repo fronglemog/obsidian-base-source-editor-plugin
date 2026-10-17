@@ -1,10 +1,26 @@
 /* ========================= IMPORTS ========================= */
-import { PluginSettingTab } from 'obsidian';
-import type {SettingDefinitionItem } from 'obsidian';
+import {
+  Platform,
+  PluginSettingTab
+} from 'obsidian';
+
+import type {
+  App,
+  Command,
+  SettingDefinition,
+  SettingDefinitionItem
+} from 'obsidian';
 
 import type BasesSourceEditorPlugin from 'src/main';
 import { getPluginSettingPath, PLUGIN_DEFAULT_SETTINGS, setPluginSettingPath } from 'src/Settings/PluginSettings';
 import type { PluginSettingPath } from 'src/Settings/PluginSettings';
+import { commandSuggester } from 'src/Mobile/CommandSuggestModal';
+
+import {
+  getMobileToolbarCommands,
+  getGlobalCommandsForToolbar,
+  TOOLBAR_SUPPORTED_COMMAND_IDS
+} from 'src/Mobile/toolbarCommands';
 
 /* ========================= BasesSourceEditorPluginTab ========================= */
 
@@ -174,9 +190,103 @@ export class BasesSourceEditorPluginSettingsTab extends PluginSettingTab {
             }
           }
         ]
+      },
+      {
+        heading: 'Mobile',
+        type: 'group',
+        visible: Platform.isMobile,
+        items: [
+          {
+            name: 'Configure mobile toolbar',
+            desc: 'Manage toolbar options',
+            searchable: true,
+            type: 'page',
+            items: this.getMobileToolbarSettingsItems()
+          },
+        ]
       }
     ]
 
     return settingsDefinitions;
+  }
+
+  /**
+   * Builds the items of the "Configure mobile toolbar" page.
+   *
+   * @returns The page's items.
+   */
+  private getMobileToolbarSettingsItems(): SettingDefinitionItem<PluginSettingPath>[] {
+    const app: App = this.plugin.app;
+
+    const toolbarCommands: Command[] = getMobileToolbarCommands(app, this.plugin.settings.mobileToolbarCommands);
+    const toolbarCommandIds: string[] = toolbarCommands.map((command: Command): string => command.id);
+
+    const availableCommandIdsToAdd: string[] = TOOLBAR_SUPPORTED_COMMAND_IDS.filter((commandId: string): boolean => !toolbarCommandIds.includes(commandId));
+    const availableCommandsToAdd: Command[] = getMobileToolbarCommands(app, availableCommandIdsToAdd);
+
+    const settingsItems: SettingDefinitionItem<PluginSettingPath>[] = [
+      {
+        heading: 'Manage toolbar options',
+        type: 'list',
+        emptyState: 'No commands found.',
+        items: toolbarCommands.map((command: Command): SettingDefinition<PluginSettingPath> => ({
+          name: command.name,
+          icon: command.icon ?? 'question-mark-glyph',
+          searchable: false
+        })),
+        addItem: {
+          name: 'Add a command...',
+          action: async () => {
+            const globalCommands: Command[] = getGlobalCommandsForToolbar(app, toolbarCommandIds);
+            const command: Command | null = await commandSuggester(this.plugin, globalCommands);
+
+            if (command == null) {
+              return;
+            }
+            await this.addMobileToolbarCommand(toolbarCommandIds, command.id);
+          }
+        },
+        onReorder: async (oldIndex, newIndex) => {
+          const [movedCommandId] = toolbarCommandIds.splice(oldIndex, 1);
+          toolbarCommandIds.splice(newIndex, 0, movedCommandId as string);
+          this.plugin.settings.mobileToolbarCommands = toolbarCommandIds;
+          await this.plugin.saveSettings();
+        },
+        onDelete: async (index) => {
+          toolbarCommandIds.splice(index, 1);
+          this.plugin.settings.mobileToolbarCommands = toolbarCommandIds;
+          await this.plugin.saveSettings();
+          this.update();
+        },
+      },
+      {
+        heading: 'More toolbar options',
+        type: 'list',
+        visible: availableCommandsToAdd.length > 0,
+        items: availableCommandsToAdd.map((command: Command): SettingDefinition<PluginSettingPath> => ({
+          name: command.name,
+          icon: command.icon ?? 'question-mark-glyph',
+          searchable: false,
+          action: () => this.addMobileToolbarCommand(toolbarCommandIds, command.id)
+        }))
+      }
+    ];
+    return settingsItems;
+  }
+
+  /**
+   * Adds a command to the end of the mobile toolbar.
+   *
+   * @param toolbarCommandIds - IDs of the commands currently on the toolbar. Edited in place.
+   * @param commandId - ID of the command to add.
+   */
+  private async addMobileToolbarCommand(toolbarCommandIds: string[], commandId: string): Promise<void> {
+    if (toolbarCommandIds.includes(commandId)) {
+      return;
+    }
+    toolbarCommandIds.push(commandId);
+    this.plugin.settings.mobileToolbarCommands = toolbarCommandIds;
+    await this.plugin.saveSettings();
+    this.update();
   }
 }

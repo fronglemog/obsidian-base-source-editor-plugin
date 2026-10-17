@@ -10,6 +10,19 @@ export const PLUGIN_DEFAULT_SETTINGS: PluginSettings = {
   indentationGuideOpacity: 25,
   renderWhitespace: false,
   whitespaceOpacity: 30,
+  mobileToolbarCommands: [
+    'command-palette:open',
+    'editor:undo',
+    'editor:redo',
+    'editor:copy',
+    'editor:cut',
+    'editor:paste',
+    'editor:indent-list',
+    'editor:unindent-list',
+    'editor:swap-line-up',
+    'editor:swap-line-down',
+    'editor:delete-paragraph'
+  ],
 }
 
 export interface PluginSettings {
@@ -23,6 +36,7 @@ export interface PluginSettings {
   indentationGuideOpacity: number;
   renderWhitespace: boolean;
   whitespaceOpacity: number;
+  mobileToolbarCommands: string[];
 }
 
 

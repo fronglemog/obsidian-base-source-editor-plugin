@@ -1,5 +1,5 @@
 /* ========================= IMPORTS ========================= */
-import type { App, Command, Component, Debouncer, KeymapInfo } from 'obsidian';
+import type { App, Command, Component, Debouncer, IconName, KeymapInfo } from 'obsidian';
 
 import type { LanguageSupport as EditorLanguageSupport } from '@codemirror/language';
 
@@ -15,6 +15,24 @@ declare module 'obsidian' {
      * @unofficial
      */
     commands: Commands;
+    /**
+     * References to important DOM elements of the application.
+     *
+     * @unofficial
+     */
+    dom: ObsidianDOM;
+    /**
+     * Navigation bar for mobile devices, or `null` on desktop.
+     *
+     * @unofficial
+     */
+    mobileNavbar: MobileNavbar | null;
+    /**
+     * Toolbar for mobile devices, or `null` on desktop.
+     *
+     * @unofficial
+     */
+    mobileToolbar: MobileToolbar | null;
     /**
      * Manages global hotkeys.
      *
@@ -40,6 +58,84 @@ declare module 'obsidian' {
      */
     getEditorLanguageSupport(): EditorLanguageSupport;
   }
+  interface SettingDefinitionBase {
+    /**
+     * Icon shown before the setting's name, as in Obsidian's mobile toolbar settings.
+     *
+     * @unofficial
+     */
+    icon?: IconName;
+  }
+}
+
+declare global {
+  /**
+   * Events fired on `window` by Obsidian's mobile apps, as the on-screen keyboard opens and closes.
+   * When they fire, Obsidian has already set `--keyboard-height` to the new height.
+   *
+   * @unofficial
+   */
+  interface WindowEventMap {
+    keyboardWillShow: Event;
+    keyboardWillHide: KeyboardWillHideEvent;
+    /** Android only: the app entered or left split-screen. */
+    multiWindowModeChanged: Event;
+  }
+}
+
+/**
+ * @unofficial
+ */
+export interface KeyboardWillHideEvent extends Event {
+  /**
+   * Whether a physical keyboard is connected. The on-screen keyboard hides when one is used,
+   * but the user can still type.
+   */
+  hasPhysicalKeyboard?: boolean;
+}
+
+/**
+ * Core DOM elements of the Obsidian application layout.
+ *
+ * @public
+ * @unofficial
+ */
+export interface ObsidianDOM {
+  /**
+   * Root element of the application.
+   */
+  appContainerEl: HTMLElement;
+}
+
+/**
+ * Navigation bar component for the mobile interface.
+ *
+ * @public
+ * @unofficial
+ */
+export interface MobileNavbar {
+  /**
+   * Shows the navbar, unless Obsidian's own toolbar or the on-screen keyboard is visible.
+   */
+  show(): void;
+  hide(): void;
+}
+
+/**
+ * Toolbar component displayed above the keyboard on mobile.
+ *
+ * @public
+ * @unofficial
+ */
+export interface MobileToolbar {
+  /**
+   * Whether the toolbar is shown.
+   */
+  isVisible: boolean;
+  /**
+   * Android only: whether the app is in split-screen.
+   */
+  isMultiWindowMode: boolean;
 }
 
 /**

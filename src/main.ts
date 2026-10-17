@@ -1,12 +1,12 @@
 /* ========================= IMPORTS ========================= */
 import {
   FileView,
+  Platform,
 	Plugin,
 } from 'obsidian';
 
 import type {
   App,
-  Command,
 	WorkspaceLeaf,
 } from 'obsidian';
 
@@ -20,15 +20,22 @@ import {
 import { ViewActionsManager } from 'src/ViewActionsManager';
 import { toggleSourceMode } from 'src/toggleSourceMode';
 import { BaseYamlLanguage } from 'src/BaseYamlLanguage/BaseYamlLanguage';
+import { BaseSourceMobileToolbar } from 'src/Mobile/BaseSourceMobileToolbar';
+import { patchEditorCommands } from 'src/EditorCommands/patchEditorCommands';
 
 /* ========================= BasesSourceEditorPlugin ========================= */
 export default class BasesSourceEditorPlugin extends Plugin {
 	declare settings: PluginSettings;
 
   baseYamlLanguage!: BaseYamlLanguage;
+  mobileToolbar: BaseSourceMobileToolbar | null = null;
 
   /* Load plugin */
   override async onload(): Promise<void> {
+    /* Register commands */
+    this.registerPluginCommands();
+    patchEditorCommands(this);
+    
     /* Load plugin settings */
     await this.loadSettings();
 
@@ -44,9 +51,10 @@ export default class BasesSourceEditorPlugin extends Plugin {
       (leaf: WorkspaceLeaf) => new BaseSourceView(this, leaf)
     );
 
-    /* Register commands */
-    this.registerPluginCommands();
-    this.patchSearchReplaceCommand();
+    /* Register mobile toolbar */
+    if (Platform.isMobile) {
+      this.mobileToolbar = this.addChild(new BaseSourceMobileToolbar(this));
+    }
 
     /* Register view header actions */
     const viewActionsManager = new ViewActionsManager(this);
@@ -60,7 +68,7 @@ export default class BasesSourceEditorPlugin extends Plugin {
   async loadSettings(): Promise<void> {
     this.settings = Object.assign(
       {},
-      PLUGIN_DEFAULT_SETTINGS,
+      structuredClone(PLUGIN_DEFAULT_SETTINGS),
       (await this.loadData()) as Partial<PluginSettings>
     );
   }
@@ -76,6 +84,7 @@ export default class BasesSourceEditorPlugin extends Plugin {
     this.addCommand({
       id: 'toggle-source-mode',
       name: 'Toggle source mode',
+      icon: 'lucide-table',
       checkCallback: (checking: boolean): boolean => {
         const app: App = this.app;
 
@@ -107,36 +116,5 @@ export default class BasesSourceEditorPlugin extends Plugin {
         leaf.view.updateRenderWhitespace();
       }
     }
-  }
-
-  /**
-   * Patches Obsidian's built-in 'Search & replace in current file' command to support Base Source Editor views.
-   */
-  private patchSearchReplaceCommand(): void {
-    const command: Command | undefined = this.app.commands.findCommand('editor:open-search-replace');
-    const originalCheckCallback: Command['checkCallback'] = command?.checkCallback;
-
-    // Accessing undocumented API... keep this guard.
-    if (command == null || originalCheckCallback == null) {
-      return;
-    }
-
-    const extendedCheckCallback = (checking: boolean) => {
-      const view: BaseSourceView | null = this.app.workspace.getActiveViewOfType(BaseSourceView);
-      if (view == null) {
-        return originalCheckCallback(checking);
-      }
-      if (!checking) {
-        view.showSearch(true);
-      }
-      return true;
-    };
-
-    command.checkCallback = extendedCheckCallback;
-    this.register(() => {
-      if (command.checkCallback === extendedCheckCallback) {
-        command.checkCallback = originalCheckCallback;
-      }
-    });
   }
 }

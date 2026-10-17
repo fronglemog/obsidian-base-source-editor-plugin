@@ -31,7 +31,10 @@ import {
   lineNumbers
 } from '@codemirror/view';
 
-import type { ViewUpdate } from '@codemirror/view';
+import type {
+  Command as CMEditorCommand,
+  ViewUpdate
+} from '@codemirror/view';
 
 import {
   history,
@@ -228,6 +231,28 @@ export class BaseSourceView extends TextFileView {
   override onResize(): void {
     super.onResize();
     this.updateBottomPadding();
+  }
+
+  /**
+   * Whether the editor has focus. 
+   *
+   * @returns `True` if the editor has focus, `false` otherwise.
+   */
+  hasEditorFocus(): boolean {
+    const hasEditorFocus: boolean = this.editor?.hasFocus ?? false;
+    return hasEditorFocus;
+  }
+
+  /**
+   * Runs a command on the editor.
+   *
+   * @param command - Command to run.
+   */
+  runEditorCommand(command: CMEditorCommand): void {
+    if (this.editor == null) {
+      return;
+    }
+    command(this.editor);
   }
 
   /**
