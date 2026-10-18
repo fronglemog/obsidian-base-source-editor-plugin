@@ -28,7 +28,7 @@ class CommandSuggester extends FuzzySuggestModal<Command> {
     this.setPlaceholder('Select a command...');
   }
 
-  async openAndGetCommand(resolve: (command: Command) => void, reject: (reason?: Error) => void): Promise<void> {
+  openAndGetCommand(resolve: (command: Command) => void, reject: (reason?: Error) => void): void {
     this.resolve = resolve;
     this.reject = reject;
     this.open();
@@ -80,7 +80,7 @@ export async function commandSuggester(plugin: BasesSourceEditorPlugin, commands
   try {
     const suggestResult: Awaited<Command> = await promise;
     return suggestResult;
-  } catch (error: unknown) {
+  } catch {
     return null;
   }
 }

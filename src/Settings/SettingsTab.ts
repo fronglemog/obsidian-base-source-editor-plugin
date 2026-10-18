@@ -236,26 +236,20 @@ export class BasesSourceEditorPluginSettingsTab extends PluginSettingTab {
         })),
         addItem: {
           name: 'Add a command...',
-          action: async () => {
-            const globalCommands: Command[] = getGlobalCommandsForToolbar(app, toolbarCommandIds);
-            const command: Command | null = await commandSuggester(this.plugin, globalCommands);
-
-            if (command == null) {
-              return;
-            }
-            await this.addMobileToolbarCommand(toolbarCommandIds, command.id);
+          action: () => {
+            void this.addCommandFromSuggester(toolbarCommandIds);
           }
         },
-        onReorder: async (oldIndex, newIndex) => {
+        onReorder: (oldIndex, newIndex) => {
           const [movedCommandId] = toolbarCommandIds.splice(oldIndex, 1);
           toolbarCommandIds.splice(newIndex, 0, movedCommandId as string);
           this.plugin.settings.mobileToolbarCommands = toolbarCommandIds;
-          await this.plugin.saveSettings();
+          void this.plugin.saveSettings();
         },
-        onDelete: async (index) => {
+        onDelete: (index) => {
           toolbarCommandIds.splice(index, 1);
           this.plugin.settings.mobileToolbarCommands = toolbarCommandIds;
-          await this.plugin.saveSettings();
+          void this.plugin.saveSettings();
           this.update();
         },
       },
@@ -267,11 +261,28 @@ export class BasesSourceEditorPluginSettingsTab extends PluginSettingTab {
           name: command.name,
           icon: command.icon ?? 'question-mark-glyph',
           searchable: false,
-          action: () => this.addMobileToolbarCommand(toolbarCommandIds, command.id)
+          action: () => {
+            void this.addMobileToolbarCommand(toolbarCommandIds, command.id);
+          }
         }))
       }
     ];
     return settingsItems;
+  }
+
+  /**
+   * Opens the command suggester and adds the chosen command to the end of the mobile toolbar.
+   *
+   * @param toolbarCommandIds - IDs of the commands currently on the toolbar. Edited in place.
+   */
+  private async addCommandFromSuggester(toolbarCommandIds: string[]): Promise<void> {
+    const globalCommands: Command[] = getGlobalCommandsForToolbar(this.plugin.app, toolbarCommandIds);
+    const command: Command | null = await commandSuggester(this.plugin, globalCommands);
+
+    if (command == null) {
+      return;
+    }
+    await this.addMobileToolbarCommand(toolbarCommandIds, command.id);
   }
 
   /**
