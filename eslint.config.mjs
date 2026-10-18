@@ -69,7 +69,7 @@ export default defineConfig([
       '@typescript-eslint/no-empty-function' : 'off',
       '@typescript-eslint/no-empty-object-type' : 'off',
       '@typescript-eslint/no-explicit-any' : 'off',
-      '@typescript-eslint/no-misused-promises' : 'off',
+      '@typescript-eslint/no-misused-promises' : 'warn',
       '@typescript-eslint/no-namespace' : 'warn',
       '@typescript-eslint/no-redundant-type-constituents' : 'off',
       '@typescript-eslint/no-unnecessary-type-assertion': 'warn',
