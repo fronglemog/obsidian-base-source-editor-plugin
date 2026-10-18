@@ -50,7 +50,7 @@ eg:
   
   .cm-content {
     caret-color: var(--caret-color);
-    flex-basis: unset !important;
+    flex-basis: unset !important; /* !important is necessary here - don't remove. */
     width: 0;
     padding-block: 0;
     padding-inline-start: var(--search-match-ring-width);
@@ -95,14 +95,14 @@ eg:
       var(--background-primary);
   }
 
-  .cm-contentContainer:has(> .cm-content:not(.cm-lineWrapping)) {
+  .view-content:not(.bse-line-wrap) .cm-contentContainer {
     width: max-content;
     min-width: calc(100% - var(--sizer-inset));
-  }
 
-  .cm-content:not(.cm-lineWrapping) {
-    width: auto;
-    padding-inline-end: var(--file-margins-x);
+    .cm-content {
+      width: auto;
+      padding-inline-end: var(--file-margins-x);
+    }
   }
 
   .cm-line {

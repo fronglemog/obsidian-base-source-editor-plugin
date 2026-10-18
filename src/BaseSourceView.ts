@@ -170,6 +170,7 @@ export class BaseSourceView extends TextFileView {
     this.wrapEditorContent(this.editor);
     this.updateBottomPadding();
     this.updateReadableLineWidth();
+    this.updateLineWrap();
     this.updateIndentationGuideColour();
     this.updateWhitespaceOpacity();
     this.updateFontSize();
@@ -378,8 +379,11 @@ export class BaseSourceView extends TextFileView {
    * 
    */
   updateLineWrap(): void {
+    const shouldLineWrap: boolean = this.plugin.settings.lineWrap;
+    this.contentEl.toggleClass('bse-line-wrap', shouldLineWrap);
+
     this.editor?.dispatch({
-      effects: this.lineWrapCompartment.reconfigure(getLineWrapExtensions(this.plugin.settings.lineWrap))
+      effects: this.lineWrapCompartment.reconfigure(getLineWrapExtensions(shouldLineWrap))
     });
   }
 
