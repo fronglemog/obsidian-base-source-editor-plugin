@@ -48,7 +48,7 @@ export class BaseSourceMobileToolbar extends Component {
   private wrapperEl: HTMLElement;
   private optionsListEl: HTMLElement;
 
-  private requestUpdate: Debouncer<[], void> = debounce(() => this.update(), 0, true);
+  requestUpdate: Debouncer<[], void> = debounce(() => this.update(), 0, true);
 
   constructor(plugin: BasesSourceEditorPlugin) {
     super();

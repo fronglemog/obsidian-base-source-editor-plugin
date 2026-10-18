@@ -289,6 +289,8 @@ export class BaseSourceView extends TextFileView {
     await super.onClose();
     this.editor?.destroy();
     this.editor = null;
+
+    this.plugin.mobileToolbar?.requestUpdate();
   }
 
   /**
