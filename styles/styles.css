@@ -156,8 +156,12 @@ eg:
   .is-phone .mod-root & {
     --view-top-spacing: 0;
 
-    .view-content > .cm-editor > .cm-scroller {
-      padding-top: var(--view-top-spacing-markdown);
+    .view-content {
+      margin-top: 0;
+
+      > .cm-editor > .cm-scroller {
+        padding-top: calc(var(--view-top-spacing) + var(--view-top-spacing-markdown));
+      }
     }
   }
 
