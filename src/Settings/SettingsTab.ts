@@ -19,7 +19,7 @@ import { commandSuggester } from 'src/CommandSuggester';
 import {
   getMobileToolbarCommands,
   getGlobalCommandsForToolbar,
-  TOOLBAR_SUPPORTED_COMMAND_IDS
+  TOOLBAR_COMMAND_IDS
 } from 'src/Mobile/toolbarCommands';
 
 /* ========================= BasesSourceEditorPluginTab ========================= */
@@ -221,7 +221,7 @@ export class BasesSourceEditorPluginSettingsTab extends PluginSettingTab {
     const toolbarCommands: Command[] = getMobileToolbarCommands(app, this.plugin.settings.mobileToolbarCommands);
     const toolbarCommandIds: string[] = toolbarCommands.map((command: Command): string => command.id);
 
-    const availableCommandIdsToAdd: string[] = TOOLBAR_SUPPORTED_COMMAND_IDS.filter((commandId: string): boolean => !toolbarCommandIds.includes(commandId));
+    const availableCommandIdsToAdd: string[] = TOOLBAR_COMMAND_IDS.filter((commandId: string): boolean => !toolbarCommandIds.includes(commandId));
     const availableCommandsToAdd: Command[] = getMobileToolbarCommands(app, availableCommandIdsToAdd);
 
     const settingsItems: SettingDefinitionItem<PluginSettingPath>[] = [

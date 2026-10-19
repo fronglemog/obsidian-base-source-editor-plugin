@@ -10,9 +10,7 @@ import type {
  * Commands offered under "More toolbar options" in the mobile toolbar settings, in this order.
  * Only includes `editor:*` commands that have been patched by this plugin.
  */
-export const TOOLBAR_SUPPORTED_COMMAND_IDS: readonly string[] = [
-  'command-palette:open',
-  'base-source-editor:toggle-source-mode',
+export const TOOLBAR_COMMAND_IDS: readonly string[] = [
   'editor:undo',
   'editor:redo',
   'editor:copy',
@@ -66,7 +64,7 @@ export function getGlobalCommandsForToolbar(app: App, toolbarCommandIds: readonl
 
   const globalCommands: Command[] = commands.filter((command: Command): boolean => {
     const isEditorCommand: boolean = app.commands.editorCommands[command.id] != null;
-    const isSupportedCommand: boolean = TOOLBAR_SUPPORTED_COMMAND_IDS.includes(command.id);
+    const isSupportedCommand: boolean = TOOLBAR_COMMAND_IDS.includes(command.id);
     const isOnToolbar: boolean = toolbarCommandIds.includes(command.id);
 
     return !isEditorCommand && !isSupportedCommand && !isOnToolbar;
