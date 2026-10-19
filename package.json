@@ -18,7 +18,7 @@
     "ts-check": "tsc -noEmit -skipLibCheck",
     "lint": "eslint .",
     "test": "vitest run --config vitest.config.ts",
-    "version": "node version-bump.mjs && git add manifest.json versions.json"
+    "version": "node scripts/version-bump.mjs && git add manifest.json versions.json"
   },
   "dependencies": {
     "yaml": "2.9.1"
