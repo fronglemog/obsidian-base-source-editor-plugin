@@ -24,18 +24,22 @@ import type {
 
 import { getIndentUnit } from '@codemirror/language';
 
-/* ================================================== */
+/* ========================= INDENTATION GUIDES ========================= */
 
 /**
- * One decoration per indent depth. Neighbouring marks with equal specs can be joined into
- * a single span, which would draw one guide instead of two, so each depth gets its own attribute.
+ * Mark decorations for indentation guides, by indent depth. Created on first use.
+ *
+ * @remarks
+ * Each depth has its own `data-indent` attribute. CodeMirror joins neighbouring marks with equal specs
+ * into one span, which would draw one guide instead of two.
  */
 const indentDecorations: Decoration[] = [];
 
 /**
+ * Gets the mark decoration for an indent depth.
  *
- * @param depth -
- * @returns
+ * @param depth - Indent depth, from 0.
+ * @returns The decoration.
  */
 function getIndentDecoration(depth: number): Decoration {
   let decoration: Decoration | undefined = indentDecorations[depth];
@@ -52,9 +56,10 @@ function getIndentDecoration(depth: number): Decoration {
 }
 
 /**
+ * Counts the spaces at the start of a string.
  *
- * @param text -
- * @returns
+ * @param text - Text to check.
+ * @returns The number of leading spaces.
  */
 function countLeadingSpaces(text: string): number {
   let count: number = 0;
@@ -67,10 +72,11 @@ function countLeadingSpaces(text: string): number {
 }
 
 /**
+ * Adds a mark for each indent level of a line.
  *
- * @param builder -
- * @param line -
- * @param indentWidth -
+ * @param builder - Builder to add the marks to.
+ * @param line - The line.
+ * @param indentWidth - Number of spaces per indent level.
  */
 function addLineIndentDecorations(builder: RangeSetBuilder<Decoration>, line: Line, indentWidth: number): void {
   const lineDepth: number = Math.floor(countLeadingSpaces(line.text) / indentWidth);
@@ -86,9 +92,10 @@ function addLineIndentDecorations(builder: RangeSetBuilder<Decoration>, line: Li
 }
 
 /**
+ * Creates the indentation guide marks for the visible lines.
  *
- * @param view -
- * @returns
+ * @param view - The editor.
+ * @returns The marks.
  */
 function getIndentDecorations(view: EditorView): DecorationSet {
   const doc: Text = view.state.doc;
@@ -108,7 +115,7 @@ function getIndentDecorations(view: EditorView): DecorationSet {
 }
 
 /**
- *
+ * Draws indentation guides on the visible lines.
  */
 const indentationGuides: Extension = ViewPlugin.fromClass(class {
   decorations: DecorationSet;
@@ -128,8 +135,10 @@ const indentationGuides: Extension = ViewPlugin.fromClass(class {
 });
 
 /**
- * 
- * @returns 
+ * Gets the indentation guide extensions.
+ *
+ * @param extensionEnabled - Whether indentation guides are on.
+ * @returns The extensions, or none if `extensionEnabled` is `false`.
  */
 export function getIndentationGuidesExtensions(extensionEnabled: boolean): Extension {
   if (extensionEnabled === false) {

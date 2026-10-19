@@ -22,7 +22,8 @@ import {
 } from '@codemirror/state';
 
 import type {
-  ChangeSpec
+  ChangeSpec,
+  Extension
 } from '@codemirror/state';
 
 import {
@@ -43,7 +44,7 @@ import {
   indentWithTab
 } from '@codemirror/commands';
 
-import { 
+import {
   bracketMatching,
   indentUnit
 } from '@codemirror/language';
@@ -66,6 +67,11 @@ import { activeLineHighlight } from 'src/EditorExtensions/activeLine';
 import { getIndentationGuidesExtensions } from 'src/EditorExtensions/indentationGuides';
 import { getLineWrapExtensions } from 'src/EditorExtensions/lineWrap';
 import { getRenderWhitespaceExtensions } from 'src/EditorExtensions/renderWhitespace';
+import {
+  getAutocompleteExtensions,
+  isAutocompleteEnabled
+} from 'src/EditorExtensions/autocompleteExtension';
+
 import { getDocumentChange } from 'src/getDocumentChange';
 import { handleTouchEditorScroll } from 'src/Mobile/handleTouchEditorScroll';
 
@@ -77,13 +83,15 @@ const YAML_INDENT = '  ';
 
 export class BaseSourceView extends TextFileView {
   private plugin: BasesSourceEditorPlugin;
-  
-  private editor: EditorView | null = null
+
+  private editor: EditorView | null = null;
   private lineWrapCompartment: Compartment = new Compartment();
   private indentationGuidesCompartment: Compartment = new Compartment();
   private renderWhitespaceCompartment: Compartment = new Compartment();
   private remeasureCompartment: Compartment = new Compartment();
   private searchBar: BaseSourceSearchBar | null = null;
+  private autocompleteCompartment: Compartment = new Compartment();
+  private hasAutocomplete: boolean = false;
 
   constructor(plugin: BasesSourceEditorPlugin, leaf: WorkspaceLeaf) {
     super(leaf);
@@ -115,11 +123,14 @@ export class BaseSourceView extends TextFileView {
   }
 
   /**
-   * Updates the view after file contents change.
-   * Handles content changes while preserving undo history.
+   * Sets the editor's content from the file.
+   *
+   * @remarks
+   * When the file changes outside the editor, only the changed part is replaced,
+   * as a remote change that isn't added to the undo history.
    *
    * @param data - File contents.
-   * @param clear - Whether to reset editor state history.
+   * @param clear - Whether a different file was opened, which resets the editor state and its history.
    */
   setViewData(data: string, clear: boolean): void {
     this.data = data;
@@ -190,10 +201,12 @@ export class BaseSourceView extends TextFileView {
   }
 
   /**
-   * Makes a scope handle key presses, like the markdown view does for its search.
-   * Only setting `this.scope` isn't enough, because Obsidian doesn't push a view's scope when it becomes active.
+   * Replaces the view's scope on Obsidian's keymap, as the Markdown view does for its search.
    *
-   * @param scope - Scope to push, or null to pop the current one.
+   * @remarks
+   * Setting `this.scope` alone isn't enough: Obsidian doesn't push a view's scope when the view becomes active.
+   *
+   * @param scope - Scope to push, or `null` to pop the current one.
    */
   private applyScope(scope: Scope | null): void {
     const app: App = this.plugin.app;
@@ -212,10 +225,10 @@ export class BaseSourceView extends TextFileView {
   }
 
   /**
-   * Wraps the editor content and gutter in Obsidian's editor layout elements.
-   * Uses the class names expected by Obsidian's editor styles and themes.
+   * Wraps the editor's content and gutters in the same layout elements as Obsidian's Markdown editor,
+   * so Obsidian's editor styles and themes apply.
    *
-   * @param editor - Editor whose content should be wrapped.
+   * @param editor - The editor.
    */
   private wrapEditorContent(editor: EditorView): void {
     const scrollerEl: HTMLElement = editor.scrollDOM;
@@ -235,9 +248,9 @@ export class BaseSourceView extends TextFileView {
   }
 
   /**
-   * Whether the editor has focus. 
+   * Returns whether the editor has focus.
    *
-   * @returns `True` if the editor has focus, `false` otherwise.
+   * @returns `true` if the editor has focus.
    */
   hasEditorFocus(): boolean {
     const hasEditorFocus: boolean = this.editor?.hasFocus ?? false;
@@ -245,7 +258,7 @@ export class BaseSourceView extends TextFileView {
   }
 
   /**
-   * Runs a command on the editor.
+   * Runs a CodeMirror command on the editor.
    *
    * @param command - Command to run.
    */
@@ -257,8 +270,8 @@ export class BaseSourceView extends TextFileView {
   }
 
   /**
-   * Adds space below the document so the last line can scroll towards the middle of the view.
-   * Accounts for height of the keyboard on mobile.
+   * Adds space below the document, so the last line can scroll up to the middle of the view.
+   * On mobile, the keyboard's height is included.
    */
   private updateBottomPadding(): void {
     if (this.editor == null || this.containerEl.offsetParent == null) {
@@ -280,9 +293,6 @@ export class BaseSourceView extends TextFileView {
     });
   }
 
-  /**
-   * 
-   */
   override async onClose(): Promise<void> {
     this.applyScope(null);
     this.searchBar = null;
@@ -295,9 +305,10 @@ export class BaseSourceView extends TextFileView {
   }
 
   /**
-   * 
-   * @param doc -
-   * @returns 
+   * Creates the editor state for a document, with all of the editor's extensions.
+   *
+   * @param doc - Document text.
+   * @returns The editor state.
    */
   private createEditorState(doc: string): EditorState {
     const editorState: EditorState = EditorState.create({
@@ -307,6 +318,7 @@ export class BaseSourceView extends TextFileView {
         yamlSyntaxHighlighting,
         bracketMatching(),
         closeBrackets(),
+        this.autocompleteCompartment.of(this.getAutocompleteExtensionsForSettings()),
         lineNumbers(),
         activeLineHighlight,
         history(),
@@ -330,11 +342,10 @@ export class BaseSourceView extends TextFileView {
   }
 
   /**
-   * Requests a save when an editor update contains a local document change.
-   * Transactions marked as remote are ignored to avoid saving changes
-   * made outside of the Base Source editor.
+   * Requests a save when an editor update changes the document.
+   * Remote changes, made by {@link BaseSourceView.setViewData}, are ignored, because they come from the file.
    *
-   * @param update - Editor update to inspect.
+   * @param update - Editor update.
    */
   private onEditorUpdate(update: ViewUpdate): void {
     const hasLocalChange: boolean = update.transactions.some((tx: Transaction): boolean => {
@@ -351,7 +362,7 @@ export class BaseSourceView extends TextFileView {
   }
 
   /**
-   * 
+   * Applies the "Custom font size" and "Font size" settings.
    */
   updateFontSize(): void {
     const isCustomFontSize: boolean = this.plugin.settings.fontCustomSize;
@@ -365,9 +376,10 @@ export class BaseSourceView extends TextFileView {
   }
 
   /**
-   * Force the CodeMirror editor to re-measure layout after any CSS changes it can't auto-detect.
-   * Required to remeasure line height after changes to font size.
-   * Takes advantage of the fact that changes to a theme forces re-measure, by swapping in an empty theme.
+   * Makes the editor re-measure its layout after a CSS change it can't detect, such as a new font size.
+   *
+   * @remarks
+   * Reconfiguring a theme forces CodeMirror to re-measure, so an empty theme is swapped in.
    */
   private remeasureLayout(): void {
     this.editor?.dispatch({
@@ -376,7 +388,7 @@ export class BaseSourceView extends TextFileView {
   }
 
   /**
-   * 
+   * Applies the "Line wrapping" setting.
    */
   updateLineWrap(): void {
     const shouldLineWrap: boolean = this.plugin.settings.lineWrap;
@@ -388,7 +400,7 @@ export class BaseSourceView extends TextFileView {
   }
 
   /**
-   * Limits the text to `--file-line-width` when the plugin's "Readable line length" setting is on.
+   * Applies the "Readable line length" setting, which limits the text to `--file-line-width`.
    */
   updateReadableLineWidth(): void {
     const isReadableLineWidth: boolean = this.plugin.settings.readableLineLength;
@@ -396,7 +408,7 @@ export class BaseSourceView extends TextFileView {
   }
 
   /**
-   * 
+   * Applies the indentation guide settings.
    */
   updateIndentationGuides(): void {
     this.editor?.dispatch({
@@ -406,8 +418,7 @@ export class BaseSourceView extends TextFileView {
   }
 
   /**
-   * Replaces the theme's indentation guide colour with the plugin's custom colour and opacity
-   * when the plugin's "Custom indentation guide colour" setting is on.
+   * Applies the custom indentation guide colour and opacity, when "Enable custom indentation guide style" is on.
    */
   private updateIndentationGuideColour(): void {
     const isCustomStyle: boolean = this.plugin.settings.indentationGuideCustomStyle;
@@ -422,7 +433,7 @@ export class BaseSourceView extends TextFileView {
   }
 
   /**
-   * 
+   * Applies the whitespace rendering settings.
    */
   updateRenderWhitespace(): void {
     this.editor?.dispatch({
@@ -432,8 +443,10 @@ export class BaseSourceView extends TextFileView {
   }
 
   /**
-   * Sets the CSS variable for the opacity of rendered whitespace from the plugin's settings.
-   * It's inline on the view, so it takes priority over values set in CSS snippets.
+   * Applies the "Whitespace opacity" setting.
+   *
+   * @remarks
+   * The CSS variable is set inline on the view, so it takes priority over values set in CSS snippets.
    */
   private updateWhitespaceOpacity(): void {
     const whitespaceOpacity: number = this.plugin.settings.whitespaceOpacity;
@@ -443,10 +456,37 @@ export class BaseSourceView extends TextFileView {
   }
 
   /**
-   * Adds actions to the Base Source Editor pane menu.
-   * 
-   * @param menu -
-   * @param source -
+   * Applies the "Autocomplete" setting.
+   *
+   * @remarks
+   * Only reconfigures when autocomplete is turned on or off: every settings change calls this,
+   * and reconfiguring would close an open popup.
+   */
+  updateAutocomplete(): void {
+    if (isAutocompleteEnabled(this.plugin.settings) === this.hasAutocomplete) {
+      return;
+    }
+
+    this.editor?.dispatch({
+      effects: this.autocompleteCompartment.reconfigure(this.getAutocompleteExtensionsForSettings())
+    });
+  }
+
+  /**
+   * Gets the autocomplete extensions for the current settings, and records whether autocomplete is on.
+   *
+   * @returns The extensions, or none if autocomplete is off.
+   */
+  private getAutocompleteExtensionsForSettings(): Extension[] {
+    this.hasAutocomplete = isAutocompleteEnabled(this.plugin.settings);
+    return this.hasAutocomplete ? getAutocompleteExtensions(this.plugin) : [];
+  }
+
+  /**
+   * Adds "Find..." and "Replace..." to the view's menu.
+   *
+   * @param menu - The menu.
+   * @param source - What opened the menu.
    */
   override onPaneMenu(menu: Menu, source: string): void {
     super.onPaneMenu(menu, source);
@@ -467,7 +507,9 @@ export class BaseSourceView extends TextFileView {
   }
 
   /**
-   * Opens the search bar. 
+   * Opens the search bar.
+   *
+   * @remarks
    * Obsidian's "Search current file" command calls this on any active view that has a `showSearch` method.
    *
    * @param replace - Whether to show the replace row.

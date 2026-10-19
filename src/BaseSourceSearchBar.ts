@@ -1,4 +1,5 @@
 /* ========================= IMPORTS ========================= */
+/* OBSIDIAN */
 import {
   ButtonComponent,
   Keymap,
@@ -13,7 +14,9 @@ import type {
   KeymapContext
 } from 'obsidian';
 
+/* CODEMIRROR */
 import { SearchCursor } from '@codemirror/search';
+import { completionStatus } from '@codemirror/autocomplete';
 
 import {
   EditorSelection,
@@ -23,7 +26,9 @@ import {
 
 import type {
   ChangeSpec,
-  StateEffectType
+  SelectionRange,
+  StateEffectType,
+  Text
 } from '@codemirror/state';
 
 import {
@@ -32,17 +37,18 @@ import {
 } from '@codemirror/view';
 
 import type { DecorationSet } from '@codemirror/view';
+
+/* PLUGIN */
 import type BasesSourceEditorPlugin from 'src/main';
 
 /* ========================= BaseSourceSearchBar ========================= */
-interface SearchMatch {
-  from: number;
-  to: number;
-}
 
 const setSearchHighlights: StateEffectType<SearchMatch[]> = StateEffect.define<SearchMatch[]>();
 const searchMatchDecoration: Decoration = Decoration.mark({ class: 'obsidian-search-match-highlight' });
 
+/**
+ * Highlights the current search match in the Base Source editor.
+ */
 export const searchHighlightField: StateField<DecorationSet> = StateField.define<DecorationSet>({
   create: (): DecorationSet => Decoration.none,
 
@@ -62,11 +68,14 @@ export const searchHighlightField: StateField<DecorationSet> = StateField.define
   provide: (field) => EditorView.decorations.from(field)
 });
 
+/**
+ * Search bar for a Base Source editor, built from the same elements as the Obsidian's native search bar for Markdown notes.
+ */
 export class BaseSourceSearchBar {
   private plugin: BasesSourceEditorPlugin;
 
   readonly scope: Scope;
-  
+
   private editor: EditorView;
   private parentEl: HTMLElement;
   private applyScope: (scope: Scope | null) => void;
@@ -82,10 +91,16 @@ export class BaseSourceSearchBar {
   private caseSensitive: boolean = false;
   private currentMatch: SearchMatch | null = null;
 
-  // Where next/previous searches start: the selection when the query was typed, then the current match
+  // Document range for the next/previous searches
   private searchFrom: number = 0;
   private searchTo: number = 0;
 
+  /**
+   * @param plugin - The Base Source Editor plugin.
+   * @param editor - Editor to search.
+   * @param parentEl - Element to show the search bar in.
+   * @param applyScope - Called with the search bar's scope when it opens, and with `null` when it closes.
+   */
   constructor(plugin: BasesSourceEditorPlugin, editor: EditorView, parentEl: HTMLElement, applyScope: (scope: Scope | null) => void) {
     this.plugin = plugin;
 
@@ -116,10 +131,28 @@ export class BaseSourceSearchBar {
     const searchButtonsEl: HTMLElement = searchRowEl.createDiv();
     searchButtonsEl.addClass('document-search-buttons');
 
-    this.createButton(searchButtonsEl, 'lucide-arrow-up', 'Previous\nShift + F3', () => this.findPrevious());
-    this.createButton(searchButtonsEl, 'lucide-arrow-down', 'Next\nF3', () => this.findNext());
-    // Replaces the native "Find all" button. Same icon and label as the PDF viewer's match case toggle
-    const caseSensitiveButton: ButtonComponent = this.createButton(searchButtonsEl, 'uppercase-lowercase-a', 'Match case', () => this.toggleCaseSensitive());
+    createSearchBarButton(
+      searchButtonsEl,
+      'lucide-arrow-up',
+      'Previous\nShift + F3',
+      () => this.findPrevious()
+    );
+
+    createSearchBarButton(
+      searchButtonsEl,
+      'lucide-arrow-down',
+      'Next\nF3',
+      () => this.findNext()
+    );
+    
+    // Replaces the native "Find all" button
+    const caseSensitiveButton: ButtonComponent = createSearchBarButton(
+      searchButtonsEl,
+      'uppercase-lowercase-a',
+      'Match case',
+      () => this.toggleCaseSensitive()
+    );
+
     this.caseSensitiveButtonEl = caseSensitiveButton.buttonEl;
     this.caseSensitiveButtonEl.setAttr('aria-pressed', 'false');
 
@@ -143,9 +176,20 @@ export class BaseSourceSearchBar {
 
     const replaceButtonsEl: HTMLElement = replaceRowEl.createDiv();
     replaceButtonsEl.addClass('document-replace-buttons');
-    
-    this.createButton(replaceButtonsEl, 'lucide-replace', 'Replace\nEnter', () => this.replaceCurrentMatch());
-    this.createButton(replaceButtonsEl, 'lucide-replace-all', 'Replace all\nCtrl + Alt + Enter', () => this.replaceAll());
+
+    createSearchBarButton(
+      replaceButtonsEl,
+      'lucide-replace',
+      'Replace\nEnter',
+      () => this.replaceCurrentMatch()
+    );
+
+    createSearchBarButton(
+      replaceButtonsEl,
+      'lucide-replace-all',
+      'Replace all\nCtrl + Alt + Enter',
+      () => this.replaceAllMatches()
+    );
 
     // Null modifiers and key match every key press, like Obsidian's own scope for hotkeys
     this.scope.register(null, null, (evt: KeyboardEvent, ctx: KeymapContext) => this.handleKeyDown(evt, ctx));
@@ -174,8 +218,7 @@ export class BaseSourceSearchBar {
   }
 
   /**
-   * 
-   * @returns 
+   * Closes the search bar, clears its highlights and returns focus to the editor.
    */
   hide(): void {
     if (!this.isActive) {
@@ -199,13 +242,12 @@ export class BaseSourceSearchBar {
   }
 
   /* ========================= Keys ========================= */
-
   /**
    * Handles key presses while the search bar is open.
    *
    * @param evt - Key press event.
    * @param ctx - The pressed key. `vkey` is used because `key` is lowercase for letters.
-   * @returns false if the key was handled, or undefined to pass it on to Obsidian's hotkeys.
+   * @returns `false` if the key was handled, or `undefined` to pass it on to Obsidian's hotkey handler.
    */
   private handleKeyDown(evt: KeyboardEvent, ctx: KeymapContext): false | undefined {
     // Handle instances where IME (input method editor) is composing - for non-English languages.
@@ -244,14 +286,16 @@ export class BaseSourceSearchBar {
       return false;
     }
 
-    // Close: Escape
+    // Close: Escape. While autocomplete is open or about to open, Escape is passed on to CodeMirror, which closes it
     if (modifiers === '' && key === 'Escape') {
+      if (completionStatus(this.editor.state) != null) {
+        return undefined;
+      }
       this.hide();
       return false;
     }
 
-    // Enter keys only act while typing in the search bar, so they still reach the editor otherwise
-
+    // Enter key - only effective while search bar has focus
     // Next match or replace: Enter
     if (modifiers === '' && key === 'Enter' && inputFocused) {
       // Like the markdown editor, Enter replaces only from a non-empty replace input
@@ -270,9 +314,9 @@ export class BaseSourceSearchBar {
       return false;
     }
 
-    // Replace all: Mod + Alt + Enter, from the replace input
+    // Replace all: Mod + Alt + Enter
     if (modifiers === 'Mod+Alt' && key === 'Enter' && this.isReplace && this.replaceInputEl.isActiveElement()) {
-      this.replaceAll();
+      this.replaceAllMatches();
       return false;
     }
 
@@ -287,7 +331,7 @@ export class BaseSourceSearchBar {
       return false;
     }
 
-    // Not a search bar key, so let Obsidian's hotkeys handle it
+    // Else... not a search bar key, so let Obsidian deal with it
     return undefined;
   }
 
@@ -296,12 +340,11 @@ export class BaseSourceSearchBar {
   }
 
   /* ========================= Find ========================= */
-
   /**
-   * 
+   * Searches again from the selection, after the query or the "Match case" option changes.
    */
   private onSearchInput(): void {
-    const selection = this.editor.state.selection.main;
+    const selection: SelectionRange = this.editor.state.selection.main;
     this.searchFrom = selection.from;
     this.searchTo = selection.to;
 
@@ -312,48 +355,28 @@ export class BaseSourceSearchBar {
   }
 
   /**
-   * 
+   * Moves to the next match, wrapping around the first match.
    */
   private findNext(): void {
-    const matches: SearchMatch[] = this.getMatches();
+    const matches: SearchMatch[] = getMatches(this.editor.state.doc, this.searchInputEl.value, this.caseSensitive);
     const match: SearchMatch | null = matches.find((m: SearchMatch) => m.from >= this.searchTo) ?? matches[0] ?? null;
     this.setCurrentMatch(match, matches);
   }
 
   /**
-   * 
+   * Moves to the previous match, wrapping around to the last match.
    */
   private findPrevious(): void {
-    const matches: SearchMatch[] = this.getMatches();
+    const matches: SearchMatch[] = getMatches(this.editor.state.doc, this.searchInputEl.value, this.caseSensitive);
     const match: SearchMatch | null = matches.findLast((m: SearchMatch) => m.to <= this.searchFrom) ?? matches.at(-1) ?? null;
     this.setCurrentMatch(match, matches);
   }
 
   /**
-   * 
-   * @returns 
-   */
-  private getMatches(): SearchMatch[] {
-    const query: string = this.searchInputEl.value;
-    if (query === '') {
-      return [];
-    }
-
-    const doc = this.editor.state.doc;
-    const normalize: ((text: string) => string) | undefined = this.caseSensitive ? undefined : (text: string) => text.toLowerCase();
-    const cursor: SearchCursor = new SearchCursor(doc, query, 0, doc.length, normalize);
-
-    const matches: SearchMatch[] = [];
-    while (!cursor.next().done) {
-      matches.push({ from: cursor.value.from, to: cursor.value.to });
-    }
-    return matches;
-  }
-
-  /**
-   * 
-   * @param match -
-   * @param matches -
+   * Sets the current match, highlights it in the editor and updates the result count.
+   *
+   * @param match - The new current match.
+   * @param matches - All matches.
    */
   private setCurrentMatch(match: SearchMatch | null, matches: SearchMatch[]): void {
     this.currentMatch = match;
@@ -363,12 +386,13 @@ export class BaseSourceSearchBar {
     }
 
     this.highlight(match == null ? [] : [match]);
-    this.updateCount(match, matches);
+    this.updateMatchCount(match, matches);
   }
 
   /**
-   * 
-   * @param matches -
+   * Highlights matches, and scrolls the first one into view.
+   *
+   * @param matches - Matches to highlight. Empty to clear the highlights.
    */
   private highlight(matches: SearchMatch[]): void {
     const effects: StateEffect<unknown>[] = [setSearchHighlights.of(matches)];
@@ -381,7 +405,13 @@ export class BaseSourceSearchBar {
     this.editor.dispatch({ effects });
   }
 
-  private updateCount(match: SearchMatch | null, matches: SearchMatch[]): void {
+  /**
+   * Updates the "current / total" match count.
+   *
+   * @param match - The current match.
+   * @param matches - All matches.
+   */
+  private updateMatchCount(match: SearchMatch | null, matches: SearchMatch[]): void {
     const index: number = match == null ? 0 : matches.findIndex((m: SearchMatch) => m.from === match.from) + 1;
     const total: number = match == null ? 0 : matches.length;
 
@@ -392,8 +422,7 @@ export class BaseSourceSearchBar {
   /* ========================= Replace ========================= */
 
   /**
-   * 
-   * @returns 
+   * Replaces the current match, then moves to the next one.
    */
   private replaceCurrentMatch(): void {
     const match: SearchMatch | null = this.currentMatch;
@@ -403,7 +432,7 @@ export class BaseSourceSearchBar {
 
     // The document may have been edited since the match was found
     const matchedText: string = this.editor.state.sliceDoc(match.from, match.to);
-    if (!this.matchesQuery(matchedText)) {
+    if (!matchesQuery(matchedText, this.searchInputEl.value, this.caseSensitive)) {
       this.findNext();
       return;
     }
@@ -420,12 +449,12 @@ export class BaseSourceSearchBar {
   }
 
   /**
-   * 
-   * @returns 
+   * Replaces every match.
    */
-  private replaceAll(): void {
+  private replaceAllMatches(): void {
     const replacement: string = this.replaceInputEl.value;
-    const changes: ChangeSpec[] = this.getMatches().map((m: SearchMatch) => ({ from: m.from, to: m.to, insert: replacement }));
+    const matches: SearchMatch[] = getMatches(this.editor.state.doc, this.searchInputEl.value, this.caseSensitive);
+    const changes: ChangeSpec[] = matches.map((m: SearchMatch) => ({ from: m.from, to: m.to, insert: replacement }));
     if (changes.length === 0) {
       return;
     }
@@ -435,43 +464,7 @@ export class BaseSourceSearchBar {
   }
 
   /**
-   * 
-   * @param text -
-   * @returns 
-   */
-  private matchesQuery(text: string): boolean {
-    const query: string = this.searchInputEl.value;
-
-    if (this.caseSensitive) {
-      return text === query;
-    }
-    return text.toLowerCase() === query.toLowerCase();
-  }
-
-  /**
-   * 
-   * @param parentEl -
-   * @param icon -
-   * @param tooltip -
-   * @param onClick -
-   * @returns 
-   */
-  private createButton(parentEl: HTMLElement, icon: IconName, tooltip: string, onClick: () => void): ButtonComponent {
-    const button: ButtonComponent = new ButtonComponent(parentEl);
-    button.setIcon(icon);
-    button.setTooltip(tooltip, { placement: 'top' });
-    button.setClass('clickable-icon');
-    button.setClass('document-search-button');
-    button.onClick(onClick);
-
-    // Keep focus in the input when a button is clicked
-    button.buttonEl.addEventListener('mousedown', (evt: MouseEvent) => evt.preventDefault());
-
-    return button;
-  }
-
-  /**
-   * 
+   * Turns the "Match case" option on or off, then searches again.
    */
   private toggleCaseSensitive(): void {
     this.caseSensitive = !this.caseSensitive;
@@ -481,5 +474,75 @@ export class BaseSourceSearchBar {
     // Re-run the search with the new setting
     this.onSearchInput();
   }
-
 }
+
+/**
+ * Returns whether text matches a given search query string.
+ *
+ * @param text - Text to check against the query.
+ * @param query - The search query.
+ * @param caseSensitive - Whether the match should be case sensitive.
+ * @returns `true` if `text` matches the query.
+ */
+function matchesQuery(text: string, query: string, caseSensitive: boolean): boolean {
+  if (caseSensitive) {
+    return text === query;
+  }
+  else {
+    return text.toLowerCase() === query.toLowerCase();
+  }
+}
+
+/**
+ * Finds every match of the search query in the document.
+ * 
+ * @param doc - The document to search.
+ * @param query - The search query.
+ * @param caseSensitive - Whether the match should be case sensitive.
+ * @returns The matches, in order found in the document.
+ */
+function getMatches(doc: Text, query: string, caseSensitive: boolean): SearchMatch[] {
+  if (query === '') {
+    return [];
+  }
+
+  const normalize: ((text: string) => string) | undefined = caseSensitive ? undefined : (text: string) => text.toLowerCase();
+  const cursor: SearchCursor = new SearchCursor(doc, query, 0, doc.length, normalize);
+
+  const matches: SearchMatch[] = [];
+  while (!cursor.next().done) {
+    matches.push({ from: cursor.value.from, to: cursor.value.to });
+  }
+  return matches;
+}
+
+/**
+ * Creates a search bar button that does not take focus from other elements when clicked.
+ *
+ * @param parentEl - Element to add the button to.
+ * @param icon - Icon to show.
+ * @param tooltip - Tooltip text.
+ * @param onClick - Called when the button is clicked.
+ * @returns The button.
+ */
+function createSearchBarButton(parentEl: HTMLElement, icon: IconName, tooltip: string, onClick: () => void): ButtonComponent {
+  const button: ButtonComponent = new ButtonComponent(parentEl);
+  button.setIcon(icon);
+  button.setTooltip(tooltip, { placement: 'top' });
+  button.setClass('clickable-icon');
+  button.setClass('document-search-button');
+  button.onClick(onClick);
+
+  // Do not take focus when clicked
+  button.buttonEl.addEventListener('mousedown', (evt: MouseEvent) => evt.preventDefault());
+
+  return button;
+}
+
+/**
+ * A search match: a range of document positions.
+ */
+type SearchMatch = {
+  from: number;
+  to: number;
+};

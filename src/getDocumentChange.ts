@@ -1,15 +1,17 @@
 /* ========================= IMPORTS ========================= */
+/* CODEMIRROR */
 import type {
   ChangeSpec
 } from '@codemirror/state';
 
+/* ============================================================ */
+
 /**
- * Finds a single replacement that transforms the current text into
- * the incoming text, excluding their shared prefix and suffix.
+ * Describes the change to apply to the current text, to match into the incoming text.
  *
- * @param currentData - The CodeMirror editor's current document data.
- * @param incomingData - Replacement data, with normalised line endings.
- * @returns The change to apply to the Editor document, or null if `currentData` is the same as `incomingData`.
+ * @param currentData - The editor's current document text.
+ * @param incomingData - The new text, with normalised line endings.
+ * @returns The change to apply to the editor's document, or `null` if the texts are the same.
  */
 export function getDocumentChange(currentData: string, incomingData: string): ChangeSpec | null {
   if (currentData === incomingData) {

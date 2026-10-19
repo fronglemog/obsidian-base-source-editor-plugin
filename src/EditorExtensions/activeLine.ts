@@ -1,4 +1,5 @@
 /* ========================= IMPORTS ========================= */
+/* CODEMIRROR */
 import { RangeSet } from '@codemirror/state';
 
 import type {
@@ -19,11 +20,16 @@ import type {
   ViewUpdate
 } from '@codemirror/view';
 
-
-/* ================================================== */
+/* ========================= ACTIVE LINE ========================= */
 
 const activeLineDecoration: Decoration = Decoration.line({ class: 'cm-active' });
 
+/**
+ * Creates a line decoration for each line that has a cursor.
+ *
+ * @param view - The editor.
+ * @returns The decorations.
+ */
 function getActiveLineDecorations(view: EditorView): DecorationSet {
   const decorations: Range<Decoration>[] = [];
   let lastLineFrom: number = -1;
@@ -78,7 +84,7 @@ const activeLineGutter: Extension = gutterLineClass.compute(['selection'], (stat
 
 /**
  * Highlights the line of each cursor, in both the editor content and the line number gutter.
- * Uses Obsidian's `cm-active` class, so themes style it like the markdown editor's active line.
+ * Uses Obsidian's `cm-active` class.
  */
 export const activeLineHighlight: Extension = [
   activeLineGutter,

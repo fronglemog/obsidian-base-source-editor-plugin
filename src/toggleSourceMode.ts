@@ -1,20 +1,22 @@
 /* ========================= IMPORTS ========================= */
+/* OBSIDIAN */
 import type {
   FileView,
   TFile
 } from 'obsidian';
 
-import { 
+/* PLUGIN */
+import {
   VIEW_TYPE_BASES,
   VIEW_TYPE_BASES_SOURCE
 } from 'src/BaseSourceView';
 
-/* ======================================================= */
+/* ============================================================ */
 
 /**
- * 
- * @param view - 
- * @returns 
+ * Switches a `.base` file between the Bases view and the Base Source view.
+ *
+ * @param view - A Bases or Base Source view.
  */
 export function toggleSourceMode(view: FileView) {
   const viewType: string = view.getViewType();

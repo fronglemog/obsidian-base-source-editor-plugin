@@ -1,4 +1,5 @@
 /* ========================= IMPORTS ========================= */
+/* OBSIDIAN */
 import { FuzzySuggestModal } from 'obsidian';
 
 import type {
@@ -6,10 +7,14 @@ import type {
   FuzzyMatch
 } from 'obsidian';
 
+/* PLUGIN */
 import type BasesSourceEditorPlugin from 'src/main';
 
-/* ========================= CommandSuggestModal ========================= */
+/* ========================= CommandSuggester ========================= */
 
+/**
+ * Fuzzy search modal for picking a command. Opened through {@link commandSuggester}.
+ */
 class CommandSuggester extends FuzzySuggestModal<Command> {
   private plugin: BasesSourceEditorPlugin;
 

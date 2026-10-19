@@ -8,9 +8,13 @@ import type {
   Extension
 } from '@codemirror/state';
 
+/* ========================= LINE WRAP ========================= */
+
 /**
- * 
- * @returns 
+ * Gets the line wrapping extensions.
+ *
+ * @param extensionEnabled - Whether line wrapping is on.
+ * @returns The extensions, or none if `extensionEnabled` is `false`.
  */
 export function getLineWrapExtensions(extensionEnabled: boolean): Extension {
   if (extensionEnabled === false) {

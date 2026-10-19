@@ -1,34 +1,38 @@
 /* ========================= IMPORTS ========================= */
+/* OBSIDIAN */
 import {
   FileView,
   Platform,
-	Plugin,
+  Plugin,
 } from 'obsidian';
 
 import type {
   App,
-	WorkspaceLeaf,
+  WorkspaceLeaf,
 } from 'obsidian';
 
+/* PLUGIN */
 import { PLUGIN_DEFAULT_SETTINGS } from 'src/Settings/PluginSettings';
 import type { PluginSettings } from 'src/Settings/PluginSettings';
 import { BasesSourceEditorPluginSettingsTab } from 'src/Settings/SettingsTab';
-import { 
+import {
   VIEW_TYPE_BASES_SOURCE,
   BaseSourceView
 } from 'src/BaseSourceView';
 import { ViewActionsManager } from 'src/ViewActionsManager';
 import { toggleSourceMode } from 'src/toggleSourceMode';
 import { BaseYamlLanguage } from 'src/BaseYamlLanguage/BaseYamlLanguage';
+import { NativeFormulaSupport } from 'src/Autocompletion/NativeFormulaSupport';
 import { BaseSourceMobileToolbar } from 'src/Mobile/BaseSourceMobileToolbar';
 import { patchEditorCommands } from 'src/EditorCommands/patchEditorCommands';
 import { objectMerge } from 'src/Util/objectMerge';
 
 /* ========================= BasesSourceEditorPlugin ========================= */
 export default class BasesSourceEditorPlugin extends Plugin {
-	declare settings: PluginSettings;
+  declare settings: PluginSettings;
 
   baseYamlLanguage!: BaseYamlLanguage;
+  nativeFormulaSupport!: NativeFormulaSupport;
   mobileToolbar: BaseSourceMobileToolbar | null = null;
 
   /* Load plugin */
@@ -36,7 +40,7 @@ export default class BasesSourceEditorPlugin extends Plugin {
     /* Register commands */
     this.registerPluginCommands();
     patchEditorCommands(this);
-    
+
     /* Load plugin settings */
     await this.loadSettings();
 
@@ -45,6 +49,7 @@ export default class BasesSourceEditorPlugin extends Plugin {
 
     /* Register Base YAML language support */
     this.baseYamlLanguage = new BaseYamlLanguage();
+    this.nativeFormulaSupport = new NativeFormulaSupport(this.app, this.baseYamlLanguage);
 
     /* Register view */
     this.registerView(
@@ -103,7 +108,7 @@ export default class BasesSourceEditorPlugin extends Plugin {
   }
 
   /**
-   * 
+   * Applies the current settings to every open Base Source view.
    */
   updateBaseSourceViews(): void {
     const app: App = this.app;
@@ -115,6 +120,7 @@ export default class BasesSourceEditorPlugin extends Plugin {
         leaf.view.updateReadableLineWidth();
         leaf.view.updateIndentationGuides();
         leaf.view.updateRenderWhitespace();
+        leaf.view.updateAutocomplete();
       }
     }
   }

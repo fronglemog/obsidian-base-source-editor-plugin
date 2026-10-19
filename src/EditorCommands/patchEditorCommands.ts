@@ -36,10 +36,7 @@ import {
 /* ========================= PATCHED COMMANDS ========================= */
 
 /**
- * Obsidian commands that also work in a Base Source view, and what each does there.
- * Most are editor commands, which only work in markdown editors, so they're patched to run
- * the matching CodeMirror command instead. They keep Obsidian's names, icons and hotkeys.
- * Commands that don't exist on this platform, such as Copy on desktop, are skipped.
+ * Editor commands, which only work in markdown editors, are patched to run a the matching CodeMirror command instead. 
  */
 const PATCHED_COMMANDS: Record<string, (view: BaseSourceView) => void> = {
   // 'editor:open-search' does not need to be patched - Obsidian already runs it on any active view with a `showSearch` method.
@@ -78,8 +75,8 @@ const PATCHED_COMMANDS: Record<string, (view: BaseSourceView) => void> = {
  * @param plugin - Plugin that owns the patches.
  */
 export function patchEditorCommands(plugin: BasesSourceEditorPlugin): void {
-  for (const [commandId, runInBaseSourceView] of Object.entries(PATCHED_COMMANDS)) {
-    patchCommand(plugin, commandId, runInBaseSourceView);
+  for (const [commandId, execCommandInBaseSourceView] of Object.entries(PATCHED_COMMANDS)) {
+    patchCommand(plugin, commandId, execCommandInBaseSourceView);
   }
 }
 
@@ -89,12 +86,12 @@ export function patchEditorCommands(plugin: BasesSourceEditorPlugin): void {
  *
  * @param plugin - Plugin that owns the patch.
  * @param commandId - ID of the command to patch.
- * @param runInBaseSourceView - What the command does in a Base Source view.
+ * @param execCommandInBaseSourceView - What the command does in a Base Source view.
  */
 function patchCommand(
   plugin: BasesSourceEditorPlugin,
   commandId: string,
-  runInBaseSourceView: (view: BaseSourceView) => void
+  execCommandInBaseSourceView: (view: BaseSourceView) => void
 ): void {
   const app: App = plugin.app;
   const command: Command | undefined = app.commands.findCommand(commandId);
@@ -111,7 +108,7 @@ function patchCommand(
       return originalCheckCallback(checking);
     }
     if (!checking) {
-      runInBaseSourceView(view);
+      execCommandInBaseSourceView(view);
     }
     return true;
   };

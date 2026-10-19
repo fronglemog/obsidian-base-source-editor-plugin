@@ -1,4 +1,5 @@
 /* ========================= IMPORTS ========================= */
+/* OBSIDIAN */
 import {
   Component,
   Platform,
@@ -14,6 +15,7 @@ import type {
   WorkspaceLeaf
 } from 'obsidian';
 
+/* PLUGIN */
 import type BasesSourceEditorPlugin from 'src/main';
 import {
   BaseSourceView,
@@ -36,6 +38,10 @@ const ANDROID_KEYBOARD_ANIMATION: KeyframeAnimationOptions = {
   easing: 'cubic-bezier(.22, .25, 0, 1)'
 };
 
+/**
+ * Mobile toolbar for Base Source editors.
+ * Looks and behaves like Obsidian's own mobile toolbar.
+ */
 export class BaseSourceMobileToolbar extends Component {
   private plugin: BasesSourceEditorPlugin;
 
@@ -107,7 +113,7 @@ export class BaseSourceMobileToolbar extends Component {
   }
 
   /**
-   * Shows the toolbar while a Base Source editor has focus, and hides it otherwise.
+   * Shows the toolbar while a Base Source editor has focus.
    */
   private update(): void {
     const app: App = this.plugin.app;
@@ -128,9 +134,12 @@ export class BaseSourceMobileToolbar extends Component {
   }
 
   /**
-   * Checks every Base Source view, so it doesn't depend on Obsidian having made the focused one active yet.
+   * Returns whether the editor of any Base Source view has focus.
    *
-   * @returns True if the editor of any Base Source view has focus.
+   * @remarks
+   * Checks every view, not only the active one, because Obsidian may not have made the focused view active yet.
+   *
+   * @returns `true` if a Base Source editor has focus.
    */
   private hasBaseSourceEditorFocus(): boolean {
     const app: App = this.plugin.app;
@@ -143,8 +152,7 @@ export class BaseSourceMobileToolbar extends Component {
   }
 
   /**
-   * Shows the toolbar in place of the navbar, like Obsidian's own toolbar.
-   * An empty toolbar isn't shown, so the navbar stays.
+   * Shows the Base Source editor mobile toolbar.
    */
   private show(): void {
     const app: App = this.plugin.app;
@@ -164,7 +172,7 @@ export class BaseSourceMobileToolbar extends Component {
   }
 
   /**
-   * Hides the toolbar and brings back the navbar, like Obsidian's own toolbar.
+   * Hides the toolbar and brings back the navbar.
    */
   private hide(): void {
     const app: App = this.plugin.app;
@@ -184,7 +192,7 @@ export class BaseSourceMobileToolbar extends Component {
   }
 
   /**
-   * Rebuilds the toolbar's buttons, only if its commands have changed since the last time.
+   * Rebuilds the toolbar's buttons if the assigned commands have changed.
    *
    * @param commands - Commands to show, in order.
    */
@@ -223,9 +231,11 @@ export class BaseSourceMobileToolbar extends Component {
   }
 
   /**
-   * Slides the toolbar to its new position when the keyboard opens or closes, like Obsidian's own toolbar.
-   * The toolbar's CSS already places it above the new keyboard height, so it starts the animation
-   * from where it was and slides into place.
+   * Slides the toolbar to its new position when the keyboard opens or closes.
+   *
+   * @remarks
+   * The toolbar's CSS already places it above the new keyboard height,
+   * so the animation starts from the old position and slides into place.
    */
   private animateToKeyboardHeight(): void {
     if (!this.isVisible) {
@@ -251,10 +261,10 @@ export class BaseSourceMobileToolbar extends Component {
   }
 }
 
-/* ========================= HELPERS ========================= */
-
 /**
- * @returns Height of the on-screen keyboard in pixels, which Obsidian keeps in `--keyboard-height`.
+ * Gets the height of the on-screen keyboard, from Obsidian's `--keyboard-height` CSS variable.
+ *
+ * @returns The height in pixels, or 0 if it isn't set.
  */
 function getKeyboardHeight(): number {
   const documentStyle: CSSStyleDeclaration = getComputedStyle(document.documentElement);
@@ -265,7 +275,9 @@ function getKeyboardHeight(): number {
 }
 
 /**
- * @returns Timing for sliding with the keyboard, or null on platforms where Obsidian's own toolbar doesn't slide.
+ * Gets the timing Obsidian's own toolbar uses to slide with the keyboard on this platform.
+ *
+ * @returns The timing, or `null` on platforms where Obsidian's toolbar doesn't slide.
  */
 function getKeyboardAnimation(): KeyframeAnimationOptions | null {
   if (Platform.isIosApp) {

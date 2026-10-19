@@ -1,34 +1,36 @@
+/* ========================= objectMerge ========================= */
+
 /**
- * Deep version of `Object.assign()`. 
+ * Deep version of `Object.assign()`.
  * Copies all of the enumerable own properties from one or more source objects onto a target object, and returns the target object.
- * 
+ *
  * @param target - The target object to copy properties into.
  * @param source - The source object from which to deeply copy properties.
  */
 export function objectMerge<T extends object, U>(target: T, source: U): T & IntersectSources<[U]>;
 /**
- * Deep version of `Object.assign()`. 
+ * Deep version of `Object.assign()`.
  * Copies all of the enumerable own properties from one or more source objects onto a target object, and returns the target object.
- * 
+ *
  * @param target - The target object to copy properties into.
  * @param source1 - The first source object from which to deeply copy properties.
  * @param source2 - The second source object from which to deeply copy properties.
  */
 export function objectMerge<T extends object, U, V>(target: T, source1: U, source2: V): T & IntersectSources<[U, V]>;
 /**
- * Deep version of `Object.assign()`. 
+ * Deep version of `Object.assign()`.
  * Copies all of the enumerable own properties from one or more source objects onto a target object, and returns the target object.
- * 
+ *
  * @param target - The target object to copy properties into.
  * @param source1 - The first source object from which to deeply copy properties.
- * @param source2 - The second source object from which to deeply copy properties. 
- * @param source3 - The third source object from which to deeply copy properties. 
+ * @param source2 - The second source object from which to deeply copy properties.
+ * @param source3 - The third source object from which to deeply copy properties.
  */
 export function objectMerge<T extends object, U, V, W>(target: T, source1: U, source2: V, source3: W): T & IntersectSources<[U, V, W]>;
 /**
- * Deep version of `Object.assign()`. 
- * Copies all of the enumerable own properties from one or more source objects onto a target object, and returns the target object.\
- * 
+ * Deep version of `Object.assign()`.
+ * Copies all of the enumerable own properties from one or more source objects onto a target object, and returns the target object.
+ *
  * @param target - The target object to copy properties into.
  * @param sources - One or more source objects from which to deeply copy properties.
  */
@@ -45,7 +47,20 @@ export function objectMerge(target: object, ...sources: unknown[]): object {
   return target;
 }
 
-/* Deeply copies one source onto the target, keeping its loops and shared objects like `structuredClone()`. `merging` maps each source object still being merged to the object it is being merged into, so a source that refers back to itself, or to an outer object, points at that object's copy instead of recursing forever. `copies` maps each source object already copied into a new object to that copy, so every place it appears gets the same copy. */
+/* ========================= HELPERS ========================= */
+
+/**
+ * Deeply copies one source object onto a target object.
+ *
+ * @remarks
+ * Keeps circular and shared references, like `structuredClone()`. A reference back to an object still
+ * being merged points at that object's target, and an object that appears twice gets the same copy.
+ *
+ * @param targetObject - Object to copy into.
+ * @param sourceObject - Object to copy from.
+ * @param merging - Source objects still being merged, mapped to the objects they're merged into.
+ * @param copies - Source objects already copied into new objects, mapped to their copies.
+ */
 function mergeSource(targetObject: Record<PropertyKey, unknown>, sourceObject: Record<PropertyKey, unknown>, merging: Map<object, object>, copies: Map<object, object>): void {
   merging.set(sourceObject, targetObject);
 
@@ -91,7 +106,16 @@ function mergeSource(targetObject: Record<PropertyKey, unknown>, sourceObject: R
   merging.delete(sourceObject);
 }
 
-/* Object literals and `Object.create(null)` objects. Checking the prototype's prototype, instead of comparing it with `Object.prototype`, also accepts objects from other windows. */
+/**
+ * Returns whether a value is a plain object: an object literal, or one created with `Object.create(null)`.
+ *
+ * @remarks
+ * Checks that the prototype's prototype is `null`, instead of comparing the prototype with `Object.prototype`,
+ * so objects from other windows count too.
+ *
+ * @param value - Value to check.
+ * @returns `true` if `value` is a plain object.
+ */
 function isPlainObject(value: unknown): value is Record<PropertyKey, unknown> {
   if (typeof value !== 'object' || value === null) {
     return false;
@@ -100,6 +124,8 @@ function isPlainObject(value: unknown): value is Record<PropertyKey, unknown> {
   const prototype: unknown = Object.getPrototypeOf(value);
   return prototype === null || Object.getPrototypeOf(prototype) === null;
 }
+
+/* ========================= TYPES ========================= */
 
 /**
  * Intersects every type in a tuple, so `[A, B, C]` becomes `A & B & C`.

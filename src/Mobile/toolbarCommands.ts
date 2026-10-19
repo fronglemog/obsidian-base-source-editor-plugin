@@ -1,4 +1,5 @@
 /* ========================= IMPORTS ========================= */
+/* OBSIDIAN */
 import type {
   App,
   Command
@@ -33,8 +34,7 @@ export const TOOLBAR_COMMAND_IDS: readonly string[] = [
 ];
 
 /**
- * Looks up commands by ID, keeping their order.
- * Skips IDs of commands that cannot be found.
+ * Gets commands by ID, in the same order. IDs of commands that can't be found are skipped.
  *
  * @param app - Obsidian app.
  * @param commandIds - Command IDs to look up.
@@ -53,7 +53,7 @@ export function getMobileToolbarCommands(app: App, commandIds: readonly string[]
 }
 
 /**
- * Commands offered by the "Add a command..." picker in the mobile toolbar settings.
+ * Gets the commands offered by the "Add a command..." picker in the mobile toolbar settings.
  *
  * @param app - Obsidian app.
  * @param toolbarCommandIds - IDs of commands already on the toolbar, which are left out.

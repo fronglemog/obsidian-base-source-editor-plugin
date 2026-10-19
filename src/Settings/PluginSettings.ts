@@ -10,6 +10,7 @@ export const PLUGIN_DEFAULT_SETTINGS: PluginSettings = {
   indentationGuideOpacity: 25,
   renderWhitespace: false,
   whitespaceOpacity: 30,
+  autocomplete: 'desktopAndTablet',
   mobileToolbarCommands: [
     'command-palette:open',
     'editor:undo',
@@ -23,7 +24,7 @@ export const PLUGIN_DEFAULT_SETTINGS: PluginSettings = {
     'editor:swap-line-down',
     'editor:delete-paragraph'
   ],
-}
+};
 
 export interface PluginSettings {
   fontCustomSize: boolean;
@@ -36,9 +37,11 @@ export interface PluginSettings {
   indentationGuideOpacity: number;
   renderWhitespace: boolean;
   whitespaceOpacity: number;
+  autocomplete: AutocompleteDevices;
   mobileToolbarCommands: string[];
 }
 
+export type AutocompleteDevices = 'off' | 'desktopAndTablet' | 'allDevices';
 
 /**
  * Dot-notation paths of {@link PluginSettings} that correspond to settings of specific types.
@@ -97,16 +100,14 @@ type ObjectKeyPath<O, T> = O extends readonly unknown[] ? never
         }[keyof O & string]
     : never;
 
-
 /* ========================= HELPERS ========================= */
 
-/* ===== SETTINGS CONFIG PARSING ===== */
-
 /**
- * 
- * @param settings - 
- * @param path - 
- * @returns 
+ * Gets the value of a setting from its dot-notation path.
+ *
+ * @param settings - The plugin's settings.
+ * @param path - Dot-notation path to the setting.
+ * @returns The value, or `undefined` if the path is invalid or doesn't exist.
  */
 export function getPluginSettingPath(settings: PluginSettings, path: string): unknown {
   const parts = getSettingPathParts(path);
@@ -121,10 +122,12 @@ export function getPluginSettingPath(settings: PluginSettings, path: string): un
 }
 
 /**
- * 
- * @param settings - 
- * @param path - 
- * @param value 
+ * Sets the value of a setting at its dot-notation path, creating missing objects along the path.
+ *
+ * @param settings - The plugin's settings.
+ * @param path - Dot-notation path to the setting.
+ * @param value - Value to set.
+ * @throws If the path is invalid, or passes through an array.
  */
 export function setPluginSettingPath(settings: PluginSettings, path: string, value: unknown): void {
   const parts = getSettingPathParts(path);
@@ -152,6 +155,12 @@ function isSettingsObject(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === 'object' && !Array.isArray(value);
 }
 
+/**
+ * Splits a dot-notation path into its parts.
+ *
+ * @param path - Dot-notation path.
+ * @returns The parts, or `undefined` if a part is empty or could reach an object's prototype.
+ */
 function getSettingPathParts(path: string): string[] | undefined {
   const parts = path.split('.');
   // Validate the entire path before a write can create any intermediate objects.

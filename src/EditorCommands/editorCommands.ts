@@ -75,10 +75,10 @@ export const pasteClipboard: CMEditorCommand = (view: EditorView): boolean => {
 /* ========================= HELPERS ========================= */
 
 /**
- * Gets text currently selected in the editor.
+ * Gets the text of the editor's selection.
  *
- * @param view - The active Editor.
- * @returns Selected text, or an empty string if nothing is selected.
+ * @param view - The editor.
+ * @returns The selected text, or an empty string if nothing is selected.
  */
 function getSelectedText(view: EditorView): string {
   const selection: SelectionRange = view.state.selection.main;

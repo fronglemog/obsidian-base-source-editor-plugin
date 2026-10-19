@@ -154,13 +154,18 @@ eg:
   }
 
   .is-phone .mod-root & {
-    --view-top-spacing: 0;
+    --view-top-spacing: 0px; /* Needs a unit because it's being used in a calculation. */
 
     .view-content {
       margin-top: 0;
 
-      > .cm-editor > .cm-scroller {
+      > .cm-editor > .cm-scroller,
+      > .document-search-container {
         padding-top: calc(var(--view-top-spacing) + var(--view-top-spacing-markdown));
+      }
+
+      > .document-search-container + .cm-editor {
+        --view-top-spacing: 0px; /* Needs a unit because it's being used in a calculation. */
       }
     }
   }

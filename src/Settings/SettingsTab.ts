@@ -1,4 +1,5 @@
 /* ========================= IMPORTS ========================= */
+/* OBSIDIAN */
 import {
   Platform,
   PluginSettingTab
@@ -11,10 +12,19 @@ import type {
   SettingDefinitionItem
 } from 'obsidian';
 
+/* PLUGIN */
 import type BasesSourceEditorPlugin from 'src/main';
-import { getPluginSettingPath, PLUGIN_DEFAULT_SETTINGS, setPluginSettingPath } from 'src/Settings/PluginSettings';
-import type { PluginSettingPath } from 'src/Settings/PluginSettings';
-import { commandSuggester } from 'src/CommandSuggester';
+import {
+  getPluginSettingPath,
+  PLUGIN_DEFAULT_SETTINGS,
+  setPluginSettingPath
+} from 'src/Settings/PluginSettings';
+import type {
+  AutocompleteDevices,
+  PluginSettingPath
+} from 'src/Settings/PluginSettings';
+
+import { commandSuggester } from 'src/Mobile/CommandSuggester';
 
 import {
   getMobileToolbarCommands,
@@ -22,10 +32,9 @@ import {
   TOOLBAR_COMMAND_IDS
 } from 'src/Mobile/toolbarCommands';
 
-/* ========================= BasesSourceEditorPluginTab ========================= */
+/* ========================= BasesSourceEditorPluginSettingsTab ========================= */
 
 export class BasesSourceEditorPluginSettingsTab extends PluginSettingTab {
-
   private plugin: BasesSourceEditorPlugin;
 
   constructor(plugin: BasesSourceEditorPlugin) {
@@ -35,7 +44,7 @@ export class BasesSourceEditorPluginSettingsTab extends PluginSettingTab {
 
   override getControlValue(key: string): unknown {
     const pluginSettingPath = getPluginSettingPath(this.plugin.settings, key);
-    return pluginSettingPath
+    return pluginSettingPath;
   }
   
   override async setControlValue(key: string, value: unknown): Promise<void> {
@@ -45,7 +54,7 @@ export class BasesSourceEditorPluginSettingsTab extends PluginSettingTab {
     this.plugin.updateBaseSourceViews();
   }
 
-  override getSettingDefinitions (): SettingDefinitionItem<PluginSettingPath>[] {
+  override getSettingDefinitions(): SettingDefinitionItem<PluginSettingPath>[] {
     const settingsDefinitions: SettingDefinitionItem<PluginSettingPath>[] = [
       {
         heading: 'Font size',
@@ -192,6 +201,26 @@ export class BasesSourceEditorPluginSettingsTab extends PluginSettingTab {
         ]
       },
       {
+        heading: 'Autocomplete',
+        type: 'group',
+        items: [
+          {
+            name: 'Autocomplete',
+            desc: 'Suggestions and function hints while typing formulas.',
+            searchable: true,
+            control: {
+              key: 'autocomplete',
+              type: 'dropdown',
+              options: {
+                off: 'Off',
+                desktopAndTablet: 'Enabled (desktop/tablet only)',
+                allDevices: 'Enabled (all devices)'
+              } satisfies Record<AutocompleteDevices, string>
+            }
+          }
+        ]
+      },
+      {
         heading: 'Mobile',
         type: 'group',
         visible: Platform.isMobile,
@@ -205,7 +234,7 @@ export class BasesSourceEditorPluginSettingsTab extends PluginSettingTab {
           },
         ]
       }
-    ]
+    ];
 
     return settingsDefinitions;
   }

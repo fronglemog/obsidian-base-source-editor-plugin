@@ -6,6 +6,7 @@ import globals from 'globals';
 
 /* PLUGINS */
 import tseslint from 'typescript-eslint';
+import eslintPluginTsDoc from 'eslint-plugin-tsdoc';
 import eslintPluginUnicorn from 'eslint-plugin-unicorn';
 import eslintPluginObsidianmd from 'eslint-plugin-obsidianmd';
 
@@ -26,6 +27,7 @@ export default defineConfig([
     plugins: {
       js,
       '@typescript-eslint': tseslint.plugin,
+      tsdoc: eslintPluginTsDoc,
       unicorn: eslintPluginUnicorn,
       obsidianmd: eslintPluginObsidianmd
     },
@@ -35,7 +37,7 @@ export default defineConfig([
       tseslint.configs.recommended,
       tseslint.configs.recommendedTypeCheckedOnly,
       eslintPluginUnicorn.configs.recommended,
-      eslintPluginObsidianmd.configs.recommended
+      eslintPluginObsidianmd.configs.recommended,
     ],
     languageOptions: {
       globals: {
@@ -77,6 +79,9 @@ export default defineConfig([
       '@typescript-eslint/no-unsafe-member-access': 'warn',
       '@typescript-eslint/no-unused-vars' : 'warn',
       '@typescript-eslint/only-throw-error': 'error',
+
+      // TSDoc
+      'tsdoc/syntax': 'warn',
 
       // eslint-plugin-unicorn
       'unicorn/consistent-boolean-name': 'off',

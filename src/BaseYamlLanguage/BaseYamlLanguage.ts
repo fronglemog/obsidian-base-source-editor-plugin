@@ -1,4 +1,5 @@
 /* ========================= IMPORTS ========================= */
+/* CODEMIRROR */
 import { LanguageSupport } from '@codemirror/language';
 import type { LRLanguage } from '@codemirror/language';
 
@@ -14,28 +15,31 @@ import type {
   NestedParse,
   Parser,
   ParseWrapper,
-  SyntaxNode,
   SyntaxNodeRef
 } from '@lezer/common';
 
+/* PLUGIN */
 import { getBaseFormulaParser } from 'src/BaseYamlLanguage/baseFormulaParser';
+import { getQuotedLiteralRanges } from 'src/BaseYamlLanguage/quotedLiteralRanges';
+import type { DocumentRange } from 'src/BaseYamlLanguage/quotedLiteralRanges';
+import {
+  getYamlKeyPath,
+  isFormulaPath
+} from 'src/BaseYamlLanguage/yamlKeyPath';
 
-/* ======================================================= */
+/* ========================= BaseYamlLanguage ========================= */
 
+/**
+ * YAML language support for `.base` files, with formulas parsed by Obsidian's formula parser.
+ */
 export class BaseYamlLanguage {
-  /**
-   * Language support used by Base Source editors.
-   */
+  /** Cached language support */
   private languageSupport: LanguageSupport | null = null;
 
-  constructor() {
-  }
-
   /**
-   * Gets language support for the YAML used in Obsidian Bases.
-   * Falls back to plain YAML.
-   * 
-   * @returns YAML language support with formula parsing using Obsidian's Base formula parser.
+   * Gets the language support for Base Source editors.
+   *
+   * @returns YAML language support that parses formulas, or plain YAML if Obsidian's formula parser can't be found.
    */
   getLanguageSupport(): LanguageSupport {
     if (this.languageSupport != null) {
@@ -56,16 +60,16 @@ export class BaseYamlLanguage {
   }
 
   /**
-   * Creates YAML language that implements Obsidian's Base formula parser.
+   * Creates the YAML language, with formula values parsed by a formula parser.
    *
-   * @param parser - Parser used for Obsidian formulas.
-   * @returns The YAML language.
+   * @param parser - Obsidian's formula parser.
+   * @returns The language.
    */
   private createBaseYamlLanguage(parser: Parser): LRLanguage {
     const parseWrapper: ParseWrapper = parseMixed((node: SyntaxNodeRef, input: Input): NestedParse | null => {
       const parse: NestedParse | null = this.getBaseFormulaParse(node, input, parser);
       return parse;
-    })
+    });
 
     const language: LRLanguage = yamlLanguage.configure({
       wrap: parseWrapper
@@ -75,13 +79,16 @@ export class BaseYamlLanguage {
   }
 
   /**
-   * Gets the formula parsing configuration for a Base YAML value.
-   * For quoted values, only the text between the quotes is parsed.
+   * Gets the nested parse for a YAML node, if its value is a formula.
    *
-   * @param node - YAML syntax node being parsed.
-   * @param input - Source text used to determine the node's key path.
-   * @param formulaParser - Parser used for Obsidian formula expressions.
-   * @returns Parsing configuration, or null if no formula parse is needed.
+   * @remarks
+   * For a quoted value, only the text between the quotes is parsed, without YAML's escape characters,
+   * so the formula parser sees the formula Obsidian reads.
+   *
+   * @param node - YAML syntax node.
+   * @param input - The document's text.
+   * @param formulaParser - Obsidian's formula parser.
+   * @returns The nested parse, or `null` if the node isn't a formula.
    */
   private getBaseFormulaParse(node: SyntaxNodeRef, input: Input, formulaParser: Parser): NestedParse | null {
     const isSupportedNode: boolean =
@@ -93,17 +100,18 @@ export class BaseYamlLanguage {
       return null;
     }
 
-    const keyPath: string[] | null = this.getKeyPath(node.node, input);
+    const keyPath: string[] | null = getYamlKeyPath(node.node, (from: number, to: number): string => input.read(from, to));
 
     if (keyPath == null) {
       return null;
     }
 
-    if (this.isFormulaPath(keyPath) === false) {
+    if (isFormulaPath(keyPath) === false) {
       return null;
     }
 
     if (node.name === 'QuotedLiteral') {
+      const quote: string = input.read(node.from, node.from + 1);
       const contentStart: number = node.from + 1;
       const contentEnd: number = node.to - 1;
 
@@ -111,14 +119,16 @@ export class BaseYamlLanguage {
         return null;
       }
 
+      const content: string = input.read(contentStart, contentEnd);
+      const contentRanges: DocumentRange[] = getQuotedLiteralRanges(content, contentStart, quote);
+
+      if (contentRanges.length === 0) {
+        return null;
+      }
+
       const nestedParse: NestedParse = {
         parser: formulaParser,
-        overlay: [
-          {
-            from: contentStart,
-            to: contentEnd
-          }
-        ]
+        overlay: contentRanges
       };
 
       return nestedParse;
@@ -129,73 +139,5 @@ export class BaseYamlLanguage {
     };
 
     return nestedParse;
-  }
-
-  /**
-   * Gets the YAML key path for a value.
-   *
-   * List items are represented by '#'. For example, a filter inside
-   * a view might have the path ['views', '#', 'filters', 'and', '#'].
-   *
-   * @param node - Syntax node whose path should be determined.
-   * @param input - Source text used to read key names.
-   * @returns The key path, or null if the node is within a YAML key.
-   */
-  private getKeyPath(node: SyntaxNode, input: Input): string[] | null {
-    const keyPath: string[] = [];
-
-    for (
-      let currentNode: SyntaxNode | null = node;
-      currentNode != null;
-      currentNode = currentNode.parent
-    ) {
-      if (currentNode.name === 'Key') {
-        return null;
-      }
-      if (currentNode.name === 'Item') {
-        keyPath.unshift('#');
-      }
-      else if (currentNode.name === 'Pair') {
-        const keyNode: SyntaxNode | null = currentNode.getChild('Key');
-        let keyText: string = '';
-
-        if (keyNode != null) {
-          keyText = input.read(keyNode.from, keyNode.to);
-        }
-
-        const keyName: string = keyText.replace(/^(['"])(.*)\1$/s, '$2');
-        keyPath.unshift(keyName);
-      }
-    }
-    return keyPath;
-  }
-
-  /**
-   * Checks if a YAML key path corresponds to a formula.
-   * @param keyPath - YAML keys, with '#' for list items.
-   * 
-   * @returns Whether or not the value should be parsed as a formula.
-   */
-  private isFormulaPath(keyPath: string[]): boolean {
-    const rootKey: string | undefined = keyPath[0];
-
-    const isFormulaDefinition: boolean = rootKey === 'formulas' && keyPath.length === 2;
-
-    const isSummaryDefinition: boolean = rootKey === 'summaries' && keyPath.length === 2;
-
-    if (isFormulaDefinition === true || isSummaryDefinition === true) {
-      return true;
-    }
-
-    if (rootKey === 'filters') {
-      return true;
-    }
-
-    const isViewFilter: boolean = (rootKey === 'views') && (keyPath[1] === '#') && (keyPath[2] === 'filters');
-    if (isViewFilter === true){
-      return true;
-    }
-
-    return false;
   }
 }

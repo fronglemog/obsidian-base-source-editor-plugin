@@ -1,4 +1,5 @@
 /* ========================= IMPORTS ========================= */
+/* OBSIDIAN */
 import { FileView } from 'obsidian';
 
 import type {
@@ -7,7 +8,8 @@ import type {
   View
 } from 'obsidian';
 
-import type BasesSourceEditorPlugin from "src/main";
+/* PLUGIN */
+import type BasesSourceEditorPlugin from 'src/main';
 import {
   VIEW_TYPE_BASES,
   VIEW_TYPE_BASES_SOURCE
@@ -15,13 +17,10 @@ import {
 
 import { toggleSourceMode } from 'src/toggleSourceMode';
 
-/* ========================= ActionsManager ========================= */
+/* ========================= ViewActionsManager ========================= */
 
-/**
- * Header action shown on each view type, pointing at the view it switches to
- */
 const VIEW_ACTIONS: Record<string, ViewAction> = {
-  [VIEW_TYPE_BASES]: { 
+  [VIEW_TYPE_BASES]: {
     icon: 'code-xml',
     title: 'Switch to source mode',
     callback: (view: FileView) => toggleSourceMode(view)
@@ -33,12 +32,9 @@ const VIEW_ACTIONS: Record<string, ViewAction> = {
   }
 };
 
-interface ViewAction {
-  icon: IconName;
-  title: string;
-  callback: (view: FileView) => void;
-}
-
+/**
+ * Adds a header action to Bases and Base Source views that switches between them.
+ */
 export class ViewActionsManager {
   private plugin: BasesSourceEditorPlugin;
 
@@ -49,7 +45,9 @@ export class ViewActionsManager {
     this.plugin = plugin;
   }
 
-  /* Add actions to existing views, and to new views as the layout changes */
+  /**
+   * Adds the actions to open views and to views opened later. They're removed when the plugin unloads.
+   */
   registerActions(): void {
     const app: App = this.plugin.app;
 
@@ -96,3 +94,14 @@ export class ViewActionsManager {
     }
   }
 }
+
+/* ========================= TYPES ========================= */
+
+/**
+ * A view header action.
+ */
+type ViewAction = {
+  icon: IconName;
+  title: string;
+  callback: (view: FileView) => void;
+};
