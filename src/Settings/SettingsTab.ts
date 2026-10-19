@@ -14,7 +14,7 @@ import type {
 import type BasesSourceEditorPlugin from 'src/main';
 import { getPluginSettingPath, PLUGIN_DEFAULT_SETTINGS, setPluginSettingPath } from 'src/Settings/PluginSettings';
 import type { PluginSettingPath } from 'src/Settings/PluginSettings';
-import { commandSuggester } from 'src/Mobile/CommandSuggester';
+import { commandSuggester } from 'src/CommandSuggester';
 
 import {
   getMobileToolbarCommands,
