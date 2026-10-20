@@ -1,5 +1,3 @@
-/* eslint-disable eslint-comments/disable-enable-pair */
-/* eslint-disable tsdoc/syntax */
 /* ========================= IMPORTS ========================= */
 import type {
   App,
