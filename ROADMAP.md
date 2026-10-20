@@ -18,8 +18,8 @@ I intend to keep this plugin limited in scope - focused purely on the experience
 
 - [x] Theme-aware syntax highlighting
 - [x] Parse formulas using Obsidian's native Base formula parser
-	- [ ] Syntax analysis and validation of formulas
-	- [ ] Autocompletion of formulas
+	- [ ] Validation of formulas - show errors if a formula is invalid.
+	- [x] Autocompletion of formulas
 	- [ ] Autocompletion/suggest file properties using vault metadata cache
 - [ ] Display little red squiggles and hints if the YAML is not valid
 - [ ] Autocompletion of YAML key names

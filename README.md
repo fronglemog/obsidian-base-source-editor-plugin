@@ -5,6 +5,7 @@ An [Obsidian](https://obsidian.md) plugin that adds a **Base Source Editor**, fo
 ## Features
 
 - Edit Base files as plain-text YAML without leaving Obsidian.
+- Autocompletion for formulas.
 - Search & replace, mirroring Obsidian's native behaviour. Supports case-sensitive search.
 	- The search/replace command is accessed the same way as for native Markdown notes, either from the Command palette or the file menu.
 - Theme-aware YAML syntax highlighting, utilising Obsidian's built-in CSS variables.
