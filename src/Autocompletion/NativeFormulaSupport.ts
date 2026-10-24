@@ -15,11 +15,14 @@ import type { Extension } from '@codemirror/state';
 /* PLUGIN */
 import type { BaseYamlLanguage } from 'src/BaseYamlLanguage/BaseYamlLanguage';
 import { createFormulaCompletionSource } from 'src/Autocompletion/formulaCompletionSource';
+import { FallbackMockContext } from 'src/Autocompletion/FallbackMockContext';
 import { FormulaContext } from 'src/Autocompletion/FormulaContext';
+import type { MockContextClass } from 'src/Autocompletion/FormulaContext';
 import { logError } from 'src/Util/logError';
 
 import type {
   BasesFormulaLanguageSupport,
+  BasesIdentifierContext,
   BasesLRLanguageClass,
   BasesMockContext,
   BasesMockContextConstructor,
@@ -30,20 +33,21 @@ import type {
 
 const SHADOW_LANGUAGE_NAME: string = 'base-yaml-shadow';
 const UNAVAILABLE_MESSAGE: string = 'formula suggestions are off.';
+const FALLBACK_MESSAGE: string = 'formula suggestions carry on without formula result types.';
 
 /**
  * Provides Obsidian's own formula autocomplete and function signature tooltip to Base Source editors.
  *
  * @remarks
- * Uses undocumented Obsidian API. If any part of it is missing, formula autocomplete is turned off
- * and the reason is logged to the console. The rest of the editor is unaffected.
+ * Uses undocumented Obsidian API. If Obsidian's mock context class can't be found, a {@link FallbackMockContext}
+ * takes its place. If any other part is missing, formula autocomplete is turned off.
  */
 export class NativeFormulaSupport {
   private app: App;
   private baseYamlLanguage: BaseYamlLanguage;
 
-  /** Obsidian's mock context class, cached once found. */
-  private mockContextClass: BasesMockContextConstructor | null = null;
+  /** Obsidian's mock context class: `undefined` until first needed, `null` if it can't be found. */
+  private mockContextClass: BasesMockContextConstructor | null | undefined = undefined;
 
   /** The shadow language: `undefined` until first needed, `null` if it isn't needed or can't be created. */
   private shadowLanguage: Language | null | undefined = undefined;
@@ -56,17 +60,19 @@ export class NativeFormulaSupport {
   /**
    * Creates the extensions for formula autocomplete in one editor.
    *
-   * @returns The extensions, or `null` if Obsidian's formula support can't be found.
+   * @returns The extensions, or `null` if the Bases core plugin is off or Obsidian's formula support can't be found.
    */
   createEditorExtensions(): Extension[] | null {
-    const mockContextClass: BasesMockContextConstructor | null = this.getMockContextClass();
-
-    if (mockContextClass == null) {
-      return null;
-    }
-
     // Accessing undocumented API... keep this guard.
     try {
+      const basesPlugin: unknown = this.app.internalPlugins.getEnabledPluginById('bases');
+
+      // The Bases core plugin is turned off: a user setting, not a failure, so nothing is logged
+      if (basesPlugin == null) {
+        return null;
+      }
+
+      const mockContextClass: MockContextClass = this.getMockContextClass(basesPlugin) ?? FallbackMockContext;
       const formulaContext: FormulaContext = new FormulaContext(this.app, mockContextClass);
       const languageSupport: BasesFormulaLanguageSupport | null = createLanguageSupport(formulaContext.context);
 
@@ -103,22 +109,16 @@ export class NativeFormulaSupport {
    * The class isn't exported, so it's read from the `mockContext` of a `QueryController` instance.
    * The QueryController is initialised but never loaded; the listeners it registers are cleaned-up manually.
    *
-   * @returns The class, or `null` if the Bases core plugin is off or the class can't be found.
+   * @param basesPlugin - The Bases core plugin's instance, which `QueryController`'s constructor needs.
+   * @returns The class, or `null` if it can't be found.
    */
-  private getMockContextClass(): BasesMockContextConstructor | null {
-    if (this.mockContextClass != null) {
+  private getMockContextClass(basesPlugin: unknown): BasesMockContextConstructor | null {
+    if (this.mockContextClass !== undefined) {
       return this.mockContextClass;
     }
 
     // Accessing undocumented API... keep this guard.
     try {
-      const basesPlugin: unknown = this.app.internalPlugins.getEnabledPluginById('bases');
-
-      // The Bases core plugin is turned off: a user setting, not a failure, so nothing is logged
-      if (basesPlugin == null) {
-        return null;
-      }
-
       const QueryControllerClass = QueryController as unknown as QueryControllerConstructor;
       const queryController: QueryController = new QueryControllerClass(this.app, basesPlugin, createDiv(), null);
       const mockContext: BasesMockContext | undefined = queryController.mockContext;
@@ -132,14 +132,16 @@ export class NativeFormulaSupport {
       }
 
       if (mockContext == null || typeof mockContext.constructor !== 'function') {
-        logError(`${UNAVAILABLE_MESSAGE} A QueryController has no mockContext.`);
+        logError(`${FALLBACK_MESSAGE} A QueryController has no mockContext.`);
+        this.mockContextClass = null;
         return null;
       }
 
       this.mockContextClass = mockContext.constructor as unknown as BasesMockContextConstructor;
       return this.mockContextClass;
     } catch (error: unknown) {
-      logError(`${UNAVAILABLE_MESSAGE} Couldn't create a QueryController to reach the mock context class.`, error);
+      logError(`${FALLBACK_MESSAGE} Couldn't create a QueryController to reach the mock context class.`, error);
+      this.mockContextClass = null;
       return null;
     }
   }
@@ -191,7 +193,7 @@ export class NativeFormulaSupport {
  * @param mockContext - Mock context to read identifiers and their types from.
  * @returns The language support, or `null` if it can't be created.
  */
-function createLanguageSupport(mockContext: BasesMockContext): BasesFormulaLanguageSupport | null {
+function createLanguageSupport(mockContext: BasesIdentifierContext): BasesFormulaLanguageSupport | null {
   const proto: QueryController = QueryController.prototype;
 
   if (typeof proto.getEditorLanguageSupport !== 'function') {

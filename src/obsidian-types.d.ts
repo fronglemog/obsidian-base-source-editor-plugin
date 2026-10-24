@@ -5,13 +5,20 @@ import type {
   BasesPropertyId,
   BasesView,
   BasesViewConfig,
-  Command,  
+  CachedMetadata,
+  Command,
   Component,
   Constructor,
+  DateValue,
   Debouncer,
+  EventRef,
   Events,
+  FileValue,
+  HoverPopover,
   IconName,
   KeymapInfo,
+  moment,
+  ObjectValue,
   QueryController,
   TFile,
   Value
@@ -75,6 +82,13 @@ declare module 'obsidian' {
      * @unofficial
      */
     internalPlugins: InternalPlugins;
+    /**
+     * Manages the frontmatter properties of the vault and the rendering of the properties.
+     *
+     * @tutorial Fetching properties used in all frontmatter fields, may potentially be used for adding custom frontmatter widgets.
+     * @unofficial
+     */
+    metadataTypeManager: MetadataTypeManager;
   }
 
   interface Component {
@@ -693,15 +707,35 @@ export interface MobileToolbar {
 }
 
 /**
+ * The part of a mock context that Obsidian's formula language support calls: the identifiers a formula can use,
+ * and a value of the right type for each.
+ *
+ * @unofficial
+ * @BaseSourceEditor
+ */
+export interface BasesIdentifierContext {
+  /**
+   * Identifiers a formula can use: every vault property, plus `note`, `file`, `formula` and `this`.
+   */
+  keys(): string[];
+  /**
+   * Gets a value of the right type for an identifier.
+   *
+   * @param identifier - Identifier, such as `note` or a property name.
+   */
+  getByIdentifier(identifier: string): Value;
+}
+
+/**
  * Bases view controller mock context.
  * The identifiers a formula can use, and a value of the right type for each.
  * Obsidian's formula autocomplete reads it.
- * 
+ *
  * @public
  * @unofficial
  * @BaseSourceEditor
  */
-export type BasesMockContext = {
+export type BasesMockContext = BasesIdentifierContext & {
   /**
    * Reference to the app.
    */
@@ -715,16 +749,6 @@ export type BasesMockContext = {
    * The formulas given to the constructor, and their results once evaluated.
    */
   formulaResults: BasesFormulaResults;
-  /**
-   * Identifiers a formula can use: every vault property, plus `note`, `file`, `formula` and `this`.
-   */
-  keys(): string[];
-  /**
-   * Gets a value of the right type for an identifier.
-   *
-   * @param identifier - Identifier, such as `note` or a property name.
-   */
-  getByIdentifier(identifier: string): Value;
   /**
    * Parses a formula expression, then evaluates it with `evaluateFormula()`.
    *
@@ -839,6 +863,36 @@ export interface BasesGroupInfo {
 export type QueryControllerConstructor = new (app: App, plugin: unknown, containerEl: HTMLElement, currentFile: TFile | null) => QueryController;
 
 /**
+ * `ObjectValue`'s constructor: `data` holds the object's entries, as values or as plain data that's wrapped on access.
+ * The public typings don't declare its parameters.
+ *
+ * @unofficial
+ * @BaseSourceEditor
+ */
+export type ObjectValueConstructor = new (data: Record<string, unknown>) => ObjectValue;
+
+/**
+ * `FileValue`'s constructor. The public typings don't declare its parameters.
+ *
+ * @remarks
+ * Obsidian's mock context passes `null` when no file is active. The value's `toString()` then throws,
+ * but autocomplete only reads its class.
+ *
+ * @unofficial
+ * @BaseSourceEditor
+ */
+export type FileValueConstructor = new (app: App, file: TFile | null) => FileValue;
+
+/**
+ * `DateValue`'s constructor: `time` is whether the value includes a time of day, `true` if left out.
+ * The public typings don't declare its parameters.
+ *
+ * @unofficial
+ * @BaseSourceEditor
+ */
+export type DateValueConstructor = new (date: Date, time?: boolean) => DateValue;
+
+/**
  * Language support of Obsidian's formula editor, from `QueryController.getEditorLanguageSupport()`.
  * Its class also has two static functions, `renderIcon` and `renderDetail`: the popup's renderers,
  * which `src/Autocompletion/renderOption.ts` copies.
@@ -849,8 +903,9 @@ export type QueryControllerConstructor = new (app: App, plugin: unknown, contain
 export interface BasesFormulaLanguageSupport extends EditorLanguageSupport {
   /**
    * The mock context it was created with, which its suggestions' identifiers and types come from.
+   * It calls only `keys()` and `getByIdentifier()` on it.
    */
-  ctx: BasesMockContext;
+  ctx: BasesIdentifierContext;
   /**
    * Completion source: suggestions at the cursor. Returns null on phones.
    *
@@ -1289,6 +1344,877 @@ export interface HotkeyManager {
    * @param keys - Hotkeys to add.
    */
   setHotkeys(command: string, keys: KeymapInfo[]): void;
+}
+
+/**
+ * Manager for frontmatter property types: the name and type of every property in the vault.
+ *
+ * @remarks
+ * Its records are keyed by property name in lower case. Each entry's `name` keeps the property's spelling.
+ *
+ * @public
+ * @unofficial
+ */
+export interface MetadataTypeManager extends Events {
+  /**
+   * Whether `load()` has finished.
+   *
+   * @remarks
+   * `@obsidian-typings` calls this the {@link obsidian#Component} lifecycle flag, but the manager isn't a `Component`:
+   * it extends `Events`, and `load()` sets this itself after reading `types.json`.
+   *
+   * @BaseSourceEditor
+   */
+  _loaded: boolean;
+  /**
+   * Reference to the {@link obsidian#App}.
+   */
+  app: App;
+  /**
+   * Associated widget types for each property: the types set in the vault's `types.json`,
+   * plus the built-in types of `aliases`, `cssclasses` and `tags`.
+   *
+   * @BaseSourceEditor
+   */
+  assignedWidgets: MetadataTypeManagerTypesRecord;
+  /**
+   * Time of the last save, or the modification time of `types.json` when it was last read after a change on disk.
+   * In milliseconds since 1970; `0` until then.
+   *
+   * @remarks
+   * `@obsidian-typings` calls this a Unix timestamp, which usually means seconds.
+   *
+   * @BaseSourceEditor
+   */
+  lastSave: number;
+  /**
+   * Debounced handler for property type config file changes on disk: reads `types.json` again
+   * if it changed since `lastSave`, 50 ms after the last call.
+   *
+   * @BaseSourceEditor
+   */
+  onConfigFileChange: Debouncer<[], Promise<void>>;
+  /**
+   * Registered properties of the vault. Each is typed from `assignedWidgets`, or else from its value
+   * in the first note that gives it one; `text` if none does.
+   *
+   * @BaseSourceEditor
+   */
+  properties: MetadataTypeManagerPropertiesRecord;
+  /**
+   * Registered type widgets. A type that isn't registered gets a fallback widget from `getWidget()`.
+   */
+  registeredTypeWidgets: MetadataTypeManagerRegisteredTypeWidgetsRecord;
+  /**
+   * Constructor.
+   *
+   * To get the constructor instance, use {@link getMetadataTypeManagerConstructor} from `obsidian-typings/implementations`.
+   *
+   * @param app - The app.
+   * @returns The new instance.
+   * @deprecated - Added only for typing purposes.
+   */
+  constructor2__?(app: App): this;
+  /**
+   * Get all registered properties of the vault.
+   *
+   * @returns {@link MetadataTypeManager.properties} itself, not a copy: property info by property name in lower case.
+   * @BaseSourceEditor
+   */
+  getAllProperties(): Record<string, PropertyInfo>;
+  /**
+   * Get assigned widget type for property, ignoring case. The built-in types of `aliases`, `cssclasses`
+   * and `tags` count as assigned.
+   *
+   * @param property - Property name.
+   * @returns The assigned widget type, or `null` if none is set.
+   * @BaseSourceEditor
+   */
+  getAssignedWidget(property: string): null | PropertyWidgetType;
+  /**
+   * Gets a property's name and type, ignoring case.
+   *
+   * @param property - Property name.
+   * @returns The property's info, or `{ name: property, widget: 'text' }` if no note has it.
+   * @BaseSourceEditor
+   */
+  getPropertyInfo(property: string): PropertyInfo;
+  /**
+   * Counts the notes that have each property.
+   *
+   * @returns The number of notes, by property name in lower case.
+   * @BaseSourceEditor
+   */
+  getPropertyOccurrences(): Record<string, number>;
+  /**
+   * Get expected widget type for property and the one inferred from the property value.
+   *
+   * @param property - Property name.
+   * @param value - Property value in one note.
+   * @returns Type information for the property: see {@link TypeInfo}.
+   */
+  getTypeInfo(property: string, value: unknown): TypeInfo;
+  /**
+   * Get property widget for a type, ignoring case.
+   *
+   * @param type - Widget type name.
+   * @returns The property widget, or a fallback widget of type `unknown` if the type isn't registered.
+   * @BaseSourceEditor
+   */
+  getWidget(type: string): PropertyWidget;
+  /**
+   * Load metadata type configuration: reads `types.json` with `loadData()`, then sets `_loaded`.
+   *
+   * @BaseSourceEditor
+   */
+  load(): Promise<void>;
+  /**
+   * Load property types from config: reads `types.json` into `assignedWidgets`, then adds the built-in types.
+   * Once loaded, triggers `changed` for each property whose type changed.
+   *
+   * @returns A promise that resolves when the property types are loaded.
+   * @BaseSourceEditor
+   */
+  loadData(): Promise<void>;
+  /**
+   * Adds a note's new properties to `properties`, and updates the spelling and type of those the user hasn't typed.
+   * Listens to the metadata cache's `changed` event.
+   *
+   * @param file - The note that changed.
+   * @param data - The note's text.
+   * @param cache - The note's new metadata.
+   * @BaseSourceEditor
+   */
+  onCacheChanged(file: TFile, data: string, cache: CachedMetadata): void;
+  /**
+   * Stops listening to the metadata cache's `finished` event, then calls `rebuildProperties()`.
+   *
+   * @BaseSourceEditor
+   */
+  onCacheFinished(): void;
+  /**
+   * Calls `onConfigFileChange()` if the file is the vault's `types.json`.
+   *
+   * @param path - Path of the file that changed on disk.
+   * @BaseSourceEditor
+   */
+  onRaw(path: string): void;
+  /**
+   * Schedules `rebuildProperties()` if the vault's excluded files (`userIgnoreFilters`) changed.
+   *
+   * @param name - Name of the vault setting that changed.
+   * @BaseSourceEditor
+   */
+  onVaultConfigChanged(name: string): void;
+  /**
+   * Rebuilds `properties` from `assignedWidgets` and every note's frontmatter. Properties with no known type get `text`.
+   *
+   * @BaseSourceEditor
+   */
+  rebuildProperties(): void;
+  /**
+   * Listens for changes to `types.json`, the vault's settings and the metadata cache, and to its own `changed` event.
+   */
+  registerListeners(): void;
+  /**
+   * Writes `assignedWidgets` to `types.json` and updates `lastSave`.
+   */
+  save(): Promise<void>;
+  /**
+   * Sets a property's type, saves it, then triggers `changed`.
+   *
+   * @param property - Property name.
+   * @param type - Widget type to assign.
+   */
+  setType(property: string, type: PropertyWidgetType): Promise<void>;
+  /**
+   * Removes the type the user set for a property, saves, then triggers `changed`.
+   *
+   * @param property - Property name.
+   */
+  unsetType(property: string): Promise<void>;
+  /**
+   * Called when the user sets or removes a property's type, or `types.json` changes it.
+   *
+   * @param name - Event name.
+   * @param callback - Called with the property's name in lower case.
+   * @param ctx - `this` for the callback.
+   * @BaseSourceEditor
+   */
+  on(name: 'changed', callback: (property: string) => unknown, ctx?: unknown): EventRef;
+  /**
+   * Triggers the `changed` event.
+   *
+   * @param name - Event name.
+   * @param property - The property's name in lower case.
+   * @BaseSourceEditor
+   */
+  trigger(name: 'changed', property: string): void;
+}
+
+/**
+ * Record mapping property names, in lower case, to their metadata information across the vault.
+ *
+ * @public
+ * @unofficial
+ */
+export interface MetadataTypeManagerPropertiesRecord extends Record<string, PropertyInfo> {
+}
+
+/**
+ * Registered type widgets, by type.
+ *
+ * @public
+ * @unofficial
+ */
+export interface MetadataTypeManagerRegisteredTypeWidgetsRecord extends Record<PropertyWidgetType, PropertyWidget> {
+  /**
+   * Property widget for aliases.
+   */
+  aliases: PropertyWidget<AliasesPropertyWidgetComponent>;
+  /**
+   * Property widget for checkboxes.
+   */
+  checkbox: PropertyWidget<CheckboxPropertyWidgetComponent>;
+  /**
+   * Property widget for dates.
+   */
+  date: PropertyWidget<DatePropertyWidgetComponent>;
+  /**
+   * Property widget for datetimes.
+   */
+  datetime: PropertyWidget<DatetimePropertyWidgetComponent>;
+  /**
+   * Property widget for files.
+   */
+  file: PropertyWidget<FilePropertyWidgetComponent>;
+  /**
+   * Property widget for folders.
+   */
+  folder: PropertyWidget<FolderPropertyWidgetComponent>;
+  /**
+   * Property widget for multitexts, named "List" in Obsidian.
+   */
+  multitext: PropertyWidget<MultitextPropertyWidgetComponent>;
+  /**
+   * Property widget for numbers.
+   */
+  number: PropertyWidget<NumberPropertyWidgetComponent>;
+  /**
+   * Property widget for properties: the value is the name of another property.
+   */
+  property: PropertyWidget<PropertyPropertyWidgetComponent>;
+  /**
+   * Property widget for tags.
+   */
+  tags: PropertyWidget<TagsPropertyWidgetComponent>;
+  /**
+   * Property widget for text.
+   */
+  text: PropertyWidget<TextPropertyWidgetComponent>;
+}
+
+/**
+ * Record mapping property names, in lower case, to their assigned widget entries.
+ *
+ * @public
+ * @unofficial
+ */
+export interface MetadataTypeManagerTypesRecord extends Record<string, PropertyWidgetEntry> {
+}
+
+/**
+ * A property's name and type, as {@link MetadataTypeManager} keeps them.
+ *
+ * @remarks
+ * `@obsidian-typings` also lists `occurrences`, which these objects don't have.
+ * {@link MetadataTypeManager.getPropertyOccurrences} gives the counts instead.
+ *
+ * @public
+ * @unofficial
+ */
+export interface PropertyInfo {
+  /**
+   * The property's name, spelled as in a note, or as the user typed it when setting its type.
+   */
+  name: string;
+  /**
+   * The property's type, such as `text`, `number`, `date` or `tags`. `unknown` if it couldn't be inferred from a value.
+   */
+  widget: string;
+}
+
+/**
+ * A property's name and the type the user set for it, as {@link MetadataTypeManager.assignedWidgets} keeps them.
+ *
+ * @public
+ * @unofficial
+ */
+export interface PropertyWidgetEntry {
+  /**
+   * The property's name, spelled as in `types.json`.
+   *
+   * @remarks
+   * `@obsidian-typings` calls this the widget's display name; it's the property's name.
+   *
+   * @BaseSourceEditor
+   */
+  name: string;
+  /**
+   * The property widget type.
+   */
+  widget: PropertyWidgetType;
+}
+
+/**
+ * Property widget type: the name of a registered type. Any string is allowed, because `types.json` can hold any name.
+ *
+ * @remarks
+ * A property's inferred type can also be `unknown`, which isn't registered: {@link MetadataTypeManager.getWidget}
+ * gives the fallback widget for it.
+ *
+ * @public
+ * @unofficial
+ * @BaseSourceEditor
+ */
+export type PropertyWidgetType = 'aliases' | 'checkbox' | 'date' | 'datetime' | 'file' | 'folder' | 'multitext' | 'number' | 'property' | 'tags' | 'text' | string;
+
+/**
+ * Information about a property's expected and inferred widget types, from {@link MetadataTypeManager.getTypeInfo}.
+ *
+ * @public
+ * @unofficial
+ */
+export interface TypeInfo {
+  /**
+   * The widget of the type the user assigned to the property, or else the same widget as `inferred`.
+   *
+   * @BaseSourceEditor
+   */
+  expected: PropertyWidget;
+  /**
+   * The widget for the value: the assigned type's if it accepts the value; otherwise, for a `null` value,
+   * the property's type in the vault; otherwise the type the value itself suggests.
+   *
+   * @BaseSourceEditor
+   */
+  inferred: PropertyWidget;
+}
+
+/**
+ * Property widget: one property type, with the component that shows and edits its values.
+ *
+ * @typeParam ComponentType - The type of the component.
+ * @public
+ * @unofficial
+ */
+export interface PropertyWidget<ComponentType extends PropertyWidgetComponentBase = PropertyWidgetComponentBase> {
+  /**
+   * Lucide icon ID shown for the type, such as `lucide-text`.
+   */
+  icon: string;
+  /**
+   * Property names that always have this type: `['aliases']` for aliases and `['tags']` for tags.
+   * An empty list for file, folder and property; missing for the other built-in types.
+   *
+   * @BaseSourceEditor
+   */
+  reservedKeys?: string[];
+  /**
+   * Identifier for the widget: its type, such as `text`.
+   */
+  type: string;
+  /**
+   * Returns the I18N name of the widget.
+   *
+   * @returns The localized name of the widget, such as "List" for `multitext`.
+   */
+  name(): string;
+  /**
+   * Creates the widget's component in `containerEl`, showing `data`.
+   *
+   * @param containerEl - The container element to render the widget into.
+   * @param data - The property data to render.
+   * @param context - The rendering context for the property: `PropertyRenderContext` in `@obsidian-typings`.
+   * @returns The rendered widget component.
+   */
+  render(containerEl: HTMLElement, data: unknown, context: unknown): ComponentType;
+  /**
+   * Validate whether the input value to the widget is correct, for example a string for `text`.
+   * The fallback widget accepts every value.
+   *
+   * @param value - The value to validate.
+   * @returns Whether the value is valid.
+   */
+  validate(value: unknown): boolean;
+}
+
+/**
+ * Base class for property widget components.
+ *
+ * @public
+ * @unofficial
+ */
+export interface PropertyWidgetComponentBase {
+  /**
+   * The element the component renders into. The base class sets it.
+   *
+   * @BaseSourceEditor
+   */
+  containerEl: HTMLElement;
+  /**
+   * The type of the property widget.
+   */
+  type: string;
+  /**
+   * Focus the property widget: calls the component's own `onFocus()` with `mode`.
+   *
+   * @param mode - The focus mode. Defaults to `both`.
+   */
+  focus(mode?: FocusMode): void;
+}
+
+/**
+ * Where {@link PropertyWidgetComponentBase.focus} puts the cursor. Only the text widget uses it.
+ *
+ * @public
+ * @unofficial
+ */
+export type FocusMode = 'both' | 'end' | 'start';
+
+/**
+ * Property widget component for aliases.
+ *
+ * @public
+ * @unofficial
+ */
+export interface AliasesPropertyWidgetComponent extends PropertyWidgetComponentBase {
+  /**
+   * The container element for the property widget.
+   */
+  containerEl: HTMLElement;
+  /**
+   * The render context for the property widget: `PropertyRenderContext` in `@obsidian-typings`.
+   */
+  ctx: unknown;
+  /**
+   * The hover popover for the property widget. Always `null`: aliases aren't shown as links.
+   */
+  hoverPopover: null;
+  /**
+   * The multiselect component for the property widget: `Multiselect` in `@obsidian-typings`.
+   */
+  multiselect: unknown;
+  /**
+   * The type of the property widget.
+   */
+  type: 'aliases';
+  /**
+   * Handle focus event.
+   */
+  onFocus(): void;
+  /**
+   * Set the value of the property widget.
+   *
+   * @param value - The value to set.
+   */
+  setValue(value: unknown): void;
+}
+
+/**
+ * Property widget component for checkboxes.
+ *
+ * @public
+ * @unofficial
+ */
+export interface CheckboxPropertyWidgetComponent extends PropertyWidgetComponentBase {
+  /**
+   * The checkbox element for the property widget. Shown as indeterminate while the property has no value.
+   */
+  checkboxEl: HTMLInputElement;
+  /**
+   * The type of the property widget.
+   */
+  type: 'checkbox';
+  /**
+   * Handle focus event.
+   */
+  onFocus(): void;
+  /**
+   * Set the value of the property widget.
+   *
+   * @param value - The value to set.
+   */
+  setValue(value: unknown): void;
+}
+
+/**
+ * Base interface for date property widget components.
+ *
+ * @remarks
+ * `moment.Moment` and `moment.MomentInput` are written as `ReturnType<typeof moment.unix>` and
+ * `Parameters<typeof moment.utc>[0]`. The `moment` package isn't a dependency of the plugin, so its types
+ * are reached through Obsidian's `moment` export, which only keeps the functions of the package's namespace.
+ *
+ * @public
+ * @unofficial
+ */
+export interface DatePropertyWidgetComponentBase extends PropertyWidgetComponentBase {
+  /**
+   * The date of the property widget, parsed from the input. Invalid while the input doesn't hold a date.
+   *
+   * @remarks
+   * `@obsidian-typings` marks this optional, but the constructor always sets it.
+   *
+   * @BaseSourceEditor
+   */
+  date: ReturnType<typeof moment.unix>;
+  /**
+   * Whether the property widget is dirty: the input changed since the value was last saved.
+   */
+  dirty: boolean;
+  /**
+   * The hover popover for the property widget. Always `null`.
+   *
+   * @remarks
+   * `@obsidian-typings` calls this `hoverPopup`.
+   *
+   * @BaseSourceEditor
+   */
+  hoverPopover: null;
+  /**
+   * The input element for the property widget.
+   */
+  inputEl: HTMLInputElement;
+  /**
+   * The value of the property widget, as text, as last saved or set.
+   */
+  value: string;
+  /**
+   * Build the input element for the property widget.
+   *
+   * @param parentEl - The parent element.
+   * @returns The input element.
+   */
+  buildInput(parentEl: HTMLElement): HTMLInputElement;
+  /**
+   * Format the date input.
+   *
+   * @param input - The input to format.
+   * @returns The formatted date, or an empty string if the date is invalid.
+   */
+  format(input: ReturnType<typeof moment.unix>): string;
+  /**
+   * Handle focus event: focuses the input.
+   *
+   * @BaseSourceEditor
+   */
+  onFocus(): void;
+  /**
+   * Parse the date input into `date`.
+   *
+   * @param input - The input to parse.
+   */
+  parse(input: Parameters<typeof moment.utc>[0]): void;
+  /**
+   * Set the value of the property widget: shows it in the input, parses it, and clears `dirty`.
+   *
+   * @param value - The value to set.
+   * @BaseSourceEditor
+   */
+  setValue(value: string): void;
+}
+
+/**
+ * Property widget component for dates.
+ *
+ * @public
+ * @unofficial
+ */
+export interface DatePropertyWidgetComponent extends DatePropertyWidgetComponentBase {
+  /**
+   * The button element for the property widget: opens the daily note for the date, and is hidden
+   * while the date is invalid. `null` if the Daily notes core plugin is off.
+   */
+  buttonEl: HTMLDivElement | null;
+  /**
+   * The type of the property widget.
+   *
+   * @remarks
+   * `datetime`, not `date`: the base class sets `date`, then this class's constructor overwrites it with `datetime`.
+   * `@obsidian-typings` says `date`.
+   *
+   * @BaseSourceEditor
+   */
+  type: 'datetime';
+}
+
+/**
+ * Property widget component for datetimes.
+ *
+ * @public
+ * @unofficial
+ */
+export interface DatetimePropertyWidgetComponent extends DatePropertyWidgetComponentBase {
+  /**
+   * The type of the property widget.
+   */
+  type: 'datetime';
+}
+
+/**
+ * Property widget component for files.
+ *
+ * @public
+ * @unofficial
+ */
+export interface FilePropertyWidgetComponent extends PropertyWidgetComponentBase {
+  /**
+   * The input element for the property widget, which suggests the vault's files.
+   */
+  inputEl: HTMLInputElement;
+  /**
+   * The type of the property widget.
+   */
+  type: 'file';
+  /**
+   * Handle focus event.
+   */
+  onFocus(): void;
+  /**
+   * Set the value of the property widget.
+   *
+   * @param value - The value to set.
+   */
+  setValue(value: unknown): void;
+}
+
+/**
+ * Property widget component for folders.
+ *
+ * @public
+ * @unofficial
+ */
+export interface FolderPropertyWidgetComponent extends PropertyWidgetComponentBase {
+  /**
+   * The input element for the property widget, which suggests the vault's folders.
+   */
+  inputEl: HTMLInputElement;
+  /**
+   * The type of the property widget.
+   */
+  type: 'folder';
+  /**
+   * Handle focus event.
+   */
+  onFocus(): void;
+  /**
+   * Set the value of the property widget.
+   *
+   * @param value - The value to set.
+   */
+  setValue(value: unknown): void;
+}
+
+/**
+ * Property widget component for multiple texts.
+ *
+ * @public
+ * @unofficial
+ */
+export interface MultitextPropertyWidgetComponent extends PropertyWidgetComponentBase {
+  /**
+   * The hover popover for the property widget: the preview of a link in one of its values, while it's open.
+   *
+   * @remarks
+   * `@obsidian-typings` types this as always `null`, but the component is the hover parent of its links' previews.
+   *
+   * @BaseSourceEditor
+   */
+  hoverPopover: HoverPopover | null;
+  /**
+   * The multiselect component for the property widget: `Multiselect` in `@obsidian-typings`.
+   */
+  multiselect: unknown;
+  /**
+   * The type of the property widget.
+   */
+  type: 'multitext';
+  /**
+   * The values of the property widget, kept in step with the multiselect.
+   */
+  valueSet: Set<string>;
+  /**
+   * Handle focus event.
+   */
+  onFocus(): void;
+  /**
+   * Set the value of the property widget.
+   *
+   * @param value - The value to set.
+   */
+  setValue(value: unknown): void;
+}
+
+/**
+ * Property widget component for numbers.
+ *
+ * @public
+ * @unofficial
+ */
+export interface NumberPropertyWidgetComponent extends PropertyWidgetComponentBase {
+  /**
+   * The input element for the property widget.
+   */
+  inputEl: HTMLInputElement;
+  /**
+   * The type of the property widget.
+   */
+  type: 'number';
+  /**
+   * Handle focus event.
+   */
+  onFocus(): void;
+  /**
+   * Set the value of the property widget.
+   *
+   * @param value - The value to set.
+   */
+  setValue(value: unknown): void;
+  /**
+   * Show the error message.
+   */
+  showError(): void;
+}
+
+/**
+ * Property widget component for properties: the value is the name of another property.
+ *
+ * @remarks
+ * `@obsidian-typings` also lists `inputEl`, which this component doesn't set.
+ *
+ * @public
+ * @unofficial
+ */
+export interface PropertyPropertyWidgetComponent extends PropertyWidgetComponentBase {
+  /**
+   * The combobox component for the property widget, listing the vault's property names:
+   * `PropertyPropertyWidgetComponentComboBox` in `@obsidian-typings`.
+   */
+  combobox: unknown;
+  /**
+   * The type of the property widget.
+   */
+  type: 'property';
+  /**
+   * Handle focus event.
+   */
+  onFocus(): void;
+  /**
+   * Set the value of the property widget.
+   *
+   * @param value - The value to set.
+   */
+  setValue(value: unknown): void;
+}
+
+/**
+ * Property widget component for tags.
+ *
+ * @public
+ * @unofficial
+ */
+export interface TagsPropertyWidgetComponent extends PropertyWidgetComponentBase {
+  /**
+   * The multiselect component for the property widget: `Multiselect` in `@obsidian-typings`.
+   */
+  multiselect: unknown;
+  /**
+   * The type of the property widget.
+   */
+  type: 'tags';
+  /**
+   * Handle focus event.
+   */
+  onFocus(): void;
+  /**
+   * Set the value of the property widget.
+   *
+   * @param value - The value to set.
+   */
+  setValue(value: unknown): void;
+}
+
+/**
+ * Property widget component for text.
+ *
+ * @public
+ * @unofficial
+ */
+export interface TextPropertyWidgetComponent extends PropertyWidgetComponentBase {
+  /**
+   * `true` while `commit()` or `setValue()` runs, so the `blur` that re-rendering causes doesn't save the value again.
+   *
+   * @BaseSourceEditor
+   */
+  _saving: boolean;
+  /**
+   * The container element for the property widget.
+   */
+  containerEl: HTMLElement;
+  /**
+   * The render context for the property widget: `PropertyRenderContext` in `@obsidian-typings`.
+   */
+  ctx: unknown;
+  /**
+   * The hover popover for the property widget: the preview of a link in the value, while it's open.
+   *
+   * @remarks
+   * `@obsidian-typings` types this as always `null`, but the component is the hover parent of its link's preview.
+   *
+   * @BaseSourceEditor
+   */
+  hoverPopover: HoverPopover | null;
+  /**
+   * The input element for the property widget: an editable `div`, so long values can wrap.
+   *
+   * @remarks
+   * `@obsidian-typings` types this as an `HTMLInputElement`.
+   *
+   * @BaseSourceEditor
+   */
+  inputEl: HTMLDivElement;
+  /**
+   * The type of the property widget.
+   */
+  type: 'text';
+  /**
+   * The value of the property widget.
+   */
+  value: string;
+  /**
+   * Saves a value through the render context's `onChange()`, then shows it.
+   *
+   * @param value - The value to save.
+   * @BaseSourceEditor
+   */
+  commit(value: string): void;
+  /**
+   * Handle focus event.
+   *
+   * @param mode - The focus mode.
+   */
+  onFocus(mode?: FocusMode): void;
+  /**
+   * Render the property widget: the value as a link if it is one, otherwise the input.
+   */
+  render(): void;
+  /**
+   * Set the value of the property widget. A missing value becomes an empty string.
+   *
+   * @param value - The value to set.
+   */
+  setValue(value: unknown): void;
 }
 
 declare global {

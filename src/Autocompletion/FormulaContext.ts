@@ -21,14 +21,14 @@ import { getFormulasFromBaseYaml } from 'src/BaseYamlLanguage/getFormulasFromBas
 
 import type {
   BasesFormula,
-  BasesMockContext,
-  BasesMockContextConstructor
+  BasesIdentifierContext,
+  BasesMockContext
 } from 'src/obsidian-types';
 
 /* ========================= FormulaContext ========================= */
 
 /**
- * Obsidian's mock context for a Base Source editor, kept up to date with the formulas in the Base YAML document.
+ * A mock context for a Base Source editor, kept up to date with the formulas in the Base YAML document.
  */
 export class FormulaContext {
   /**
@@ -37,22 +37,22 @@ export class FormulaContext {
    * @remarks
    * A proxy that forwards to the latest mock context, so it stays the same object after each {@link FormulaContext.update}.
    */
-  readonly context: BasesMockContext;
+  readonly context: BasesIdentifierContext;
 
   private app: App;
-  private mockContextClass: BasesMockContextConstructor;
-  private current: BasesMockContext;
+  private mockContextClass: MockContextClass;
+  private current: BasesIdentifierContext;
 
   /** Document the current mock context was created for. */
   private currentDoc: Text | null = null;
 
-  constructor(app: App, mockContextClass: BasesMockContextConstructor) {
+  constructor(app: App, mockContextClass: MockContextClass) {
     this.app = app;
     this.mockContextClass = mockContextClass;
     this.current = new mockContextClass(app, {});
 
     this.context = new Proxy(this.current, {
-      get: (_target: BasesMockContext, property: string | symbol): unknown => {
+      get: (_target: BasesIdentifierContext, property: string | symbol): unknown => {
         const value: unknown = Reflect.get(this.current, property, this.current);
 
         if (typeof value === 'function') {
@@ -94,3 +94,8 @@ export class FormulaContext {
     this.currentDoc = state.doc;
   }
 }
+
+/**
+ * A mock context class: Obsidian's own, or the plugin's fallback built from public value classes.
+ */
+export type MockContextClass = new (app: App, formulas: Record<string, BasesFormula>) => BasesIdentifierContext;

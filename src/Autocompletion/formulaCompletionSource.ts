@@ -53,7 +53,7 @@ export function createFormulaCompletionSource(languageSupport: BasesFormulaLangu
 
   const completionSource: CompletionSource = (context: CompletionContext): CompletionResult | null | Promise<never> => {
     // Accessing undocumented API... keep this guard.
-    // Both calls use it: `update()` creates Obsidian's mock context, and `autocomplete()` is Obsidian's own source.
+    // Both calls use it: `update()` creates the mock context, and `autocomplete()` is Obsidian's own source.
     try {
       formulaContext.update(context.state);
 
