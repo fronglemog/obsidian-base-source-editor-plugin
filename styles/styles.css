@@ -70,14 +70,25 @@ eg:
     --sizer-inset: max(0px, (100cqw - var(--file-line-width)) / 2);
   }
 
- .cm-contentContainer::after {
-    content: "";
+  /* Covers the right inset and margin, so text scrolled under them is hidden and can't be clicked. */
+  .bse-right-margin {
     position: sticky;
     right: 0;
     flex: 0 0 var(--sizer-inset);
     z-index: 1;
     background-color: var(--background-primary);
-    box-shadow: var(--file-margins-x) 0 0 var(--file-margins-x) var(--background-primary);
+  }
+
+  /* Absolutely positioned, so the margin is covered without changing the layout. */
+  /* --bse-file-margin-right is the scroller's measured right padding, which themes can make differ from --file-margins-x. */
+  .bse-right-margin::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 100%;
+    width: var(--bse-file-margin-right, var(--file-margins-x));
+    background-color: var(--background-primary);
   }
 
   .cm-gutters {
@@ -90,9 +101,18 @@ eg:
     font-variant: tabular-nums;
     z-index: 1;
     inset-inline-start: var(--sizer-inset);
-    box-shadow:
-      calc(-1 * (var(--file-margins-x) + var(--sizer-inset))) 0 0 calc(var(--file-margins-x) + var(--sizer-inset))
-      var(--background-primary);
+  }
+
+  /* Covers the left margin and inset, so text scrolled under them is hidden and can't be clicked. */
+  /* --bse-file-margin-left is the scroller's measured left padding, which themes can make differ from --file-margins-x. */
+  .cm-gutters::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    right: 100%;
+    width: calc(var(--bse-file-margin-left, var(--file-margins-x)) + var(--sizer-inset));
+    background-color: var(--background-primary);
   }
 
   .view-content:not(.bse-line-wrap) .cm-contentContainer {
@@ -101,7 +121,8 @@ eg:
 
     .cm-content {
       width: auto;
-      padding-inline-end: var(--file-margins-x);
+      /* CodeMirror's 5px scroll clearance, so the cursor at the end of the longest line isn't under the right margin. The margin's own width of scroll room comes from .bse-right-margin::after. */
+      padding-inline-end: 5px;
     }
   }
 

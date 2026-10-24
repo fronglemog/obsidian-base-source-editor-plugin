@@ -67,12 +67,14 @@ import { activeLineHighlight } from 'src/EditorExtensions/activeLine';
 import { getIndentationGuidesExtensions } from 'src/EditorExtensions/indentationGuides';
 import { getLineWrapExtensions } from 'src/EditorExtensions/lineWrap';
 import { getRenderWhitespaceExtensions } from 'src/EditorExtensions/renderWhitespace';
+import { textScrollMargins } from 'src/EditorExtensions/scrollMargins';
 import {
   getAutocompleteExtensions,
   isAutocompleteEnabled
 } from 'src/EditorExtensions/autocompleteExtension';
 
 import { getDocumentChange } from 'src/getDocumentChange';
+import { fixMouseSelectionScroll } from 'src/mouseSelectionScroll';
 import { handleTouchEditorScroll } from 'src/Mobile/handleTouchEditorScroll';
 
 /* ========================= BaseSourceView ========================= */
@@ -175,10 +177,14 @@ export class BaseSourceView extends TextFileView {
     });
 
     this.registerEvent(
-      app.workspace.on('css-change', () => this.remeasureLayout())
+      app.workspace.on('css-change', () => {
+        this.updateMarginCovers();
+        this.remeasureLayout();
+      })
     );
 
     this.wrapEditorContent(this.editor);
+    this.updateMarginCovers();
     this.updateBottomPadding();
     this.updateReadableLineWidth();
     this.updateLineWrap();
@@ -189,8 +195,11 @@ export class BaseSourceView extends TextFileView {
     // While open, the search bar's key bindings take over the view's scope
     this.searchBar = new BaseSourceSearchBar(this.plugin, this.editor, this.contentEl, (scope: Scope | null) => this.applyScope(scope));
 
+    // Runs after CodeMirror's own `mousedown` listener, which the editor added when it was created
+    const editor: EditorView = this.editor;
+    this.registerDomEvent(editor.contentDOM, 'mousedown', () => fixMouseSelectionScroll(editor));
+
     if (Platform.isMobile) {
-      const editor: EditorView = this.editor;
       this.registerDomEvent(
         editor.scrollDOM,
         'touchstart',
@@ -218,7 +227,7 @@ export class BaseSourceView extends TextFileView {
 
   /**
    * Wraps the editor's content and gutters in the same layout elements as Obsidian's Markdown editor,
-   * so Obsidian's editor styles and themes apply.
+   * so Obsidian's editor styles and themes apply, and adds the element that covers the right margin.
    *
    * @param editor - The editor.
    */
@@ -232,11 +241,15 @@ export class BaseSourceView extends TextFileView {
       contentContainerEl.appendChild(guttersEl);
     }
     contentContainerEl.appendChild(editor.contentDOM);
+
+    // Covers the right margin. A real element, so clicks there don't reach text scrolled under it
+    contentContainerEl.createDiv('bse-right-margin');
   }
 
   override onResize(): void {
     super.onResize();
     this.updateBottomPadding();
+    this.updateMarginCovers();
   }
 
   /**
@@ -285,6 +298,25 @@ export class BaseSourceView extends TextFileView {
     });
   }
 
+  /**
+   * Sizes the elements that cover the left and right margins to match the scroller's side padding.
+   *
+   * @remarks
+   * The padding comes from `--file-margins`, which a theme can set without changing `--file-margins-x`,
+   * so it's measured instead of taken from `--file-margins-x`.
+   */
+  private updateMarginCovers(): void {
+    if (this.editor == null) {
+      return;
+    }
+
+    const scrollerStyle: CSSStyleDeclaration = getComputedStyle(this.editor.scrollDOM);
+    this.contentEl.setCssProps({
+      '--bse-file-margin-left': scrollerStyle.paddingLeft,
+      '--bse-file-margin-right': scrollerStyle.paddingRight
+    });
+  }
+
   override async onClose(): Promise<void> {
     this.applyScope(null);
     this.searchBar = null;
@@ -313,6 +345,7 @@ export class BaseSourceView extends TextFileView {
         this.autocompleteCompartment.of(this.getAutocompleteExtensionsForSettings()),
         lineNumbers(),
         activeLineHighlight,
+        textScrollMargins,
         history(),
         indentUnit.of(YAML_INDENT),
         this.lineWrapCompartment.of(getLineWrapExtensions(this.plugin.settings.lineWrap)),

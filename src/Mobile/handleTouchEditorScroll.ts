@@ -4,6 +4,10 @@ import type {
   EditorView,
 } from '@codemirror/view';
 
+/* PLUGIN */
+import { getVisibleTextBounds } from 'src/EditorExtensions/scrollMargins';
+import type { TextBounds } from 'src/EditorExtensions/scrollMargins';
+
 /* ============================================================ */
 
 const NO_SCROLL_X_CLASS = 'mod-no-scroll-x';
@@ -91,17 +95,7 @@ function isTouchInsideEditor(editor: EditorView, evt: TouchEvent): boolean {
     return false;
   }
 
-  const scrollerEl: HTMLElement = editor.scrollDOM;
-  const scrollerRect: DOMRect = scrollerEl.getBoundingClientRect();
-  const scrollerStyle: CSSStyleDeclaration = getComputedStyle(scrollerEl);
-  const guttersEl: HTMLElement | null = scrollerEl.querySelector('.cm-gutters');
-
-  // The column is inset from the scroller's padding by the same space on either side
-  const contentContainerEl: HTMLElement | null = editor.contentDOM.parentElement;
-  const columnInset: number = contentContainerEl == null ? 0 : Number.parseFloat(getComputedStyle(contentContainerEl).marginInlineStart) || 0;
-
-  const textLeft: number = guttersEl?.getBoundingClientRect().right ?? scrollerRect.left + Number.parseFloat(scrollerStyle.paddingLeft) + columnInset;
-  const textRight: number = scrollerRect.left + scrollerEl.clientWidth - Number.parseFloat(scrollerStyle.paddingRight) - columnInset;
+  const textBounds: TextBounds = getVisibleTextBounds(editor);
   const touchX: number = evt.touches[0]?.clientX ?? Number.NaN;
-  return touchX >= textLeft && touchX <= textRight;
+  return touchX >= textBounds.left && touchX <= textBounds.right;
 }

@@ -1,3 +1,4 @@
+/* eslint-disable tsdoc/syntax */
 /* ========================= IMPORTS ========================= */
 import type {
   App,
@@ -34,6 +35,19 @@ import type {
   Language,
   LanguageSupport as EditorLanguageSupport
 } from '@codemirror/language';
+
+import type {
+  RangeSet,
+  RangeValue,
+  SelectionRange,
+  Text as EditorText
+} from '@codemirror/state';
+
+import type {
+  EditorView,
+  MouseSelectionStyle,
+  ViewUpdate
+} from '@codemirror/view';
 
 import type { Parser } from '@lezer/common';
 
@@ -2215,6 +2229,393 @@ export interface TextPropertyWidgetComponent extends PropertyWidgetComponentBase
    * @param value - The value to set.
    */
   setValue(value: unknown): void;
+}
+
+/* ========================= CODEMIRROR TYPES ========================= */
+// From @codemirror/view 6.43.13, the version Obsidian 1.14.4 ships (its `obsidian` package's peerDependencies)
+
+declare module '@codemirror/view' {
+  interface EditorView {
+    /**
+     * Tracks the editor's DOM input: key presses, touches, compositions and the mouse selection in progress.
+     *
+     * @unofficial
+     * @BaseSourceEditor
+     */
+    inputState: EditorInputState;
+  }
+}
+
+/**
+ * CodeMirror's input state, at `EditorView.inputState`: what the editor's DOM event handlers record.
+ * Times are from `Date.now()`.
+ *
+ * @unofficial
+ * @BaseSourceEditor
+ */
+export interface EditorInputState {
+  /**
+   * `-1` outside a composition. Otherwise the number of changes made during the current composition.
+   */
+  composing: number;
+  /**
+   * Time the last composition ended; `0` before the first.
+   */
+  compositionEndedAt: number;
+  /**
+   * Whether the next change starts the composition: `true` if it does, `false` once the first change is marked,
+   * `null` outside a composition.
+   */
+  compositionFirstChange: boolean | null;
+  /**
+   * Whether changes from DOM mutations that arrive shortly after `compositionend` still count as part of the composition.
+   */
+  compositionPendingChange: boolean;
+  /**
+   * Safari only: whether an Enter `keydown` right after `compositionend` is still ignored as part of the composition.
+   */
+  compositionPendingKey: boolean;
+  /**
+   * The range being dragged while text is dragged out of the editor, or `null`.
+   */
+  draggedContent: SelectionRange | null;
+  /**
+   * DOM event handlers and observers by event type: the editor's view plugins' first, then CodeMirror's own.
+   */
+  handlers: Record<string, EditorEventHandlers>;
+  /**
+   * Text of the last `beforeinput` event that inserted text. Used when reading DOM changes.
+   */
+  insertingText: string;
+  /**
+   * Time of the last `beforeinput` event that inserted text; `0` before the first.
+   */
+  insertingTextAt: number;
+  /**
+   * Time of the last `contextmenu` event; `0` before the first.
+   */
+  lastContextMenu: number;
+  /**
+   * Time the editor last gained focus; `0` before then, and reset to `0` in some cases.
+   */
+  lastFocusTime: number;
+  /**
+   * iOS only: time of the last `scroll` event while no finger was down, which means a glide.
+   * CodeMirror doesn't set `scrollTop` within 100 ms of it, because Safari stops the glide if it does.
+   */
+  lastIOSMomentumScroll: number;
+  /**
+   * `keyCode` of the last `keydown`. Reset to `0` by the next transaction.
+   */
+  lastKeyCode: number;
+  /**
+   * Time of the last `keydown`; `0` before the first.
+   */
+  lastKeyTime: number;
+  /**
+   * The scroller's `scrollLeft` at the last `scroll` event. Restored on focus if the scroll position was reset.
+   */
+  lastScrollLeft: number;
+  /**
+   * The scroller's `scrollTop` at the last `scroll` event. Restored on focus if the scroll position was reset.
+   */
+  lastScrollTop: number;
+  /**
+   * User event type for the next selection change, such as `select.pointer`, or `null`.
+   */
+  lastSelectionOrigin: string | null;
+  /**
+   * Time `lastSelectionOrigin` was set. Reset to `0` by the next transaction.
+   */
+  lastSelectionTime: number;
+  /**
+   * Time of the last `touchstart`; `0` before the first. Mouse presses within 2 seconds of it are ignored.
+   */
+  lastTouchTime: number;
+  /**
+   * `clientX` of the last `touchstart`.
+   */
+  lastTouchX: number;
+  /**
+   * `clientY` of the last `touchstart`.
+   */
+  lastTouchY: number;
+  /**
+   * Time of the last `wheel` event; `0` before the first.
+   */
+  lastWheelEvent: number;
+  /**
+   * The mouse selection in progress, or `null` when there's none.
+   */
+  mouseSelection: EditorMouseSelection | null;
+  /**
+   * Whether the editor had focus when focus was last reported to extensions, through a view update.
+   */
+  notifiedFocused: boolean;
+  /**
+   * iOS only: a key whose default behaviour runs first, to keep the on-screen keyboard right,
+   * and is handled once the DOM change it causes is read. `undefined` when there's none.
+   */
+  pendingIOSKey: EditorPendingKey | undefined;
+  /**
+   * Set to an empty list and not used anywhere else in CodeMirror 6.43.13.
+   */
+  scrollHandlers: unknown[];
+  /**
+   * Tab focus mode. `-1`: off, so Tab reaches the key handlers. `0`: on, so Tab moves focus as in the browser.
+   * Above `0`: on until that time. Esc turns it on for 2 seconds.
+   */
+  tabFocusMode: number;
+  /**
+   * Whether a finger is on the editor: set by `touchstart`, cleared by `touchend`.
+   */
+  touchActive: boolean;
+  /**
+   * The editor.
+   */
+  view: EditorView;
+  /**
+   * Ends the mouse selection in progress, if any.
+   */
+  destroy(): void;
+  /**
+   * Adds the DOM event listeners the handlers need to the editor's content element, and removes ones no longer needed.
+   * Listeners for events with only observers are passive.
+   *
+   * @param plugins - The editor's view plugin instances.
+   */
+  ensureHandlers(plugins: readonly unknown[]): void;
+  /**
+   * iOS only: handles `pendingIOSKey` now.
+   *
+   * @param change - The DOM change that came with the key, if any.
+   * @returns Whether the key was handled. `false` if there's no pending key, DOM changes are still waiting to be read,
+   *   or the change looks like an autocorrection before Enter.
+   */
+  flushIOSKey(change?: { from: number; to: number; insert: EditorText }): boolean;
+  /**
+   * Passes a DOM event to {@link EditorInputState.runHandlers}, unless it doesn't belong to the editor
+   * or is ignored during a composition. Bound to the instance in the constructor, so it can be passed
+   * to `addEventListener()`.
+   *
+   * @param event - The DOM event.
+   */
+  handleEvent(event: Event): void;
+  /**
+   * Returns whether a key event is part of a composition, and so isn't handled.
+   *
+   * @param event - The DOM event.
+   * @returns `true` if the event is ignored.
+   */
+  ignoreDuringComposition(event: Event): boolean;
+  /**
+   * Handles what must happen on every `keydown`: records it, applies tab focus mode, and delays keys
+   * that Android and iOS handle after their DOM change.
+   *
+   * @param event - The `keydown` event.
+   * @returns `true` if the key handlers shouldn't run for it.
+   */
+  keydown(event: KeyboardEvent): boolean;
+  /**
+   * Runs the observers, then the handlers, for an event type. Stops at the first handler that returns `true`,
+   * and calls `preventDefault()` for it.
+   *
+   * @param type - The event type.
+   * @param event - The DOM event.
+   */
+  runHandlers(type: string, event: Event): void;
+  /**
+   * Sets `lastSelectionOrigin` and `lastSelectionTime`.
+   *
+   * @param origin - User event type, such as `select.pointer`.
+   */
+  setSelectionOrigin(origin: string): void;
+  /**
+   * Sets the mouse selection in progress, ending the previous one.
+   *
+   * @param mouseSelection - The new mouse selection.
+   */
+  startMouseSelection(mouseSelection: EditorMouseSelection): void;
+  /**
+   * Passes a view update to the DOM observer and the mouse selection, maps `draggedContent` through document changes,
+   * and resets `lastKeyCode` and `lastSelectionTime` after a transaction.
+   *
+   * @param update - The view update.
+   */
+  update(update: ViewUpdate): void;
+}
+
+/**
+ * DOM event handlers and observers for one event type, in {@link EditorInputState.handlers}.
+ *
+ * @unofficial
+ * @BaseSourceEditor
+ */
+export interface EditorEventHandlers {
+  /**
+   * Called in order until one returns `true`. Handlers from view plugins are wrapped to catch and log their errors.
+   */
+  handlers: ((view: EditorView, event: Event) => boolean | void)[];
+  /**
+   * Called for every event, before the handlers.
+   */
+  observers: ((view: EditorView, event: Event) => void)[];
+}
+
+/**
+ * iOS only: a key whose handling waits for the DOM change it causes, in {@link EditorInputState.pendingIOSKey}.
+ *
+ * @unofficial
+ * @BaseSourceEditor
+ */
+export interface EditorPendingKey {
+  /**
+   * The key's `key`, such as `Enter`.
+   */
+  key: string;
+  /**
+   * The key's `keyCode`.
+   */
+  keyCode: number;
+  /**
+   * Modifier keys held. Shift is dropped while the on-screen keyboard capitalises automatically.
+   */
+  mods: {
+    altKey: boolean;
+    ctrlKey: boolean;
+    metaKey: boolean;
+    shiftKey: boolean;
+  };
+}
+
+/**
+ * A mouse selection in progress: from a left-button `mousedown` in the editor until `mouseup`.
+ * In {@link EditorInputState.mouseSelection}.
+ *
+ * @unofficial
+ * @BaseSourceEditor
+ */
+export interface EditorMouseSelection {
+  /**
+   * The editor's atomic ranges when the selection started. The selection skips over them.
+   */
+  atoms: RangeSet<RangeValue>[];
+  /**
+   * `false` for a selection drag. `null` while a press inside the selection may still become a drag
+   * of the selected text, and `true` once it has.
+   */
+  dragging: boolean | null;
+  /**
+   * Whether Shift was held at the start, so the selection extends the existing one.
+   */
+  extend: boolean;
+  /**
+   * The last `mousemove` the selection was updated from, or the starting `mousedown`.
+   */
+  lastEvent: MouseEvent;
+  /**
+   * Whether the selection adds a range instead of replacing the selection. By default: Ctrl held, or Cmd on macOS.
+   */
+  multiple: boolean;
+  /**
+   * Whether the next {@link EditorMouseSelection.select} dispatches the selection even if it's unchanged.
+   * Set when the editor didn't have focus at the start.
+   */
+  mustSelect: boolean;
+  /**
+   * The elements scrolled when the pointer is dragged past their edges.
+   */
+  scrollParents: EditorScrollParents;
+  /**
+   * The current drag-scroll speed, in px per step. A step runs every 50 ms.
+   */
+  scrollSpeed: { x: number; y: number };
+  /**
+   * The interval that runs the drag-scroll steps, or `-1` while not scrolling.
+   */
+  scrolling: number;
+  /**
+   * The `mousedown` that started the selection.
+   */
+  startEvent: MouseEvent;
+  /**
+   * How the selection is computed from the pointer: from `EditorView.mouseSelectionStyle`, or CodeMirror's basic style.
+   */
+  style: MouseSelectionStyle;
+  /**
+   * The editor.
+   */
+  view: EditorView;
+  /**
+   * Stops drag-scrolling, removes the document listeners, and clears the input state's
+   * `mouseSelection` and `draggedContent`.
+   */
+  destroy(): void;
+  /**
+   * Handles `mousemove` on the document: updates the selection, then sets the drag-scroll speed
+   * from how far the pointer is past the scroll parents' edges. Bound to the instance in the constructor.
+   *
+   * @param event - The `mousemove` event.
+   */
+  move(event: MouseEvent): void;
+  /**
+   * Runs one drag-scroll step: scrolls each scroll parent by the speed, or the window when there's
+   * no parent for that direction, then updates the selection.
+   */
+  scroll(): void;
+  /**
+   * Dispatches the selection for the pointer position, if it changed or `mustSelect` is set.
+   *
+   * @param event - The mouse event to take the pointer position from.
+   */
+  select(event: MouseEvent): void;
+  /**
+   * Sets the drag-scroll speed, starting or stopping the interval.
+   *
+   * @param sx - Horizontal speed, in px per step.
+   * @param sy - Vertical speed, in px per step.
+   */
+  setScrollSpeed(sx: number, sy: number): void;
+  /**
+   * Applies the starting `mousedown`, unless the press may become a drag of the selected text.
+   *
+   * @param event - The `mousedown` event.
+   */
+  start(event: MouseEvent): void;
+  /**
+   * Handles `mouseup` on the document: applies the last position if needed, then ends the mouse selection.
+   * Bound to the instance in the constructor.
+   *
+   * @param event - The `mouseup` event.
+   */
+  up(event: MouseEvent): void;
+  /**
+   * Ends the selection when the user types; otherwise lets the style map its positions through document changes.
+   *
+   * @param update - The view update.
+   */
+  update(update: ViewUpdate): void;
+}
+
+/**
+ * The elements a mouse selection scrolls, in {@link EditorMouseSelection.scrollParents}.
+ *
+ * @remarks
+ * Each is the first parent of the editor's content that is larger inside than its own box in that direction.
+ * CodeMirror doesn't check `overflow`, so the element may not be able to scroll.
+ *
+ * @unofficial
+ * @BaseSourceEditor
+ */
+export interface EditorScrollParents {
+  /**
+   * The first parent whose `scrollWidth` is larger than its `clientWidth`, or `null` if there's none.
+   */
+  x: HTMLElement | null;
+  /**
+   * The first parent whose `scrollHeight` is larger than its `clientHeight`, or `null` if there's none.
+   */
+  y: HTMLElement | null;
 }
 
 declare global {
