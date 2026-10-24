@@ -201,25 +201,17 @@ export class BaseSourceView extends TextFileView {
   }
 
   /**
-   * Replaces the view's scope on Obsidian's keymap, as the Markdown view does for its search.
+   * Sets the keymap scope for the Base Source view.
    *
    * @remarks
-   * Setting `this.scope` alone isn't enough: Obsidian doesn't push a view's scope when the view becomes active.
+   * Obsidian's workspace scope passes key presses to the scope of the active view.
+   * Key presses in this view's scope will only be handled while the Base Source view is active.
    *
    * @param scope - Scope to push, or `null` to pop the current one.
    */
   private applyScope(scope: Scope | null): void {
-    const app: App = this.plugin.app;
-
     if (scope === this.scope) {
       return;
-    }
-
-    if (this.scope != null) {
-      app.keymap.popScope(this.scope);
-    }
-    if (scope != null) {
-      app.keymap.pushScope(scope);
     }
     this.scope = scope;
   }
