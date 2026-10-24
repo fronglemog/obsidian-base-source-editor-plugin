@@ -1,7 +1,10 @@
 /* ========================= IMPORTS ========================= */
 /* OBSIDIAN */
 import { QueryController } from 'obsidian';
-import type { App } from 'obsidian';
+import type { 
+  App,
+  Component
+} from 'obsidian';
 
 /* CODEMIRROR */
 import { LRLanguage } from '@codemirror/language';
@@ -97,8 +100,8 @@ export class NativeFormulaSupport {
    * Gets Obsidian's mock context class.
    *
    * @remarks
-   * The class isn't exported, so it's read from the `mockContext` of a `QueryController` created only for this.
-   * That controller is never loaded, so it registers no events.
+   * The class isn't exported, so it's read from the `mockContext` of a `QueryController` instance.
+   * The QueryController is initialised but never loaded; the listeners it registers are cleaned-up manually.
    *
    * @returns The class, or `null` if the Bases core plugin is off or the class can't be found.
    */
@@ -119,6 +122,14 @@ export class NativeFormulaSupport {
       const QueryControllerClass = QueryController as unknown as QueryControllerConstructor;
       const queryController: QueryController = new QueryControllerClass(this.app, basesPlugin, createDiv(), null);
       const mockContext: BasesMockContext | undefined = queryController.mockContext;
+
+      // Accessing undocumented API... keep this guard.
+      // Clean up the listeners registered when the QueryController is created.
+      try {
+        disposeComponent(queryController);
+      } catch(error: unknown) {
+        logError(`Couldn't remove the listeners of the QueryController created to reach the mock context class.`, error);
+      }
 
       if (mockContext == null || typeof mockContext.constructor !== 'function') {
         logError(`${UNAVAILABLE_MESSAGE} A QueryController has no mockContext.`);
@@ -171,8 +182,6 @@ export class NativeFormulaSupport {
   }
 }
 
-/* ========================= HELPERS ========================= */
-
 /**
  * Creates Obsidian's formula language support, reading identifiers from a mock context.
  *
@@ -216,4 +225,22 @@ function getTopLevelStateFields(extension: Extension): StateField<unknown>[] {
 
   const items: Extension[] = extension as Extension[];
   return items.filter((item: Extension): item is StateField<unknown> => item instanceof StateField);
+}
+
+/**
+ * Calls the functions that a {@link Component}'s `unload()` would run.
+ *
+ * @remarks
+ * A Component that is initialised but never loaded can still register events and children.
+ * Listeners can be left behind, causing memory leaks.
+ *
+ * @param component - Component that was initialised but not loaded.
+ */
+function disposeComponent(component: Component): void {
+  for (const child of component._children) {
+    disposeComponent(child);
+  }
+  while (component._events.length > 0) {
+    component._events.pop()?.();
+  }
 }

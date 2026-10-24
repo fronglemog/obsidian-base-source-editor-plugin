@@ -76,6 +76,61 @@ declare module 'obsidian' {
      */
     internalPlugins: InternalPlugins;
   }
+
+  interface Component {
+    /**
+     * Child Components attached to current component, will be unloaded on unloading parent component.
+     *
+     * @unofficial
+     */
+    _children: Component[];
+    /**
+     * Events that are attached to the current component, will be detached on unloading parent component.
+     * Functions added by `register()` and the other `register*()` methods, run last-first when this component unloads.
+     *
+     * @unofficial
+     */
+    _events: (() => unknown)[];
+    /**
+     * Whether the component and its children are loaded.
+     *
+     * @unofficial
+     */
+    _loaded: boolean;
+  }
+
+  /**
+   * A reference to an event listener, returned by {@link Events.on}.
+   * @public
+   */
+  interface EventRef {
+    /**
+     * Context applied to the event callback.
+     *
+     * @unofficial
+     */
+    ctx?: unknown;
+    /**
+     * Events object the event was registered on.
+     *
+     * @unofficial
+     */
+    e: Events;
+    /**
+     * Event name the event was registered on.
+     *
+     * @unofficial
+     */
+    name: string;
+    /**
+     * Function to be called on event trigger on the events object.
+     *
+     * @param arg - The event arguments.
+     * @unofficial
+     */
+    fn(...arg: unknown[]): void;
+  }
+
   interface QueryController extends Component {
     /**
      * The app instance.
