@@ -21,6 +21,13 @@ import {
 } from 'src/Autocompletion/quotedInserts';
 
 import type { QuoteCharacter } from 'src/Autocompletion/quotedInserts';
+
+import {
+  getEmptyValueKeyPath,
+  isFilterGroupPath,
+  isFormulaPath
+} from 'src/BaseYamlLanguage/yamlKeyPath';
+
 import type { ReadDocumentText } from 'src/BaseYamlLanguage/yamlKeyPath';
 import type { BasesFormulaLanguageSupport } from 'src/obsidian-types';
 import { logError } from 'src/Util/logError';
@@ -62,6 +69,55 @@ export function createFormulaCompletionSource(languageSupport: BasesFormulaLangu
       // Obsidian's `autocomplete()` returns nothing on phones. This source only exists on a phone
       // when the "Autocomplete" setting is "Enabled (all devices)", so the phone check is always turned off.
       const result: CompletionResult | null = setIsPhoneFalseAndCall(Platform, (): CompletionResult | null => languageSupport.autocomplete(context), reportPhoneCheckUnchangeable);
+
+      return adaptToQuotes(result, context.state, context.pos);
+    } catch (error: unknown) {
+      // A rejected promise makes CodeMirror close the popup and log the error.
+      // A thrown error would stop CodeMirror asking this source until the cursor moves.
+      return Promise.reject(error instanceof Error ? error : new Error(String(error)));
+    }
+  };
+
+  return completionSource;
+}
+
+/**
+ * Creates the completion source for an empty formula value, such as `Title: ` with nothing typed, on Ctrl+Space.
+ *
+ * @remarks
+ * Offers what Obsidian's formula editor shows at an empty formula: everything a formula can start with.
+ * Obsidian's own autocomplete only offers it when the whole document is empty, and isn't asked where a value has no formula yet.
+ * Before each request, it updates `formulaContext` and selects the summary context in a summary formula.
+ * Inside a quoted YAML string, the completions' inserts are escaped for the quotes.
+ *
+ * @param languageSupport - Obsidian's formula language support, created with `formulaContext.context`.
+ * @param formulaContext - Context that `languageSupport` reads identifiers from.
+ * @returns The completion source.
+ */
+export function createEmptyFormulaCompletionSource(languageSupport: BasesFormulaLanguageSupport, formulaContext: FormulaContext): CompletionSource {
+  const completionSource: CompletionSource = (context: CompletionContext): CompletionResult | null | Promise<never> => {
+    // Only on Ctrl+Space: typing a space after a key shouldn't open every suggestion
+    if (context.explicit === false) {
+      return null;
+    }
+
+    const readDocumentText: ReadDocumentText = (from: number, to: number): string => context.state.sliceDoc(from, to);
+    const keyPath: string[] | null = getEmptyValueKeyPath(syntaxTree(context.state), context.pos, readDocumentText);
+
+    if (keyPath == null || isFormulaPath(keyPath) === false || isFilterGroupPath(keyPath) === true) {
+      return null;
+    }
+
+    // Accessing undocumented API... keep this guard.
+    // `update()` creates the mock context, and `expressionCompletions()` is Obsidian's own list.
+    try {
+      formulaContext.update(context.state);
+      formulaContext.selectContextAt(context.state, context.pos);
+
+      const result: CompletionResult = {
+        from: context.pos,
+        options: languageSupport.expressionCompletions()
+      };
 
       return adaptToQuotes(result, context.state, context.pos);
     } catch (error: unknown) {

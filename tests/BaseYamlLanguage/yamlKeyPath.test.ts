@@ -13,7 +13,9 @@ import type {
 } from '@lezer/common';
 
 import {
+  getEmptyValueKeyPath,
   getYamlKeyPath,
+  isFilterGroupPath,
   isFormulaPath,
   isInSummaryFormula,
   isSummaryFormulaPath
@@ -46,6 +48,19 @@ function isInSummaryFormulaAfter(document: string, text: string): boolean {
   const tree: Tree = yamlLanguage.parser.parse(document);
   const position: number = document.indexOf(text) + text.length;
   return isInSummaryFormula(tree, position, (from: number, to: number): string => document.slice(from, to));
+}
+
+/**
+ * Gets the key path of the empty value at the position right after some text in a YAML document.
+ *
+ * @param document - YAML document.
+ * @param text - Text to find; the position is just after its first occurrence.
+ * @returns The key path, or `null` if the position isn't in an empty value.
+ */
+function getEmptyValueKeyPathAfter(document: string, text: string): string[] | null {
+  const tree: Tree = yamlLanguage.parser.parse(document);
+  const position: number = document.indexOf(text) + text.length;
+  return getEmptyValueKeyPath(tree, position, (from: number, to: number): string => document.slice(from, to));
 }
 
 /* ========================= TESTS ========================= */
@@ -129,5 +144,92 @@ describe('isInSummaryFormula', () => {
   test('not in other formulas, or in a view\'s summaries', () => {
     expect(isInSummaryFormulaAfter(document, 'Title: file.name')).toBe(false);
     expect(isInSummaryFormulaAfter(document, 'file.size: Average')).toBe(false);
+  });
+
+  test('at an empty summary value', () => {
+    expect(isInSummaryFormulaAfter('summaries:\n  Mean: \n  Total: values.sum()\n', 'Mean: ')).toBe(true);
+    expect(isInSummaryFormulaAfter('formulas:\n  Title: \n', 'Title: ')).toBe(false);
+  });
+});
+
+describe('isFilterGroupPath', () => {
+  test('accepts and, or and not in a filter', () => {
+    expect(isFilterGroupPath(['filters', 'and'])).toBe(true);
+    expect(isFilterGroupPath(['filters', 'or', '#', 'not'])).toBe(true);
+    expect(isFilterGroupPath(['views', '#', 'filters', 'or'])).toBe(true);
+  });
+
+  test('rejects filters, filter items, and keys named and outside filters', () => {
+    expect(isFilterGroupPath(['filters'])).toBe(false);
+    expect(isFilterGroupPath(['filters', 'and', '#'])).toBe(false);
+    expect(isFilterGroupPath(['views', '#', 'filters'])).toBe(false);
+    expect(isFilterGroupPath(['formulas', 'and'])).toBe(false);
+  });
+});
+
+describe('getEmptyValueKeyPath', () => {
+  test('after a key and a space, with nothing typed', () => {
+    expect(getEmptyValueKeyPathAfter('formulas:\n  Title: ', 'Title: ')).toEqual(['formulas', 'Title']);
+    expect(getEmptyValueKeyPathAfter('formulas:\n  Title: \n  Other: file.name\n', 'Title: ')).toEqual(['formulas', 'Title']);
+    expect(getEmptyValueKeyPathAfter('formulas:\n  "Note: title": \n', '"Note: title": ')).toEqual(['formulas', 'Note: title']);
+  });
+
+  test('with more spaces or a comment around the position', () => {
+    expect(getEmptyValueKeyPathAfter('formulas:\n  Title:   \n', 'Title: ')).toEqual(['formulas', 'Title']);
+    expect(getEmptyValueKeyPathAfter('formulas:\n  Title:   \n', 'Title:   ')).toEqual(['formulas', 'Title']);
+    expect(getEmptyValueKeyPathAfter('formulas:\n  Title:  # note\n', 'Title: ')).toEqual(['formulas', 'Title']);
+  });
+
+  test('between empty quotes', () => {
+    expect(getEmptyValueKeyPathAfter('formulas:\n  Title: ""\n', 'Title: "')).toEqual(['formulas', 'Title']);
+    expect(getEmptyValueKeyPathAfter('formulas:\n  Title: \'\'\n', 'Title: \'')).toEqual(['formulas', 'Title']);
+  });
+
+  test('on an indented line of an empty block scalar', () => {
+    expect(getEmptyValueKeyPathAfter('formulas:\n  Title: |\n    \n', '|\n    ')).toEqual(['formulas', 'Title']);
+    expect(getEmptyValueKeyPathAfter('formulas:\n  Title: |\n    \n  Other: file.name\n', '|\n    ')).toEqual(['formulas', 'Title']);
+  });
+
+  test('in an empty list item, with # for the item', () => {
+    expect(getEmptyValueKeyPathAfter('filters:\n  and:\n    - \n', '- ')).toEqual(['filters', 'and', '#']);
+    expect(getEmptyValueKeyPathAfter('filters:\n  and:\n    - \n    - file.name\n', '- ')).toEqual(['filters', 'and', '#']);
+    expect(getEmptyValueKeyPathAfter('views:\n  - type: table\n    filters:\n      or:\n        - \n', 'or:\n        - ')).toEqual(['views', '#', 'filters', 'or', '#']);
+  });
+
+  test('for any key, whether its value is a formula or not', () => {
+    expect(getEmptyValueKeyPathAfter('filters: \n', 'filters: ')).toEqual(['filters']);
+    expect(getEmptyValueKeyPathAfter('summaries:\n  Mean: \n', 'Mean: ')).toEqual(['summaries', 'Mean']);
+    expect(getEmptyValueKeyPathAfter('views:\n  - type: table\n    name: \n', 'name: ')).toEqual(['views', '#', 'name']);
+  });
+
+  test('not without a space after the colon or dash', () => {
+    expect(getEmptyValueKeyPathAfter('formulas:\n  Title:\n', 'Title:')).toBeNull();
+    expect(getEmptyValueKeyPathAfter('filters:\n  and:\n    -\n', '-')).toBeNull();
+  });
+
+  test('not in a value that has text', () => {
+    expect(getEmptyValueKeyPathAfter('formulas:\n  Title: f\n', 'Title: f')).toBeNull();
+    expect(getEmptyValueKeyPathAfter('formulas:\n  Title: file.name \n', 'file.name ')).toBeNull();
+    expect(getEmptyValueKeyPathAfter('formulas:\n  Title: "f"\n', '"f')).toBeNull();
+    expect(getEmptyValueKeyPathAfter('formulas:\n  Title: |\n    file.name \n', 'file.name ')).toBeNull();
+    expect(getEmptyValueKeyPathAfter('formulas:\n  Title: 1 - \n', '1 - ')).toBeNull();
+  });
+
+  test('not after the closing quote, on a key, or where a key would go', () => {
+    expect(getEmptyValueKeyPathAfter('formulas:\n  Title: ""\n', '""')).toBeNull();
+    expect(getEmptyValueKeyPathAfter('formulas:\n  Title: file.name\n', 'Ti')).toBeNull();
+    expect(getEmptyValueKeyPathAfter('formulas:\n  Title: file.name\n  \n', 'file.name\n  ')).toBeNull();
+  });
+
+  test('not on a block scalar\'s | line, or on a line indented no further than its key', () => {
+    expect(getEmptyValueKeyPathAfter('formulas:\n  Title: |\n', '|')).toBeNull();
+    expect(getEmptyValueKeyPathAfter('formulas:\n  Title: | \n    file.name\n', '| ')).toBeNull();
+    expect(getEmptyValueKeyPathAfter('formulas:\n  Title: |\n', '|\n')).toBeNull();
+    expect(getEmptyValueKeyPathAfter('formulas:\n  Title: |\n  ', '|\n  ')).toBeNull();
+  });
+
+  test('not on a key or list item whose value starts on the next line', () => {
+    expect(getEmptyValueKeyPathAfter('filters: \n  and:\n    - file.name\n', 'filters: ')).toBeNull();
+    expect(getEmptyValueKeyPathAfter('views:\n  - \n    type: table\n', '- ')).toBeNull();
   });
 });

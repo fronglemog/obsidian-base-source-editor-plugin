@@ -7,6 +7,7 @@ import type {
 } from 'obsidian';
 
 /* CODEMIRROR */
+import type { CompletionSource } from '@codemirror/autocomplete';
 import { LRLanguage } from '@codemirror/language';
 import type { Language } from '@codemirror/language';
 import { StateField } from '@codemirror/state';
@@ -14,7 +15,12 @@ import type { Extension } from '@codemirror/state';
 
 /* PLUGIN */
 import type { BaseYamlLanguage } from 'src/BaseYamlLanguage/BaseYamlLanguage';
-import { createFormulaCompletionSource } from 'src/Autocompletion/formulaCompletionSource';
+
+import {
+  createEmptyFormulaCompletionSource,
+  createFormulaCompletionSource
+} from 'src/Autocompletion/formulaCompletionSource';
+
 import { FallbackMockContext } from 'src/Autocompletion/FallbackMockContext';
 import { FormulaContext } from 'src/Autocompletion/FormulaContext';
 import type { MockContextClass } from 'src/Autocompletion/FormulaContext';
@@ -34,6 +40,7 @@ import type {
 const SHADOW_LANGUAGE_NAME: string = 'base-yaml-shadow';
 const UNAVAILABLE_MESSAGE: string = 'formula suggestions are off.';
 const FALLBACK_MESSAGE: string = 'formula suggestions carry on without formula result types.';
+const EMPTY_VALUE_MESSAGE: string = 'empty formula values get no suggestions.';
 
 /**
  * Provides Obsidian's own formula autocomplete and function signature tooltip to Base Source editors.
@@ -88,6 +95,8 @@ export class NativeFormulaSupport {
         languageSupport.language.data.of({
           autocomplete: createFormulaCompletionSource(languageSupport, formulaContext)
         }),
+        // Ctrl+Space on an empty formula value, where Obsidian's own completion source offers nothing
+        ...createEmptyValueExtensions(languageSupport, formulaContext, this.baseYamlLanguage.getLanguageSupport().language),
         // Obsidian's function signature tooltip
         ...getTopLevelStateFields(languageSupport.support)
       ];
@@ -210,6 +219,33 @@ function createLanguageSupport(mockContext: BasesIdentifierContext): BasesFormul
     return null;
   }
   return languageSupport;
+}
+
+/**
+ * Creates the extensions for Ctrl+Space on an empty formula value.
+ *
+ * @remarks
+ * The same completion source is added to two languages, because CodeMirror only asks the language at the cursor.
+ * Where an empty value has no formula yet, that's the plugin's YAML language. An empty block scalar
+ * is parsed as a formula made of spaces, so there it's Obsidian's formula language.
+ *
+ * @param languageSupport - Obsidian's formula language support, created with `formulaContext.context`.
+ * @param formulaContext - Context that `languageSupport` reads identifiers from.
+ * @param yamlLanguage - The plugin's YAML language.
+ * @returns The extensions, or none if Obsidian's formula language support has no `expressionCompletions()`.
+ */
+function createEmptyValueExtensions(languageSupport: BasesFormulaLanguageSupport, formulaContext: FormulaContext, yamlLanguage: Language): Extension[] {
+  if (typeof languageSupport.expressionCompletions !== 'function') {
+    logError(`${EMPTY_VALUE_MESSAGE} Obsidian's formula language support has no expressionCompletions().`);
+    return [];
+  }
+
+  const completionSource: CompletionSource = createEmptyFormulaCompletionSource(languageSupport, formulaContext);
+
+  return [
+    yamlLanguage.data.of({ autocomplete: completionSource }),
+    languageSupport.language.data.of({ autocomplete: completionSource })
+  ];
 }
 
 /**
