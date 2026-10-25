@@ -84,6 +84,24 @@ export function isFilterGroupPath(keyPath: string[]): boolean {
 }
 
 /**
+ * Returns whether the value at a YAML key path is a filter that can be written as a mapping:
+ * the value of a `filters` key, or an item in a filter group.
+ *
+ * @remarks
+ * Such a filter is a formula, or a mapping with one key: `and`, `or` or `not`.
+ * A list straight under `filters` isn't a filter group, and Obsidian doesn't accept it, so its items don't count.
+ *
+ * @param keyPath - Key path, from {@link getYamlKeyPath}.
+ * @returns `true` if the value is a filter that can be a mapping.
+ */
+export function isFilterMappingPath(keyPath: string[]): boolean {
+  const isFiltersValue: boolean = keyPath.at(-1) === 'filters';
+  const isGroupItem: boolean = keyPath.at(-1) === '#' && isFilterGroupPath(keyPath.slice(0, -1)) === true;
+
+  return (isFiltersValue === true || isGroupItem === true) && isFilterPath(keyPath) === true;
+}
+
+/**
  * Returns whether the value at a YAML key path is a summary formula: the value of a key under the top-level `summaries`.
  *
  * @remarks

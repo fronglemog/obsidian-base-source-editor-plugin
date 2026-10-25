@@ -16,6 +16,7 @@ import {
   getEmptyValueKeyPath,
   getYamlKeyPath,
   isFilterGroupPath,
+  isFilterMappingPath,
   isFormulaPath,
   isInSummaryFormula,
   isSummaryFormulaPath
@@ -164,6 +165,26 @@ describe('isFilterGroupPath', () => {
     expect(isFilterGroupPath(['filters', 'and', '#'])).toBe(false);
     expect(isFilterGroupPath(['views', '#', 'filters'])).toBe(false);
     expect(isFilterGroupPath(['formulas', 'and'])).toBe(false);
+  });
+});
+
+describe('isFilterMappingPath', () => {
+  test('accepts a filters key\'s own value, and items in a filter group', () => {
+    expect(isFilterMappingPath(['filters'])).toBe(true);
+    expect(isFilterMappingPath(['views', '#', 'filters'])).toBe(true);
+    expect(isFilterMappingPath(['filters', 'and', '#'])).toBe(true);
+    expect(isFilterMappingPath(['views', '#', 'filters', 'or', '#', 'not', '#'])).toBe(true);
+  });
+
+  test('rejects items in a list straight under filters, which Obsidian doesn\'t accept', () => {
+    expect(isFilterMappingPath(['filters', '#'])).toBe(false);
+    expect(isFilterMappingPath(['views', '#', 'filters', '#'])).toBe(false);
+  });
+
+  test('rejects filter groups, and paths outside filters', () => {
+    expect(isFilterMappingPath(['filters', 'and'])).toBe(false);
+    expect(isFilterMappingPath(['views', '#'])).toBe(false);
+    expect(isFilterMappingPath(['formulas', 'filters'])).toBe(false);
   });
 });
 

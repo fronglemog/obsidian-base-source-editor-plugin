@@ -6,23 +6,31 @@ import type {
   BasesPropertyId,
   BasesView,
   BasesViewConfig,
+  BasesViewFactory,
+  BasesViewRegistration,
   CachedMetadata,
   Command,
   Component,
   Constructor,
   DateValue,
   Debouncer,
+  Editor,
   EventRef,
   Events,
   FileValue,
   HoverPopover,
   IconName,
   KeymapInfo,
+  Menu,
   moment,
   ObjectValue,
   QueryController,
+  TAbstractFile,
   TFile,
-  Value
+  TFolder,
+  UserEvent,
+  Value,
+  WorkspaceLeaf
 } from 'obsidian';
 
 import type {
@@ -1092,6 +1100,13 @@ export interface InternalPlugins extends Events {
    */
   enable(): Promise<void>;
   /**
+   * Gets the Bases core plugin's instance, if the plugin is enabled.
+   *
+   * @param id - `bases`.
+   * @returns The instance, or null if the plugin is disabled.
+   */
+  getEnabledPluginById(id: 'bases'): BasesPluginInstance | null;
+  /**
    * Gets a core plugin's instance, if the plugin is enabled.
    *
    * @param id - Core plugin ID, such as `bases`.
@@ -1127,6 +1142,134 @@ export interface InternalPlugins extends Events {
    * Saves which core plugins are enabled to the vault's settings.
    */
   saveConfig(): Promise<void>;
+}
+
+/**
+ * The Bases core plugin's instance: the registered view types, and the commands and menu items that create Bases.
+ * From `app.internalPlugins.getEnabledPluginById('bases')` (checked in Obsidian 1.14.5).
+ *
+ * @unofficial
+ */
+export interface BasesPluginInstance {
+  /**
+   * Reference to the app.
+   */
+  app: App;
+  /**
+   * Whether the plugin is enabled in a new vault.
+   */
+  defaultOn: boolean;
+  /**
+   * The plugin's description, as shown in the core plugins settings.
+   */
+  description: string;
+  /**
+   * The plugin's ID: `bases`.
+   */
+  id: string;
+  /**
+   * The plugin's name, as shown in the core plugins settings.
+   */
+  name: string;
+  /**
+   * Each registered view type, by type: Obsidian's own (`table`, `cards`, `list`, `kanban`) and other plugins'.
+   * Prefer `getRegistration()`.
+   */
+  registrations: Record<string, BasesViewRegistration>;
+  /**
+   * Creates a Base in the folder for new files, and embeds it at the editor's selection as `![[path]]`.
+   *
+   * @param editor - The editor to embed the Base in.
+   */
+  createAndEmbedBase(editor: Editor): Promise<void>;
+  /**
+   * Creates a Base in the folder for new files and opens it, with its name selected for renaming.
+   *
+   * @param evt - The event that started it: with a modifier key, the Base opens in a new tab. Defaults to the app's last event.
+   */
+  createAndOpenBase(evt?: UserEvent): Promise<void>;
+  /**
+   * Creates a `.base` file.
+   *
+   * @param location - Folder to create it in.
+   * @param filename - Name of the file, without its extension.
+   * @param contents - The file's contents.
+   * @returns The new file.
+   */
+  createNewBasesFile(location?: TFolder, filename?: string, contents?: string): Promise<TFile>;
+  /**
+   * Removes a view type.
+   *
+   * @param type - The view type, such as `table`.
+   */
+  deregisterView(type: string): void;
+  /**
+   * Gets a view type's registration.
+   *
+   * @param type - The view type, such as `table`.
+   * @returns The registration, or `null` if no view type has that name.
+   */
+  getRegistration(type: string): BasesViewRegistration | null;
+  /**
+   * Gets every view type's registration.
+   *
+   * @returns The registrations, by view type.
+   */
+  getRegistrations(): Record<string, BasesViewRegistration>;
+  /**
+   * Gets the function that creates a view of a type.
+   *
+   * @param type - The view type, such as `table`.
+   * @returns The view factory, or `null` if no view type has that name.
+   */
+  getViewFactory(type: string): BasesViewFactory | null;
+  /**
+   * Sets up the plugin when Obsidian loads it: registers the commands that create, insert, copy and switch Bases.
+   *
+   * @param app - The app.
+   * @param plugin - Obsidian's wrapper for the core plugin.
+   */
+  init(app: App, plugin: unknown): void;
+  /**
+   * Removes Obsidian's own view types when the plugin is disabled.
+   *
+   * @param app - The app.
+   * @param plugin - Obsidian's wrapper for the core plugin.
+   * @BaseSourceEditor
+   */
+  onDisable(app: App, plugin: unknown): void;
+  /**
+   * Adds a "New base" item to an editor's context menu.
+   *
+   * @param menu - The context menu.
+   * @param editor - The editor the menu was opened in.
+   */
+  onEditorMenu(menu: Menu, editor: Editor): void;
+  /**
+   * Sets up the plugin when it's enabled: Base embeds, the file menu item, link previews, and Obsidian's own view types.
+   * It isn't an async function, so it doesn't return a promise.
+   *
+   * @param app - The app.
+   * @param plugin - Obsidian's wrapper for the core plugin.
+   * @BaseSourceEditor
+   */
+  onEnable(app: App, plugin: unknown): void;
+  /**
+   * Adds a "New base" item to a folder's context menu in the file explorer.
+   *
+   * @param menu - The context menu.
+   * @param file - The file or folder the menu was opened on.
+   * @param source - Where the menu was opened, such as `file-explorer-context-menu`.
+   * @param leaf - The leaf the menu was opened in.
+   */
+  onFileMenu(menu: Menu, file: TAbstractFile, source: string, leaf?: WorkspaceLeaf): void;
+  /**
+   * Adds a view type. Shows an error notice instead if a view type with that name is already registered.
+   *
+   * @param type - The view type, such as `table`.
+   * @param registration - The view type's registration.
+   */
+  registerView(type: string, registration: BasesViewRegistration): void;
 }
 
 /**
