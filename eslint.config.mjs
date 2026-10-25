@@ -15,6 +15,7 @@ export default defineConfig([
   globalIgnores([
     '**/node_modules/',
     '**/build/**',
+    '_local/**',
     // 'eslint.config.mjs',
     // 'esbuild.config.mjs',
     // 'version-bump.mjs'
