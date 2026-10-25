@@ -81,6 +81,8 @@ export class NativeFormulaSupport {
       }
 
       const extensions: Extension[] = [
+        // Selects the summary context in summary formulas, before Obsidian's function signature tooltip reads it
+        formulaContext.createContextSelector(),
         // Replaces Obsidian's own completion source, which isn't added.
         // Obsidian's formula language looks it up at positions inside formulas.
         languageSupport.language.data.of({

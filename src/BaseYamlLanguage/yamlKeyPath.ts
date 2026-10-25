@@ -1,7 +1,8 @@
 /* ========================= IMPORTS ========================= */
 /* CODEMIRROR */
 import type {
-  SyntaxNode
+  SyntaxNode,
+  Tree
 } from '@lezer/common';
 
 /* ========================= YAML KEY PATH ========================= */
@@ -53,8 +54,7 @@ export function isFormulaPath(keyPath: string[]): boolean {
   const rootKey: string | undefined = keyPath[0];
 
   const isFormulaDefinition: boolean = rootKey === 'formulas' && keyPath.length === 2;
-
-  const isSummaryDefinition: boolean = rootKey === 'summaries' && keyPath.length === 2;
+  const isSummaryDefinition: boolean = isSummaryFormulaPath(keyPath);
 
   if (isFormulaDefinition === true || isSummaryDefinition === true) {
     return true;
@@ -70,6 +70,36 @@ export function isFormulaPath(keyPath: string[]): boolean {
   }
 
   return false;
+}
+
+/**
+ * Returns whether the value at a YAML key path is a summary formula: the value of a key under the top-level `summaries`.
+ *
+ * @remarks
+ * A view's `summaries` holds summary names, not formulas.
+ *
+ * @param keyPath - Key path, from {@link getYamlKeyPath}.
+ * @returns `true` if the value is a summary formula.
+ */
+export function isSummaryFormulaPath(keyPath: string[]): boolean {
+  return keyPath[0] === 'summaries' && keyPath.length === 2;
+}
+
+/**
+ * Returns whether a document position is in a summary formula, or at its end.
+ *
+ * @param tree - Syntax tree of the document.
+ * @param pos - Document position.
+ * @param readDocumentText - Reads text from the document, for key names.
+ * @returns `true` if `pos` is in a summary formula.
+ */
+export function isInSummaryFormula(tree: Tree, pos: number, readDocumentText: ReadDocumentText): boolean {
+  const keyPath: string[] | null = getYamlKeyPath(tree.resolve(pos, -1), readDocumentText);
+
+  if (keyPath == null) {
+    return false;
+  }
+  return isSummaryFormulaPath(keyPath);
 }
 
 /* ========================= TYPES ========================= */

@@ -31,7 +31,8 @@ import { logError } from 'src/Util/logError';
  * Creates the completion source for positions inside formulas, backed by Obsidian's own formula autocomplete.
  *
  * @remarks
- * Before each request, it updates `formulaContext` with the formulas in the document.
+ * Before each request, it updates `formulaContext` with the formulas in the document,
+ * and selects the summary context if the position is in a summary formula.
  * Inside a quoted YAML string, the completions' inserts are escaped for the quotes.
  *
  * @param languageSupport - Obsidian's formula language support, created with `formulaContext.context`.
@@ -53,9 +54,10 @@ export function createFormulaCompletionSource(languageSupport: BasesFormulaLangu
 
   const completionSource: CompletionSource = (context: CompletionContext): CompletionResult | null | Promise<never> => {
     // Accessing undocumented API... keep this guard.
-    // Both calls use it: `update()` creates the mock context, and `autocomplete()` is Obsidian's own source.
+    // `update()` creates the mock context, and `autocomplete()` is Obsidian's own source.
     try {
       formulaContext.update(context.state);
+      formulaContext.selectContextAt(context.state, context.pos);
 
       // Obsidian's `autocomplete()` returns nothing on phones. This source only exists on a phone
       // when the "Autocomplete" setting is "Enabled (all devices)", so the phone check is always turned off.

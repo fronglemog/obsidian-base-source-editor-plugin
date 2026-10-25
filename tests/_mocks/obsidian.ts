@@ -1,6 +1,8 @@
 /* ========================= IMPORTS ========================= */
 /* OBSIDIAN */
-import type { Platform as _Platform } from 'obsidian';
+import type { 
+  Platform as _Platform
+} from 'obsidian';
 
 /* ================================================== */
 
@@ -25,3 +27,25 @@ export const Platform: typeof _Platform = {
   isSafari: false,
   resourcePathPrefix: ''
 };
+
+/**
+ * Stand-in for Obsidian's `ListValue`: keeps the items it's created with.
+ */
+export class ListValue {
+  data: unknown[];
+
+  constructor(data: unknown[]) {
+    this.data = data;
+  }
+}
+
+/**
+ * Stand-in for Obsidian's `NullValue`: one shared instance, as in Obsidian.
+ */
+export class NullValue {
+  static readonly value: NullValue = new NullValue();
+
+  toString(): string {
+    return 'null';
+  }
+}
