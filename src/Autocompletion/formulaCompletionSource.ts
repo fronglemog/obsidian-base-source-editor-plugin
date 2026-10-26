@@ -24,7 +24,9 @@ import type { QuoteCharacter } from 'src/Autocompletion/quotedInserts';
 
 import {
   getEmptyValueKeyPath,
+  getYamlKeyPath,
   isFilterGroupPath,
+  isFiltersValuePath,
   isFormulaPath
 } from 'src/BaseYamlLanguage/yamlKeyPath';
 
@@ -41,6 +43,7 @@ import { logError } from 'src/Util/logError';
  * Before each request, it updates `formulaContext` with the formulas in the document,
  * and selects the summary context if the position is in a summary formula.
  * Inside a quoted YAML string, the completions' inserts are escaped for the quotes.
+ * It offers nothing where a formula is the value of a `filters` key itself, which Obsidian's interface never writes.
  *
  * @param languageSupport - Obsidian's formula language support, created with `formulaContext.context`.
  * @param formulaContext - Context that `languageSupport` reads identifiers from.
@@ -60,6 +63,13 @@ export function createFormulaCompletionSource(languageSupport: BasesFormulaLangu
   };
 
   const completionSource: CompletionSource = (context: CompletionContext): CompletionResult | null | Promise<never> => {
+    // Obsidian's own interface never writes a formula as the value of `filters`, only a group
+    const readDocumentText: ReadDocumentText = (from: number, to: number): string => context.state.sliceDoc(from, to);
+    const keyPath: string[] | null = getYamlKeyPath(syntaxTree(context.state).resolve(context.pos, -1), readDocumentText);
+    if (keyPath != null && isFiltersValuePath(keyPath) === true) {
+      return null;
+    }
+
     // Accessing undocumented API... keep this guard.
     // `update()` creates the mock context, and `autocomplete()` is Obsidian's own source.
     try {
@@ -104,7 +114,7 @@ export function createEmptyFormulaCompletionSource(languageSupport: BasesFormula
     const readDocumentText: ReadDocumentText = (from: number, to: number): string => context.state.sliceDoc(from, to);
     const keyPath: string[] | null = getEmptyValueKeyPath(syntaxTree(context.state), context.pos, readDocumentText);
 
-    if (keyPath == null || isFormulaPath(keyPath) === false || isFilterGroupPath(keyPath) === true) {
+    if (keyPath == null || isFormulaPath(keyPath) === false || isFilterGroupPath(keyPath) === true || isFiltersValuePath(keyPath) === true) {
       return null;
     }
 

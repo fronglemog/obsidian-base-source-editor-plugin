@@ -102,6 +102,20 @@ export function isFilterMappingPath(keyPath: string[]): boolean {
 }
 
 /**
+ * Returns whether the value at a YAML key path is the value of a `filters` key itself:
+ * the top-level `filters`, or a view's `filters`, not a filter inside a group.
+ *
+ * @remarks
+ * Obsidian reads a single formula there, but its own interface always writes a group: `and` with a list.
+ *
+ * @param keyPath - Key path, from {@link getYamlKeyPath}.
+ * @returns `true` if the value is a `filters` key's own value.
+ */
+export function isFiltersValuePath(keyPath: string[]): boolean {
+  return keyPath.at(-1) === 'filters' && isFilterPath(keyPath) === true;
+}
+
+/**
  * Returns whether the value at a YAML key path is a summary formula: the value of a key under the top-level `summaries`.
  *
  * @remarks
@@ -237,22 +251,10 @@ function isEmptyBlockLiteral(blockLiteral: SyntaxNode, pos: number, readDocument
  * @returns The key path, with `#` for a list item, or `null` if there's no such key or list item before `pos`.
  */
 function getMissingValueKeyPath(tree: Tree, pos: number, readDocumentText: ReadDocumentText): string[] | null {
-  // Back over the spaces before the position, on the same line
-  let spacesStart: number = pos;
-  while (spacesStart > 0 && INLINE_SPACES.includes(readDocumentText(spacesStart - 1, spacesStart))) {
-    spacesStart -= 1;
-  }
-
-  if (spacesStart === pos) {
+  const node: SyntaxNode | null = getNodeBeforeSpaces(tree, pos, readDocumentText);
+  if (node == null) {
     return null;
   }
-
-  const characterBefore: string = readDocumentText(spacesStart - 1, spacesStart);
-  if (characterBefore !== ':' && characterBefore !== '-') {
-    return null;
-  }
-
-  const node: SyntaxNode = tree.resolve(spacesStart, -1);
 
   // A key's `:`, with no value after it in the pair. A comment after it isn't part of the pair.
   if (node.name === ':' && node.parent?.name === 'Pair') {
@@ -272,6 +274,27 @@ function getMissingValueKeyPath(tree: Tree, pos: number, readDocumentText: ReadD
   }
 
   return null;
+}
+
+/**
+ * Gets the syntax node just before the spaces before a position, on the same line,
+ * such as the `:` of a key with nothing typed after it yet: `Title: `.
+ *
+ * @param tree - Syntax tree of the document.
+ * @param pos - Document position.
+ * @param readDocumentText - Reads text from the document.
+ * @returns The node that ends where the spaces start, or `null` if there's no space just before `pos`.
+ */
+export function getNodeBeforeSpaces(tree: Tree, pos: number, readDocumentText: ReadDocumentText): SyntaxNode | null {
+  let spacesStart: number = pos;
+  while (spacesStart > 0 && INLINE_SPACES.includes(readDocumentText(spacesStart - 1, spacesStart))) {
+    spacesStart -= 1;
+  }
+
+  if (spacesStart === pos) {
+    return null;
+  }
+  return tree.resolve(spacesStart, -1);
 }
 
 /* ========================= TYPES ========================= */

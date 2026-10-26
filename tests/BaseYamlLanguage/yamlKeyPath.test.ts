@@ -17,6 +17,7 @@ import {
   getYamlKeyPath,
   isFilterGroupPath,
   isFilterMappingPath,
+  isFiltersValuePath,
   isFormulaPath,
   isInSummaryFormula,
   isSummaryFormulaPath
@@ -185,6 +186,19 @@ describe('isFilterMappingPath', () => {
     expect(isFilterMappingPath(['filters', 'and'])).toBe(false);
     expect(isFilterMappingPath(['views', '#'])).toBe(false);
     expect(isFilterMappingPath(['formulas', 'filters'])).toBe(false);
+  });
+});
+
+describe('isFiltersValuePath', () => {
+  test('accepts the value of the top-level filters and of a view\'s filters', () => {
+    expect(isFiltersValuePath(['filters'])).toBe(true);
+    expect(isFiltersValuePath(['views', '#', 'filters'])).toBe(true);
+  });
+
+  test('rejects filters inside a group, and keys named filters elsewhere', () => {
+    expect(isFiltersValuePath(['filters', 'and', '#'])).toBe(false);
+    expect(isFiltersValuePath(['views', '#', 'filters', 'or', '#'])).toBe(false);
+    expect(isFiltersValuePath(['formulas', 'filters'])).toBe(false);
   });
 });
 

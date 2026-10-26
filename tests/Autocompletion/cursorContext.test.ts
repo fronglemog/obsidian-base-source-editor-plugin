@@ -11,8 +11,15 @@ import { Text } from '@codemirror/state';
 import type { Tree } from '@lezer/common';
 
 /* PLUGIN */
-import { getKeyPosition } from 'src/Autocompletion/cursorContext';
-import type { KeyPosition } from 'src/Autocompletion/cursorContext';
+import {
+  getKeyPosition,
+  getValuePosition
+} from 'src/Autocompletion/cursorContext';
+
+import type {
+  KeyPosition,
+  ValuePosition
+} from 'src/Autocompletion/cursorContext';
 
 /* ========================= TEST DATA ========================= */
 
@@ -31,6 +38,19 @@ function getKeyPositionAfter(document: string, text: string): KeyPosition | null
   const tree: Tree = yamlLanguage.parser.parse(document);
   const position: number = document.indexOf(text) + text.length;
   return getKeyPosition(tree, Text.of(document.split('\n')), position);
+}
+
+/**
+ * Gets the value position right after some text in a YAML document.
+ *
+ * @param document - YAML document.
+ * @param text - Text to find; the position is just after its first occurrence.
+ * @returns The value position, or `null` if the position isn't a value position.
+ */
+function getValuePositionAfter(document: string, text: string): ValuePosition | null {
+  const tree: Tree = yamlLanguage.parser.parse(document);
+  const position: number = document.indexOf(text) + text.length;
+  return getValuePosition(tree, Text.of(document.split('\n')), position);
 }
 
 /* ========================= TESTS ========================= */
@@ -135,5 +155,67 @@ describe('getKeyPosition', () => {
 
   test('not in a formula that continues on the next line', () => {
     expect(getKeyPositionAfter('filters:\n  file.na\n', 'file.na')).toBeNull();
+  });
+});
+
+describe('getValuePosition', () => {
+  test('a value being typed, with its key path and the view\'s type', () => {
+    const document: string = `${VIEW}    rowHeight: me\n`;
+    const valueFrom: number = document.indexOf('me\n');
+    expect(getValuePositionAfter(document, 'rowHeight: me')).toEqual({
+      keyPath: ['views', '#', 'rowHeight'],
+      from: valueFrom,
+      to: valueFrom + 'me'.length,
+      typeValue: 'table'
+    });
+  });
+
+  test('the whole value, with the position in it or at its start', () => {
+    const valueFrom: number = VIEW.indexOf('table');
+    const expected: object = { keyPath: ['views', '#', 'type'], from: valueFrom, to: valueFrom + 'table'.length };
+    expect(getValuePositionAfter(VIEW, 'type: ta')).toMatchObject(expected);
+    expect(getValuePositionAfter(VIEW, 'type: ')).toMatchObject(expected);
+  });
+
+  test('an empty value', () => {
+    const document: string = `${VIEW}    rowHeight: `;
+    expect(getValuePositionAfter(document, 'rowHeight: ')).toEqual({
+      keyPath: ['views', '#', 'rowHeight'],
+      from: document.length,
+      to: document.length,
+      typeValue: 'table'
+    });
+    const position: number = 'views:\n  - type: '.length;
+    expect(getValuePositionAfter('views:\n  - type: \n    name: All\n', '- type: ')).toMatchObject({ keyPath: ['views', '#', 'type'], from: position, to: position });
+  });
+
+  test('the first key of a list item, and a sort item\'s direction', () => {
+    expect(getValuePositionAfter('views:\n  - type: ta\n', 'type: ta')).toMatchObject({ keyPath: ['views', '#', 'type'] });
+    expect(getValuePositionAfter(`${VIEW}    sort:\n      - property: file.name\n        direction: A\n`, 'direction: A')).toMatchObject({ keyPath: ['views', '#', 'sort', '#', 'direction'] });
+  });
+
+  test('a comment after the value isn\'t part of it', () => {
+    const document: string = `${VIEW}    rowHeight: me # short\n`;
+    const valueFrom: number = document.indexOf('me #');
+    expect(getValuePositionAfter(document, 'rowHeight: m')).toMatchObject({ from: valueFrom, to: valueFrom + 'me'.length });
+  });
+
+  test('not without a space after the colon', () => {
+    expect(getValuePositionAfter('views:\n  - name: All\n    type:\n', 'type:')).toBeNull();
+  });
+
+  test('not in quotes, a list in brackets, a block scalar or a comment', () => {
+    expect(getValuePositionAfter(`${VIEW}    rowHeight: "me"\n`, '"me')).toBeNull();
+    expect(getValuePositionAfter(`${VIEW}    order: [file.name]\n`, '[file.na')).toBeNull();
+    expect(getValuePositionAfter('formulas:\n  Title: |\n    file\n', '    file')).toBeNull();
+    expect(getValuePositionAfter(`${VIEW}    rowHeight: # me\n`, '# me')).toBeNull();
+  });
+
+  test('not in a value that starts on a later line', () => {
+    expect(getValuePositionAfter(`${VIEW}    groupBy:\n      pro\n`, '      pro')).toBeNull();
+  });
+
+  test('not in a key', () => {
+    expect(getValuePositionAfter(`${VIEW}    rowHeight: medium\n`, '    row')).toBeNull();
   });
 });

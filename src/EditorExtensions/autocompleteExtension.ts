@@ -14,7 +14,7 @@ import type {
 } from '@codemirror/view';
 
 /* PLUGIN */
-import { createYamlKeyCompletionSource } from 'src/Autocompletion/yamlCompletionSource';
+import { createYamlCompletionSource } from 'src/Autocompletion/yamlCompletionSource';
 import type BasesSourceEditorPlugin from 'src/main';
 import type { PluginSettings } from 'src/Settings/PluginSettings';
 
@@ -103,7 +103,7 @@ export function getCompletionInfoPositionConfig(view: EditorView, list: Rect, op
  */
 export function getAutocompleteExtensions(plugin: BasesSourceEditorPlugin): Extension[] {
   // Created once: CodeMirror tells a source's earlier results apart by the source function
-  const yamlKeyCompletionSource: CompletionSource = createYamlKeyCompletionSource(plugin.app);
+  const yamlCompletionSource: CompletionSource = createYamlCompletionSource(plugin.app);
 
   const extensions: Extension[] = [
     // Same popup configuration as Obsidian's formula editor, so the popup looks the same.
@@ -125,9 +125,9 @@ export function getAutocompleteExtensions(plugin: BasesSourceEditorPlugin): Exte
       // Not in Obsidian's configuration: keeps the info panel inside the editor's pane
       positionInfo: getCompletionInfoPositionConfig
     }),
-    // YAML key suggestions, at every position whatever its language: under `filters:`,
+    // YAML key and value suggestions, at every position whatever its language: under `filters:`,
     // a key being typed is parsed as a formula until its `:` is typed
-    EditorState.languageData.of((): readonly Record<string, unknown>[] => [{ autocomplete: yamlKeyCompletionSource }])
+    EditorState.languageData.of((): readonly Record<string, unknown>[] => [{ autocomplete: yamlCompletionSource }])
   ];
 
   const formulaExtensions: Extension[] | null = plugin.nativeFormulaSupport.createEditorExtensions();

@@ -1,6 +1,18 @@
 /* ========================= IMPORTS ========================= */
+/* OBSIDIAN */
+import type {
+  BasesOptions,
+  IconName
+} from 'obsidian';
+
 /* PLUGIN */
-import type { KeyPosition } from 'src/Autocompletion/cursorContext';
+import type {
+  KeyPosition,
+  ValuePosition
+} from 'src/Autocompletion/cursorContext';
+
+import type { ViewType } from 'src/Autocompletion/viewRegistrations';
+import { toYamlText } from 'src/Autocompletion/yamlText';
 import { isFilterMappingPath } from 'src/BaseYamlLanguage/yamlKeyPath';
 
 /* ========================= BASE SCHEMA ========================= */
@@ -47,6 +59,15 @@ const KEYS_NEEDING_KEY: ReadonlyMap<string, string> = new Map([
 const UNDECLARED_VIEW_KEYS: Map<string, readonly string[]> = new Map([
   ['table', ['columnSize']]
 ]);
+
+/** Values of `direction`, in a sort item and in `groupBy`. */
+const SORT_DIRECTIONS: readonly string[] = ['ASC', 'DESC'];
+
+/** Values of a toggle option. */
+const TOGGLE_VALUES: readonly string[] = ['true', 'false'];
+
+/** Grey label of a suggested default value. */
+const DEFAULT_DETAIL: string = 'Default';
 
 /**
  * Gets the keys a mapping in a Base can have, from Obsidian's schema for `.base` files.
@@ -122,6 +143,83 @@ export function getKeySuggestions(position: KeyPosition, readViewOptionKeys: (vi
 }
 
 /**
+ * Gets the values to suggest at a value position: a view's type, a sort direction, or the value of a view's option.
+ *
+ * @remarks
+ * A view option's values depend on the option's type: a dropdown's choices, `true` and `false` for a toggle,
+ * and the default of a slider or text option. A dropdown's empty choice is suggested as `""`.
+ * A view's own keys, such as `name`, get no values, whatever its type's options declare.
+ *
+ * @param position - The value position, from `getValuePosition()`.
+ * @param readViewTypes - Reads the registered view types.
+ * @param readViewOptions - Reads the options of a view type.
+ * @returns The values, in the order Obsidian lists them.
+ */
+export function getValueSuggestions(
+  position: ValuePosition,
+  readViewTypes: () => ViewType[],
+  readViewOptions: (viewType: string) => BasesOptions[]
+): ValueSuggestion[] {
+  const key: string | undefined = position.keyPath.at(-1);
+  const mappingKeyPath: string[] = position.keyPath.slice(0, -1);
+
+  if (isSortPath(mappingKeyPath) === true && key === 'direction') {
+    return SORT_DIRECTIONS.map((direction: string): ValueSuggestion => ({ value: direction }));
+  }
+
+  if (isViewPath(mappingKeyPath) === false || key == null) {
+    return [];
+  }
+
+  if (key === 'type') {
+    return readViewTypes().map((viewType: ViewType): ValueSuggestion => ({
+      value: toYamlText(viewType.id),
+      detail: viewType.name,
+      icon: viewType.icon
+    }));
+  }
+
+  if (VIEW_KEYS.includes(key) === true || position.typeValue == null) {
+    return [];
+  }
+
+  const option: BasesOptions | undefined = readViewOptions(position.typeValue).find((viewOption: BasesOptions): boolean => viewOption.key === key);
+  if (option == null) {
+    return [];
+  }
+  return getOptionValueSuggestions(option);
+}
+
+/**
+ * Gets the values to suggest for a view option, by the option's type.
+ *
+ * @param option - The view option.
+ * @returns The values, or none for an option type without fixed values or a default.
+ */
+function getOptionValueSuggestions(option: BasesOptions): ValueSuggestion[] {
+  switch (option.type) {
+    case 'dropdown': {
+      return Object.entries(option.options).map(([value, label]: [string, string]): ValueSuggestion => ({
+        value: toYamlText(value),
+        detail: label
+      }));
+    }
+    case 'toggle': {
+      return TOGGLE_VALUES.map((value: string): ValueSuggestion => ({ value }));
+    }
+    case 'slider': {
+      return option.default == null ? [] : [{ value: String(option.default), detail: DEFAULT_DETAIL }];
+    }
+    case 'text': {
+      return option.default == null ? [] : [{ value: toYamlText(option.default), detail: DEFAULT_DETAIL }];
+    }
+    default: {
+      return [];
+    }
+  }
+}
+
+/**
  * Returns whether a key is suggested in a mapping, given the keys already there.
  *
  * @param key - The key.
@@ -173,3 +271,17 @@ function isSortPath(keyPath: string[]): boolean {
 function isViewPath(keyPath: string[]): boolean {
   return keyPath.length === 2 && keyPath[0] === 'views' && keyPath[1] === '#';
 }
+
+/* ========================= TYPES ========================= */
+
+/**
+ * A value to suggest.
+ */
+export type ValueSuggestion = {
+  /** The value as it's written in the file, in quotes if it needs them. */
+  value: string;
+  /** Grey text shown beside the value, such as the name Obsidian shows for it. */
+  detail?: string;
+  /** Icon shown before the value. */
+  icon?: IconName;
+};

@@ -11,7 +11,11 @@ import type {
 } from '@lezer/common';
 
 /* PLUGIN */
-import { getYamlKeyPath } from 'src/BaseYamlLanguage/yamlKeyPath';
+import {
+  getNodeBeforeSpaces,
+  getYamlKeyPath
+} from 'src/BaseYamlLanguage/yamlKeyPath';
+
 import type { ReadDocumentText } from 'src/BaseYamlLanguage/yamlKeyPath';
 
 /* ========================= KEY POSITION ========================= */
@@ -209,7 +213,6 @@ function describeMapping(mapping: SyntaxNode | null, mappingKeyPath: string[] | 
   }
 
   const existingKeys: string[] = [];
-  let typeValue: string | null = null;
   const pairs: SyntaxNode[] = mapping?.getChildren('Pair') ?? [];
 
   for (const pair of pairs) {
@@ -219,14 +222,7 @@ function describeMapping(mapping: SyntaxNode | null, mappingKeyPath: string[] | 
     if (keyNode == null || keyNode.from === range.from) {
       continue;
     }
-
-    const keyName: string = unquote(readDocumentText(keyNode.from, keyNode.to));
-    existingKeys.push(keyName);
-
-    const value: SyntaxNode | null = getPairValue(pair);
-    if (keyName === 'type' && value != null) {
-      typeValue = unquote(readDocumentText(value.from, value.to));
-    }
+    existingKeys.push(unquote(readDocumentText(keyNode.from, keyNode.to)));
   }
 
   return {
@@ -235,9 +231,102 @@ function describeMapping(mapping: SyntaxNode | null, mappingKeyPath: string[] | 
     to: range.to,
     isRename: range.isRename,
     existingKeys,
-    typeValue
+    typeValue: getTypeValue(mapping, readDocumentText)
   };
 }
+
+/**
+ * Gets the value of a mapping's `type` key, such as a view's type.
+ *
+ * @param mapping - The mapping's node, or `null` for a mapping with no keys yet.
+ * @param readDocumentText - Reads text from the document.
+ * @returns The value without quotes, or `null` if the mapping has no `type` key with a value.
+ */
+function getTypeValue(mapping: SyntaxNode | null, readDocumentText: ReadDocumentText): string | null {
+  const pairs: SyntaxNode[] = mapping?.getChildren('Pair') ?? [];
+
+  for (const pair of pairs) {
+    const keyNode: SyntaxNode | null = pair.getChild('Key');
+    const value: SyntaxNode | null = getPairValue(pair);
+
+    if (keyNode != null && value != null && unquote(readDocumentText(keyNode.from, keyNode.to)) === 'type') {
+      return unquote(readDocumentText(value.from, value.to));
+    }
+  }
+  return null;
+}
+
+/* ========================= VALUE POSITION ========================= */
+
+/**
+ * Gets the value position at a document position: where the value of a key is being typed on the key's line, or could be.
+ *
+ * @remarks
+ * Only plain values count: a key, `:`, at least one space, then the value or nothing. Quoted values, block scalars,
+ * lists in brackets and values that start on a later line don't. A comment after the value isn't part of it.
+ * The position can be anywhere in the value, including its start: `type: ‸table`.
+ *
+ * @param tree - Syntax tree of the document.
+ * @param doc - The document.
+ * @param pos - Document position, such as the cursor.
+ * @returns The value position, or `null` if `pos` isn't in a value position.
+ */
+export function getValuePosition(tree: Tree, doc: Text, pos: number): ValuePosition | null {
+  const readDocumentText: ReadDocumentText = (textFrom: number, textTo: number): string => doc.sliceString(textFrom, textTo);
+
+  const pairValue: PairValue | null = getPairValueAt(tree, pos, readDocumentText);
+  if (pairValue == null) {
+    return null;
+  }
+
+  const { pair, value } = pairValue;
+  const keyLine: number = doc.lineAt(pair.from).number;
+  if (value != null && doc.lineAt(value.to).number !== keyLine) {
+    return null;
+  }
+
+  const keyPath: string[] | null = getYamlKeyPath(pair, readDocumentText);
+  if (keyPath == null) {
+    return null;
+  }
+
+  return {
+    keyPath,
+    from: value?.from ?? pos,
+    to: value?.to ?? pos,
+    typeValue: getTypeValue(pair.parent, readDocumentText)
+  };
+}
+
+/**
+ * Gets the pair whose plain value is at a position, and that value.
+ *
+ * @param tree - Syntax tree of the document.
+ * @param pos - Document position.
+ * @param readDocumentText - Reads text from the document.
+ * @returns The pair and its value, with `null` for an empty value; or `null` if `pos` isn't in a pair's plain value.
+ */
+function getPairValueAt(tree: Tree, pos: number, readDocumentText: ReadDocumentText): PairValue | null {
+  // In a value, or at its end
+  const node: SyntaxNode = tree.resolve(pos, -1);
+  if (node.name === 'Literal' && node.parent?.name === 'Pair') {
+    return { pair: node.parent, value: node };
+  }
+
+  // At an empty value, or at the start of one: after a key's `:` and at least one space
+  const colon: SyntaxNode | null = getNodeBeforeSpaces(tree, pos, readDocumentText);
+  if (colon?.name !== ':' || colon.parent?.name !== 'Pair') {
+    return null;
+  }
+
+  const value: SyntaxNode | null = colon.nextSibling;
+  if (value != null && (value.name !== 'Literal' || value.from !== pos)) {
+    return null;
+  }
+  return { pair: colon.parent, value };
+}
+
+/* ========================= HELPERS ========================= */
 
 /**
  * Gets the pair whose key starts at a position.
@@ -329,4 +418,26 @@ type KeyRange = {
   from: number;
   to: number;
   isRename: boolean;
+};
+
+/**
+ * A position where the value of a key is being typed on the key's line, or could be.
+ */
+export type ValuePosition = {
+  /** Key path of the value: its mapping's key path, then its key. From {@link getYamlKeyPath}. */
+  keyPath: string[];
+  /** Start of the value, or the position itself if the value is empty. */
+  from: number;
+  /** End of the value, before any comment, or the position itself if the value is empty. */
+  to: number;
+  /** The value of the mapping's `type` key, such as a view's type, or `null` if it has none. */
+  typeValue: string | null;
+};
+
+/**
+ * A pair, and its plain value: `null` if the value is empty.
+ */
+type PairValue = {
+  pair: SyntaxNode;
+  value: SyntaxNode | null;
 };

@@ -5,13 +5,24 @@ import {
   test
 } from 'vitest';
 
+/* OBSIDIAN */
+import type { BasesOptions } from 'obsidian';
+
 /* PLUGIN */
 import {
   getKeySuggestions,
-  getSchemaKeys
+  getSchemaKeys,
+  getValueSuggestions
 } from 'src/Autocompletion/baseSchema';
 
-import type { KeyPosition } from 'src/Autocompletion/cursorContext';
+import type { ValueSuggestion } from 'src/Autocompletion/baseSchema';
+
+import type {
+  KeyPosition,
+  ValuePosition
+} from 'src/Autocompletion/cursorContext';
+
+import type { ViewType } from 'src/Autocompletion/viewRegistrations';
 
 /* ========================= HELPERS ========================= */
 
@@ -48,6 +59,66 @@ function readViewOptionKeys(viewType: string): string[] {
     return ['cardSize'];
   }
   return [];
+}
+
+/**
+ * Creates a value position, as the cursor context would give it.
+ *
+ * @param keyPath - Key path of the value.
+ * @param typeValue - The mapping's `type` value.
+ * @returns The value position.
+ */
+function createValuePosition(keyPath: string[], typeValue: string | null = null): ValuePosition {
+  return {
+    keyPath,
+    from: 0,
+    to: 0,
+    typeValue
+  };
+}
+
+/**
+ * Stands in for the view types read from Obsidian.
+ *
+ * @returns Two view types.
+ */
+function readViewTypes(): ViewType[] {
+  return [
+    { id: 'table', name: 'Table', icon: 'lucide-table' },
+    { id: 'cards', name: 'Cards', icon: 'lucide-layout-grid' }
+  ];
+}
+
+/**
+ * Stands in for the view options read from Obsidian: one of each type that has values to suggest, and one that hasn't.
+ *
+ * @param viewType - The view's type.
+ * @returns The view type's options.
+ */
+function readViewOptions(viewType: string): BasesOptions[] {
+  if (viewType !== 'table') {
+    return [];
+  }
+  return [
+    { key: 'rowHeight', type: 'dropdown', displayName: 'Row height', options: { '': 'Short', medium: 'Medium' } },
+    { key: 'indentProperties', type: 'toggle', displayName: 'Indent properties', default: false },
+    { key: 'cardSize', type: 'slider', displayName: 'Card size', default: 200 },
+    { key: 'separator', type: 'text', displayName: 'Property separator', default: ', ' },
+    { key: 'caption', type: 'text', displayName: 'Caption' },
+    { key: 'image', type: 'property', displayName: 'Image property' },
+    { key: 'name', type: 'text', displayName: 'Name', default: 'Untitled' }
+  ];
+}
+
+/**
+ * Gets the value suggestions at a value position, with the stand-ins for Obsidian.
+ *
+ * @param keyPath - Key path of the value.
+ * @param typeValue - The mapping's `type` value.
+ * @returns The value suggestions.
+ */
+function getValueSuggestionsAt(keyPath: string[], typeValue: string | null = null): ValueSuggestion[] {
+  return getValueSuggestions(createValuePosition(keyPath, typeValue), readViewTypes, readViewOptions);
 }
 
 /* ========================= TESTS ========================= */
@@ -126,5 +197,56 @@ describe('getKeySuggestions', () => {
 
   test('nothing for mappings the schema doesn\'t describe', () => {
     expect(getKeySuggestions(createKeyPosition(['formulas'], ['Title']), readViewOptionKeys)).toEqual([]);
+  });
+});
+
+describe('getValueSuggestions', () => {
+  test('a view\'s type: the view types, with their names and icons', () => {
+    expect(getValueSuggestionsAt(['views', '#', 'type'])).toEqual([
+      { value: 'table', detail: 'Table', icon: 'lucide-table' },
+      { value: 'cards', detail: 'Cards', icon: 'lucide-layout-grid' }
+    ]);
+  });
+
+  test('a direction in a sort item or groupBy', () => {
+    const directions: object[] = [{ value: 'ASC' }, { value: 'DESC' }];
+    expect(getValueSuggestionsAt(['views', '#', 'sort', '#', 'direction'])).toEqual(directions);
+    expect(getValueSuggestionsAt(['views', '#', 'groupBy', 'direction'])).toEqual(directions);
+  });
+
+  test('a dropdown option: its choices, with the empty one as ""', () => {
+    expect(getValueSuggestionsAt(['views', '#', 'rowHeight'], 'table')).toEqual([
+      { value: '""', detail: 'Short' },
+      { value: 'medium', detail: 'Medium' }
+    ]);
+  });
+
+  test('a toggle option: true and false', () => {
+    expect(getValueSuggestionsAt(['views', '#', 'indentProperties'], 'table')).toEqual([{ value: 'true' }, { value: 'false' }]);
+  });
+
+  test('a slider or text option: its default, quoted if needed', () => {
+    expect(getValueSuggestionsAt(['views', '#', 'cardSize'], 'table')).toEqual([{ value: '200', detail: 'Default' }]);
+    expect(getValueSuggestionsAt(['views', '#', 'separator'], 'table')).toEqual([{ value: '", "', detail: 'Default' }]);
+  });
+
+  test('nothing for an option without a default, or of another type', () => {
+    expect(getValueSuggestionsAt(['views', '#', 'caption'], 'table')).toEqual([]);
+    expect(getValueSuggestionsAt(['views', '#', 'image'], 'table')).toEqual([]);
+  });
+
+  test('nothing for a view\'s own keys, even if its type declares an option with that key', () => {
+    expect(getValueSuggestionsAt(['views', '#', 'name'], 'table')).toEqual([]);
+  });
+
+  test('nothing for an option of a view without a type, or of another type', () => {
+    expect(getValueSuggestionsAt(['views', '#', 'rowHeight'])).toEqual([]);
+    expect(getValueSuggestionsAt(['views', '#', 'rowHeight'], 'cards')).toEqual([]);
+  });
+
+  test('nothing outside views, sort items and groupBy', () => {
+    expect(getValueSuggestionsAt(['type'])).toEqual([]);
+    expect(getValueSuggestionsAt(['properties', 'note.status', 'displayName'])).toEqual([]);
+    expect(getValueSuggestionsAt(['views', '#', 'sort', '#', 'property'])).toEqual([]);
   });
 });
