@@ -166,7 +166,8 @@ describe('getValuePosition', () => {
       keyPath: ['views', '#', 'rowHeight'],
       from: valueFrom,
       to: valueFrom + 'me'.length,
-      typeValue: 'table'
+      typeValue: 'table',
+      propertyValue: null
     });
   });
 
@@ -183,10 +184,19 @@ describe('getValuePosition', () => {
       keyPath: ['views', '#', 'rowHeight'],
       from: document.length,
       to: document.length,
-      typeValue: 'table'
+      typeValue: 'table',
+      propertyValue: null
     });
     const position: number = 'views:\n  - type: '.length;
     expect(getValuePositionAfter('views:\n  - type: \n    name: All\n', '- type: ')).toMatchObject({ keyPath: ['views', '#', 'type'], from: position, to: position });
+  });
+
+  test('the property beside a direction, in a sort item or groupBy', () => {
+    const sortDocument: string = `${VIEW}    sort:\n      - property: note.price\n        direction: A\n`;
+    expect(getValuePositionAfter(sortDocument, 'direction: A')).toMatchObject({ propertyValue: 'note.price' });
+
+    const groupDocument: string = `${VIEW}    groupBy:\n      property: "film - year"\n      direction: \n`;
+    expect(getValuePositionAfter(groupDocument, 'direction: ')).toMatchObject({ propertyValue: 'film - year' });
   });
 
   test('the first key of a list item, and a sort item\'s direction', () => {

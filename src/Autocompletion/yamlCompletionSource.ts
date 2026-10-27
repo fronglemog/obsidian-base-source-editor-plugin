@@ -2,7 +2,8 @@
 /* OBSIDIAN */
 import type {
   App,
-  BasesOptions
+  BasesOptions,
+  IconName
 } from 'obsidian';
 
 /* CODEMIRROR */
@@ -28,7 +29,10 @@ import {
   getValueSuggestions
 } from 'src/Autocompletion/baseSchema';
 
-import type { ValueSuggestion } from 'src/Autocompletion/baseSchema';
+import type {
+  ValueSources,
+  ValueSuggestion
+} from 'src/Autocompletion/baseSchema';
 
 import {
   getKeyPosition,
@@ -47,6 +51,14 @@ import {
 } from 'src/Autocompletion/viewRegistrations';
 
 import type { ViewType } from 'src/Autocompletion/viewRegistrations';
+
+import type {
+  PropertyType,
+  ReadPropertyType
+} from 'src/Autocompletion/propertyIds';
+
+import type { ReadSummaryIcon } from 'src/Autocompletion/summaries';
+import { getSummariesFromBaseYaml } from 'src/BaseYamlLanguage/getFormulasFromBaseYaml';
 
 /* ============================================================ */
 
@@ -77,15 +89,18 @@ const SORT_TEXT_DIGITS: number = 4;
  *
  * At a value position, it suggests the values the key takes, in the order Obsidian lists them.
  * The suggestions are filtered by the text before the cursor, and a picked value replaces the whole value.
+ * A value shown without quotes, such as a summary name, is still inserted with them if it needs them.
  * At an empty value, it only suggests on Ctrl+Space, so typing the space after a `:` doesn't open the popup.
  *
  * @param app - The app, for the view types and their options.
+ * @param readPropertyType - Reads a property's type, for summary names and sort direction labels.
+ * @param readSummaryIcon - Reads the icon of a summary's result, for summary names.
  * @returns The completion source.
  */
-export function createYamlCompletionSource(app: App): CompletionSource {
+export function createYamlCompletionSource(app: App, readPropertyType: ReadPropertyType, readSummaryIcon: ReadSummaryIcon): CompletionSource {
   const completionSource: CompletionSource = (context: CompletionContext): CompletionResult | null => {
     const tree: Tree = syntaxTree(context.state);
-    return getKeyCompletions(app, context, tree) ?? getValueCompletions(app, context, tree);
+    return getKeyCompletions(app, context, tree) ?? getValueCompletions(app, readPropertyType, readSummaryIcon, context, tree);
   };
 
   return completionSource;
@@ -133,11 +148,13 @@ function getKeyCompletions(app: App, context: CompletionContext, tree: Tree): Co
  * Gets the value suggestions at the position being completed.
  *
  * @param app - The app, for the view types and their options.
+ * @param readPropertyType - Reads a property's type.
+ * @param readSummaryIcon - Reads the icon of a summary's result.
  * @param context - The completion context.
  * @param tree - Syntax tree of the document.
  * @returns The value suggestions, or `null` if the position isn't a value position or there's nothing to suggest.
  */
-function getValueCompletions(app: App, context: CompletionContext, tree: Tree): CompletionResult | null {
+function getValueCompletions(app: App, readPropertyType: ReadPropertyType, readSummaryIcon: ReadSummaryIcon, context: CompletionContext, tree: Tree): CompletionResult | null {
   const position: ValuePosition | null = getValuePosition(tree, context.state.doc, context.pos);
   if (position == null) {
     return null;
@@ -148,21 +165,26 @@ function getValueCompletions(app: App, context: CompletionContext, tree: Tree): 
     return null;
   }
 
-  const values: ValueSuggestion[] = getValueSuggestions(
-    position,
-    (): ViewType[] => getViewTypes(app),
-    (viewType: string): BasesOptions[] => getViewOptions(app, viewType)
-  );
+  const sources: ValueSources = {
+    readViewTypes: (): ViewType[] => getViewTypes(app),
+    readViewOptions: (viewType: string): BasesOptions[] => getViewOptions(app, viewType),
+    readPropertyType: (propertyId: string): PropertyType => readPropertyType(context.state, propertyId),
+    readCustomSummaries: (): Record<string, string> => getSummariesFromBaseYaml(tree, (from: number, to: number): string => context.state.sliceDoc(from, to)),
+    readSummaryIcon: (propertyId: string, formula: string): IconName => readSummaryIcon(context.state, propertyId, formula)
+  };
+
+  const values: ValueSuggestion[] = getValueSuggestions(position, sources);
   if (values.length === 0) {
     return null;
   }
 
+  // CodeMirror matches what's typed against the label, so the label is the text shown, not always the text inserted
   const options: Completion[] = values.map((value: ValueSuggestion, index: number): Completion => ({
-    label: value.value,
+    label: value.label ?? value.value,
     detail: value.detail,
     type: value.icon,
     sortText: String(index).padStart(SORT_TEXT_DIGITS, '0'),
-    apply: applyValue
+    apply: (view: EditorView, completion: Completion, from: number, to: number): void => applyValue(view, value.value, completion, from, to)
   }));
 
   // Ends at the cursor, so the suggestions are filtered by the text before it
@@ -182,16 +204,17 @@ function getValueCompletions(app: App, context: CompletionContext, tree: Tree): 
  * the document may have changed since the suggestions were made.
  *
  * @param view - The editor view.
+ * @param text - The value as it's written in the file, which may differ from the suggestion's label.
  * @param completion - The picked suggestion.
  * @param from - Start of the value.
  * @param to - The cursor's position.
  */
-function applyValue(view: EditorView, completion: Completion, from: number, to: number): void {
+function applyValue(view: EditorView, text: string, completion: Completion, from: number, to: number): void {
   const position: ValuePosition | null = getValuePosition(syntaxTree(view.state), view.state.doc, to);
   const valueEnd: number = Math.max(to, position?.to ?? to);
 
   view.dispatch({
-    ...insertCompletionText(view.state, completion.label, from, valueEnd),
+    ...insertCompletionText(view.state, text, from, valueEnd),
     annotations: pickedCompletion.of(completion)
   });
 }

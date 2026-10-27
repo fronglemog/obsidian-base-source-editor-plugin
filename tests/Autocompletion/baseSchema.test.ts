@@ -6,7 +6,10 @@ import {
 } from 'vitest';
 
 /* OBSIDIAN */
-import type { BasesOptions } from 'obsidian';
+import type {
+  BasesOptions,
+  IconName
+} from 'obsidian';
 
 /* PLUGIN */
 import {
@@ -15,7 +18,10 @@ import {
   getValueSuggestions
 } from 'src/Autocompletion/baseSchema';
 
-import type { ValueSuggestion } from 'src/Autocompletion/baseSchema';
+import type {
+  ValueSources,
+  ValueSuggestion
+} from 'src/Autocompletion/baseSchema';
 
 import type {
   KeyPosition,
@@ -23,6 +29,16 @@ import type {
 } from 'src/Autocompletion/cursorContext';
 
 import type { ViewType } from 'src/Autocompletion/viewRegistrations';
+import type { PropertyType } from 'src/Autocompletion/propertyIds';
+
+/* ========================= TEST DATA ========================= */
+
+/** Types of the properties the stand-in reader knows. */
+const PROPERTY_TYPES: Record<string, PropertyType> = {
+  'price': 'number',
+  'file.ctime': 'date',
+  'done': 'checkbox'
+};
 
 /* ========================= HELPERS ========================= */
 
@@ -66,14 +82,16 @@ function readViewOptionKeys(viewType: string): string[] {
  *
  * @param keyPath - Key path of the value.
  * @param typeValue - The mapping's `type` value.
+ * @param propertyValue - The mapping's `property` value.
  * @returns The value position.
  */
-function createValuePosition(keyPath: string[], typeValue: string | null = null): ValuePosition {
+function createValuePosition(keyPath: string[], typeValue: string | null = null, propertyValue: string | null = null): ValuePosition {
   return {
     keyPath,
     from: 0,
     to: 0,
-    typeValue
+    typeValue,
+    propertyValue
   };
 }
 
@@ -111,14 +129,54 @@ function readViewOptions(viewType: string): BasesOptions[] {
 }
 
 /**
+ * Stands in for the property types read from Obsidian.
+ *
+ * @param propertyId - The property id.
+ * @returns The property's type from {@link PROPERTY_TYPES}, or `'other'`.
+ */
+function readPropertyType(propertyId: string): PropertyType {
+  return PROPERTY_TYPES[propertyId] ?? 'other';
+}
+
+/**
+ * Stands in for the custom summaries read from the file.
+ *
+ * @returns One custom summary, with a name that needs quotes.
+ */
+function readCustomSummaries(): Record<string, string> {
+  return { 'Top 2': 'values.slice(0, 2)' };
+}
+
+/**
+ * Stands in for the summary result icons read from Obsidian.
+ *
+ * @param _propertyId - The property being summarised.
+ * @param formula - The summary's formula.
+ * @returns The list icon for a formula that slices the values, the number icon for any other.
+ */
+function readSummaryIcon(_propertyId: string, formula: string): IconName {
+  return formula.startsWith('values.slice(') ? 'lucide-list' : 'lucide-binary';
+}
+
+/** The stand-ins for Obsidian and the file. */
+const SOURCES: ValueSources = {
+  readViewTypes,
+  readViewOptions,
+  readPropertyType,
+  readCustomSummaries,
+  readSummaryIcon
+};
+
+/**
  * Gets the value suggestions at a value position, with the stand-ins for Obsidian.
  *
  * @param keyPath - Key path of the value.
  * @param typeValue - The mapping's `type` value.
+ * @param propertyValue - The mapping's `property` value.
  * @returns The value suggestions.
  */
-function getValueSuggestionsAt(keyPath: string[], typeValue: string | null = null): ValueSuggestion[] {
-  return getValueSuggestions(createValuePosition(keyPath, typeValue), readViewTypes, readViewOptions);
+function getValueSuggestionsAt(keyPath: string[], typeValue: string | null = null, propertyValue: string | null = null): ValueSuggestion[] {
+  return getValueSuggestions(createValuePosition(keyPath, typeValue, propertyValue), SOURCES);
 }
 
 /* ========================= TESTS ========================= */
@@ -208,10 +266,35 @@ describe('getValueSuggestions', () => {
     ]);
   });
 
-  test('a direction in a sort item or groupBy', () => {
-    const directions: object[] = [{ value: 'ASC' }, { value: 'DESC' }];
-    expect(getValueSuggestionsAt(['views', '#', 'sort', '#', 'direction'])).toEqual(directions);
-    expect(getValueSuggestionsAt(['views', '#', 'groupBy', 'direction'])).toEqual(directions);
+  test('a direction in a sort item or groupBy, labelled by the property\'s type, with Obsidian\'s sort icons', () => {
+    const sortDirection: string[] = ['views', '#', 'sort', '#', 'direction'];
+    const groupDirection: string[] = ['views', '#', 'groupBy', 'direction'];
+    const ascIcon: string = 'lucide-arrow-down-wide-narrow';
+    const descIcon: string = 'lucide-arrow-up-narrow-wide';
+    const textLabels: object[] = [{ value: 'ASC', detail: 'A → Z', icon: ascIcon }, { value: 'DESC', detail: 'Z → A', icon: descIcon }];
+
+    expect(getValueSuggestionsAt(sortDirection, null, 'price')).toEqual([{ value: 'ASC', detail: '0 → 1', icon: ascIcon }, { value: 'DESC', detail: '1 → 0', icon: descIcon }]);
+    expect(getValueSuggestionsAt(groupDirection, null, 'file.ctime')).toEqual([{ value: 'ASC', detail: 'Old to new', icon: ascIcon }, { value: 'DESC', detail: 'New to old', icon: descIcon }]);
+    expect(getValueSuggestionsAt(sortDirection, null, 'done')).toEqual(textLabels);
+    expect(getValueSuggestionsAt(sortDirection, null, 'title')).toEqual(textLabels);
+    expect(getValueSuggestionsAt(groupDirection)).toEqual(textLabels);
+  });
+
+  test('a summary in a view\'s summaries: the summaries for the property\'s type and the custom ones, in Obsidian\'s order, with their result\'s icon', () => {
+    const icon: string = 'lucide-binary';
+    expect(getValueSuggestionsAt(['views', '#', 'summaries', 'done'])).toEqual([
+      { value: 'Checked', label: 'Checked', detail: 'values.filter(value == true).length', icon },
+      { value: 'Empty', label: 'Empty', detail: 'values.filter(value.isType("null")).length', icon },
+      { value: 'Filled', label: 'Filled', detail: 'values.filter(!value.isType("null")).length', icon },
+      { value: '"Top 2"', label: 'Top 2', detail: 'values.slice(0, 2)', icon: 'lucide-list' },
+      { value: 'Unchecked', label: 'Unchecked', detail: 'values.filter(value == false).length', icon },
+      { value: 'Unique', label: 'Unique', detail: 'values.unique().length', icon }
+    ]);
+  });
+
+  test('a summary for a property whose type isn\'t known: the summaries of any type, and the custom ones', () => {
+    const values: string[] = getValueSuggestionsAt(['views', '#', 'summaries', 'title']).map((suggestion: ValueSuggestion): string => suggestion.value);
+    expect(values).toEqual(['Empty', 'Filled', '"Top 2"', 'Unique']);
   });
 
   test('a dropdown option: its choices, with the empty one as ""', () => {

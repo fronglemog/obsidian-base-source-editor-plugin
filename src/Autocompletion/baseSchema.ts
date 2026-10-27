@@ -12,6 +12,9 @@ import type {
 } from 'src/Autocompletion/cursorContext';
 
 import type { ViewType } from 'src/Autocompletion/viewRegistrations';
+import type { PropertyType } from 'src/Autocompletion/propertyIds';
+import { getSummarySuggestions } from 'src/Autocompletion/summaries';
+import type { SummarySuggestion } from 'src/Autocompletion/summaries';
 import { toYamlText } from 'src/Autocompletion/yamlText';
 import { isFilterMappingPath } from 'src/BaseYamlLanguage/yamlKeyPath';
 
@@ -62,6 +65,21 @@ const UNDECLARED_VIEW_KEYS: Map<string, readonly string[]> = new Map([
 
 /** Values of `direction`, in a sort item and in `groupBy`. */
 const SORT_DIRECTIONS: readonly string[] = ['ASC', 'DESC'];
+
+/**
+ * Icons of the sort directions: those of the sort items in the menu of a table's column header,
+ * whatever the property's type. Obsidian's sort menu has none.
+ */
+const DIRECTION_ICONS: Readonly<Record<string, IconName>> = { ASC: 'lucide-arrow-down-wide-narrow', DESC: 'lucide-arrow-up-narrow-wide' };
+
+/** Grey labels of the sort directions for a text property, or a property of another type: Obsidian's default. */
+const TEXT_DIRECTION_LABELS: Readonly<Record<string, string>> = { ASC: 'A → Z', DESC: 'Z → A' };
+
+/** Grey labels of the sort directions by the type of the property being sorted, where they aren't {@link TEXT_DIRECTION_LABELS}. */
+const DIRECTION_LABELS: ReadonlyMap<PropertyType, Readonly<Record<string, string>>> = new Map<PropertyType, Readonly<Record<string, string>>>([
+  ['number', { ASC: '0 → 1', DESC: '1 → 0' }],
+  ['date', { ASC: 'Old to new', DESC: 'New to old' }]
+]);
 
 /** Values of a toggle option. */
 const TOGGLE_VALUES: readonly string[] = ['true', 'false'];
@@ -143,28 +161,31 @@ export function getKeySuggestions(position: KeyPosition, readViewOptionKeys: (vi
 }
 
 /**
- * Gets the values to suggest at a value position: a view's type, a sort direction, or the value of a view's option.
+ * Gets the values to suggest at a value position: a view's type, a sort direction, a summary name in a view's `summaries`,
+ * or the value of a view's option.
  *
  * @remarks
+ * A sort direction's grey label depends on the type of the property beside it, as in Obsidian's sort editor;
+ * its icon is the one Obsidian's table column menu gives the matching sort item.
+ * A summary name depends on the type of the property it summarises, as in Obsidian's summary menu.
  * A view option's values depend on the option's type: a dropdown's choices, `true` and `false` for a toggle,
  * and the default of a slider or text option. A dropdown's empty choice is suggested as `""`.
  * A view's own keys, such as `name`, get no values, whatever its type's options declare.
  *
  * @param position - The value position, from `getValuePosition()`.
- * @param readViewTypes - Reads the registered view types.
- * @param readViewOptions - Reads the options of a view type.
+ * @param sources - Where the values come from; each is only read where the position needs it.
  * @returns The values, in the order Obsidian lists them.
  */
-export function getValueSuggestions(
-  position: ValuePosition,
-  readViewTypes: () => ViewType[],
-  readViewOptions: (viewType: string) => BasesOptions[]
-): ValueSuggestion[] {
+export function getValueSuggestions(position: ValuePosition, sources: ValueSources): ValueSuggestion[] {
   const key: string | undefined = position.keyPath.at(-1);
   const mappingKeyPath: string[] = position.keyPath.slice(0, -1);
 
   if (isSortPath(mappingKeyPath) === true && key === 'direction') {
-    return SORT_DIRECTIONS.map((direction: string): ValueSuggestion => ({ value: direction }));
+    return getDirectionSuggestions(position.propertyValue, sources);
+  }
+
+  if (isViewSummariesPath(mappingKeyPath) === true && key != null) {
+    return getSummaryNameSuggestions(key, sources);
   }
 
   if (isViewPath(mappingKeyPath) === false || key == null) {
@@ -172,7 +193,7 @@ export function getValueSuggestions(
   }
 
   if (key === 'type') {
-    return readViewTypes().map((viewType: ViewType): ValueSuggestion => ({
+    return sources.readViewTypes().map((viewType: ViewType): ValueSuggestion => ({
       value: toYamlText(viewType.id),
       detail: viewType.name,
       icon: viewType.icon
@@ -183,7 +204,7 @@ export function getValueSuggestions(
     return [];
   }
 
-  const option: BasesOptions | undefined = readViewOptions(position.typeValue).find((viewOption: BasesOptions): boolean => viewOption.key === key);
+  const option: BasesOptions | undefined = sources.readViewOptions(position.typeValue).find((viewOption: BasesOptions): boolean => viewOption.key === key);
   if (option == null) {
     return [];
   }
@@ -217,6 +238,49 @@ function getOptionValueSuggestions(option: BasesOptions): ValueSuggestion[] {
       return [];
     }
   }
+}
+
+/**
+ * Gets the sort directions, each with the grey label Obsidian's sort editor gives it for the property's type,
+ * and its icon.
+ *
+ * @param propertyId - The property being sorted, or `null` if there's none yet.
+ * @param sources - Where the property's type comes from.
+ * @returns `ASC` and `DESC`, with their labels and icons.
+ */
+function getDirectionSuggestions(propertyId: string | null, sources: ValueSources): ValueSuggestion[] {
+  const propertyType: PropertyType = propertyId == null ? 'other' : sources.readPropertyType(propertyId);
+  const labels: Readonly<Record<string, string>> = DIRECTION_LABELS.get(propertyType) ?? TEXT_DIRECTION_LABELS;
+
+  return SORT_DIRECTIONS.map((direction: string): ValueSuggestion => ({
+    value: direction,
+    detail: labels[direction],
+    icon: DIRECTION_ICONS[direction]
+  }));
+}
+
+/**
+ * Gets the summary names for a property in a view's `summaries`, as Obsidian's summary menu lists them.
+ *
+ * @remarks
+ * Each name is shown, and matched against what's typed, without the quotes it may be written with,
+ * as in Obsidian's summary menu.
+ * The grey label is the summary's formula. Obsidian shows the summary's result on the view's data instead,
+ * which the editor can't work out. The icon is the result's, as in Obsidian.
+ *
+ * @param propertyId - The property being summarised: the key in the view's `summaries`.
+ * @param sources - Where the property's type, the custom summaries and the result icons come from.
+ * @returns The summary names, quoted if they need it.
+ */
+function getSummaryNameSuggestions(propertyId: string, sources: ValueSources): ValueSuggestion[] {
+  const summaries: SummarySuggestion[] = getSummarySuggestions(sources.readPropertyType(propertyId), sources.readCustomSummaries());
+
+  return summaries.map((summary: SummarySuggestion): ValueSuggestion => ({
+    value: toYamlText(summary.name),
+    label: summary.name,
+    detail: summary.formula,
+    icon: sources.readSummaryIcon(propertyId, summary.formula)
+  }));
 }
 
 /**
@@ -272,6 +336,16 @@ function isViewPath(keyPath: string[]): boolean {
   return keyPath.length === 2 && keyPath[0] === 'views' && keyPath[1] === '#';
 }
 
+/**
+ * Returns whether a key path is a view's `summaries`: the mapping of property ids to summary names.
+ *
+ * @param keyPath - Key path, from `getYamlKeyPath()`.
+ * @returns `true` if the key path is a view's `summaries`.
+ */
+function isViewSummariesPath(keyPath: string[]): boolean {
+  return keyPath.length === 3 && isViewPath(keyPath.slice(0, 2)) === true && keyPath[2] === 'summaries';
+}
+
 /* ========================= TYPES ========================= */
 
 /**
@@ -280,8 +354,29 @@ function isViewPath(keyPath: string[]): boolean {
 export type ValueSuggestion = {
   /** The value as it's written in the file, in quotes if it needs them. */
   value: string;
+  /**
+   * Text shown in the popup, and matched against what's typed, if it isn't `value`:
+   * for example a summary name without the quotes it's written with.
+   */
+  label?: string;
   /** Grey text shown beside the value, such as the name Obsidian shows for it. */
   detail?: string;
   /** Icon shown before the value. */
   icon?: IconName;
+};
+
+/**
+ * Where value suggestions come from: Obsidian and the file. Each is only read where a value position needs it.
+ */
+export type ValueSources = {
+  /** Reads the registered view types. */
+  readViewTypes: () => ViewType[];
+  /** Reads the options of a view type. */
+  readViewOptions: (viewType: string) => BasesOptions[];
+  /** Reads a property's type, from its property id. */
+  readPropertyType: (propertyId: string) => PropertyType;
+  /** Reads the custom summaries from the top-level `summaries`: each name, with its formula. */
+  readCustomSummaries: () => Record<string, string>;
+  /** Reads the icon of a summary's result, from the property id and the summary's formula. */
+  readSummaryIcon: (propertyId: string, formula: string) => IconName;
 };

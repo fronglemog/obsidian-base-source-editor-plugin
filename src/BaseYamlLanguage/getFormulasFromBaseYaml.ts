@@ -18,6 +18,7 @@ import type { ReadDocumentText } from 'src/BaseYamlLanguage/yamlKeyPath';
 /* ============================================================ */
 
 const FORMULAS_KEY: string = 'formulas';
+const SUMMARIES_KEY: string = 'summaries';
 
 /**
  * Gets the formulas defined under top-level `formulas` key of a Base YAML document.
@@ -27,6 +28,32 @@ const FORMULAS_KEY: string = 'formulas';
  * @returns The name of each formula and the corresponding formula text, with quotes and quote escapes removed.
  */
 export function getFormulasFromBaseYaml(tree: Tree, readDocumentText: ReadDocumentText): Record<string, string> {
+  return getTopLevelFormulas(tree, readDocumentText, FORMULAS_KEY);
+}
+
+/**
+ * Gets the custom summaries defined under the top-level `summaries` key of a Base YAML document.
+ *
+ * @remarks
+ * A view's `summaries` doesn't define summaries: it names one for each property.
+ *
+ * @param tree - Syntax tree of the Base YAML document.
+ * @param readDocumentText - Function that reads the document text between two positions.
+ * @returns The name of each summary and its formula text, with quotes and quote escapes removed.
+ */
+export function getSummariesFromBaseYaml(tree: Tree, readDocumentText: ReadDocumentText): Record<string, string> {
+  return getTopLevelFormulas(tree, readDocumentText, SUMMARIES_KEY);
+}
+
+/**
+ * Gets the formulas defined under a top-level key of a Base YAML document, each with its name.
+ *
+ * @param tree - Syntax tree of the Base YAML document.
+ * @param readDocumentText - Function that reads the document text between two positions.
+ * @param topLevelKey - The top-level key, such as `formulas`.
+ * @returns The name of each formula and the corresponding formula text, with quotes and quote escapes removed.
+ */
+function getTopLevelFormulas(tree: Tree, readDocumentText: ReadDocumentText, topLevelKey: string): Record<string, string> {
   const formulas: Record<string, string> = {};
 
   // Formula trees mounted inside values are skipped: only the YAML structure is read
@@ -38,11 +65,11 @@ export function getFormulasFromBaseYaml(tree: Tree, readDocumentText: ReadDocume
       }
 
       const keyPath: string[] | null = getYamlKeyPath(nodeRef.node, readDocumentText);
-      if (keyPath == null || keyPath[0] !== FORMULAS_KEY) {
+      if (keyPath == null || keyPath[0] !== topLevelKey) {
         return false;
       }
 
-      // The `formulas` pair itself: look inside it
+      // The top-level pair itself: look inside it
       if (keyPath.length === 1) {
         return true;
       }

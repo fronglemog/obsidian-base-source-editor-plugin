@@ -231,25 +231,26 @@ function describeMapping(mapping: SyntaxNode | null, mappingKeyPath: string[] | 
     to: range.to,
     isRename: range.isRename,
     existingKeys,
-    typeValue: getTypeValue(mapping, readDocumentText)
+    typeValue: getMappingValue(mapping, 'type', readDocumentText)
   };
 }
 
 /**
- * Gets the value of a mapping's `type` key, such as a view's type.
+ * Gets the value of a key in a mapping, such as a view's `type` or a sort item's `property`.
  *
  * @param mapping - The mapping's node, or `null` for a mapping with no keys yet.
+ * @param key - The key.
  * @param readDocumentText - Reads text from the document.
- * @returns The value without quotes, or `null` if the mapping has no `type` key with a value.
+ * @returns The value without quotes, or `null` if the mapping has no such key with a value.
  */
-function getTypeValue(mapping: SyntaxNode | null, readDocumentText: ReadDocumentText): string | null {
+function getMappingValue(mapping: SyntaxNode | null, key: string, readDocumentText: ReadDocumentText): string | null {
   const pairs: SyntaxNode[] = mapping?.getChildren('Pair') ?? [];
 
   for (const pair of pairs) {
     const keyNode: SyntaxNode | null = pair.getChild('Key');
     const value: SyntaxNode | null = getPairValue(pair);
 
-    if (keyNode != null && value != null && unquote(readDocumentText(keyNode.from, keyNode.to)) === 'type') {
+    if (keyNode != null && value != null && unquote(readDocumentText(keyNode.from, keyNode.to)) === key) {
       return unquote(readDocumentText(value.from, value.to));
     }
   }
@@ -294,7 +295,8 @@ export function getValuePosition(tree: Tree, doc: Text, pos: number): ValuePosit
     keyPath,
     from: value?.from ?? pos,
     to: value?.to ?? pos,
-    typeValue: getTypeValue(pair.parent, readDocumentText)
+    typeValue: getMappingValue(pair.parent, 'type', readDocumentText),
+    propertyValue: getMappingValue(pair.parent, 'property', readDocumentText)
   };
 }
 
@@ -432,6 +434,8 @@ export type ValuePosition = {
   to: number;
   /** The value of the mapping's `type` key, such as a view's type, or `null` if it has none. */
   typeValue: string | null;
+  /** The value of the mapping's `property` key, such as the property a sort item sorts by, or `null` if it has none. */
+  propertyValue: string | null;
 };
 
 /**

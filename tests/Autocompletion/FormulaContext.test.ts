@@ -2,11 +2,18 @@
 import {
   describe,
   expect,
-  test
+  test,
+  vi
 } from 'vitest';
 
 /* OBSIDIAN */
-import { NullValue } from 'obsidian';
+import {
+  BooleanValue,
+  DateValue,
+  ListValue,
+  NullValue,
+  NumberValue
+} from 'obsidian';
 
 import type {
   App,
@@ -23,7 +30,10 @@ import {
 
 /* PLUGIN */
 import { FormulaContext } from 'src/Autocompletion/FormulaContext';
-import type { BasesIdentifierContext } from 'src/obsidian-types';
+import type {
+  BasesIdentifierContext,
+  DateValueConstructor
+} from 'src/obsidian-types';
 
 /* ========================= TEST DATA ========================= */
 
@@ -47,6 +57,44 @@ class NoteOnlyMockContext implements BasesIdentifierContext {
 
   getByIdentifier(): Value {
     return NullValue.value;
+  }
+}
+
+/** `DateValue`, with the constructor Obsidian's class has but its typings leave out. */
+const DateValueClass = DateValue as unknown as DateValueConstructor;
+
+/**
+ * Stands in for Obsidian's mock context class: evaluates three properties to values of their own types,
+ * and fails to evaluate a fourth. Of the summary formulas, `values.first()` gives the first of the values,
+ * and `values.broken()` fails.
+ */
+class EvaluatingMockContext extends NoteOnlyMockContext {
+  evaluateIdent(expression: string): Value {
+    switch (expression) {
+      // Reads `values` through the context it's called on, as Obsidian's formulas do
+      case 'values.first()': {
+        const values: Value = (this as BasesIdentifierContext).getByIdentifier('values');
+        return values instanceof ListValue ? values.get(0) : NullValue.value;
+      }
+      case 'values.broken()': {
+        throw new Error('Evaluation failed');
+      }
+      case 'note["price"]': {
+        return new NumberValue(3);
+      }
+      case 'file["ctime"]': {
+        return new DateValueClass(new Date(), true);
+      }
+      case 'note["done"]': {
+        return new BooleanValue(true);
+      }
+      case 'note["broken"]': {
+        throw new Error('Evaluation failed');
+      }
+      default: {
+        return NullValue.value;
+      }
+    }
   }
 }
 
@@ -121,5 +169,74 @@ describe('FormulaContext', () => {
     moveCursor(inSummary, getPositionAfter('Title: file.name'));
 
     expect(recorded).toEqual([['values'], ['note']]);
+  });
+});
+
+describe('FormulaContext.readPropertyType', () => {
+  test('reads a property\'s type by evaluating it', () => {
+    const formulaContext: FormulaContext = new FormulaContext({} as App, EvaluatingMockContext);
+    const state: EditorState = EditorState.create({ doc: DOCUMENT, extensions: yamlLanguage });
+
+    expect(formulaContext.readPropertyType(state, 'price')).toBe('number');
+    expect(formulaContext.readPropertyType(state, 'file.ctime')).toBe('date');
+    expect(formulaContext.readPropertyType(state, 'done')).toBe('checkbox');
+    expect(formulaContext.readPropertyType(state, 'title')).toBe('other');
+  });
+
+  test('every type is other with a context that can\'t evaluate', () => {
+    const formulaContext: FormulaContext = new FormulaContext({} as App, NoteOnlyMockContext);
+    const state: EditorState = EditorState.create({ doc: DOCUMENT, extensions: yamlLanguage });
+
+    expect(formulaContext.readPropertyType(state, 'price')).toBe('other');
+  });
+
+  test('a failed evaluation gives other, and is logged once', () => {
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const formulaContext: FormulaContext = new FormulaContext({} as App, EvaluatingMockContext);
+    const state: EditorState = EditorState.create({ doc: DOCUMENT, extensions: yamlLanguage });
+
+    expect(formulaContext.readPropertyType(state, 'broken')).toBe('other');
+    expect(formulaContext.readPropertyType(state, 'broken')).toBe('other');
+    expect(consoleError).toHaveBeenCalledTimes(1);
+
+    consoleError.mockRestore();
+  });
+});
+
+describe('FormulaContext.readSummaryIcon', () => {
+  test('the icon of a summary\'s result, worked out with the property\'s value as values', () => {
+    const formulaContext: FormulaContext = new FormulaContext({} as App, EvaluatingMockContext);
+    const state: EditorState = EditorState.create({ doc: DOCUMENT, extensions: yamlLanguage });
+
+    expect(formulaContext.readSummaryIcon(state, 'price', 'values.first()')).toBe('lucide-binary');
+    expect(formulaContext.readSummaryIcon(state, 'file.ctime', 'values.first()')).toBe('lucide-clock');
+    expect(formulaContext.readSummaryIcon(state, 'done', 'values.first()')).toBe('lucide-check-square');
+  });
+
+  test('no result gives the icon of a summary without a result', () => {
+    const formulaContext: FormulaContext = new FormulaContext({} as App, EvaluatingMockContext);
+    const state: EditorState = EditorState.create({ doc: DOCUMENT, extensions: yamlLanguage });
+
+    expect(formulaContext.readSummaryIcon(state, 'title', 'values.first()')).toBe('lucide-square-function');
+    expect(formulaContext.readSummaryIcon(state, 'price', 'values.unknown()')).toBe('lucide-square-function');
+  });
+
+  test('every icon is the one without a result with a context that can\'t evaluate', () => {
+    const formulaContext: FormulaContext = new FormulaContext({} as App, NoteOnlyMockContext);
+    const state: EditorState = EditorState.create({ doc: DOCUMENT, extensions: yamlLanguage });
+
+    expect(formulaContext.readSummaryIcon(state, 'price', 'values.first()')).toBe('lucide-square-function');
+  });
+
+  test('a failed evaluation gives the icon without a result, and is logged once', () => {
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const formulaContext: FormulaContext = new FormulaContext({} as App, EvaluatingMockContext);
+    const state: EditorState = EditorState.create({ doc: DOCUMENT, extensions: yamlLanguage });
+
+    expect(formulaContext.readSummaryIcon(state, 'price', 'values.broken()')).toBe('lucide-square-function');
+    expect(formulaContext.readSummaryIcon(state, 'price', 'values.broken()')).toBe('lucide-square-function');
+    expect(consoleError).toHaveBeenCalledTimes(1);
+
+    consoleError.mockRestore();
   });
 });

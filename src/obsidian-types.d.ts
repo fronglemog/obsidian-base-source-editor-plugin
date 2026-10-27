@@ -646,6 +646,38 @@ declare module 'obsidian' {
      */
     icon?: IconName;
   }
+
+  interface Value {
+    /**
+     * Icon of the value's type, set by each value class: `lucide-binary` for a number, `lucide-calendar` for a date
+     * without a time and `lucide-clock` for one with a time, `lucide-file-question` for the null value.
+     *
+     * @unofficial
+     */
+    icon: IconName;
+    /**
+     * The value's class: a getter that returns `this.constructor`.
+     *
+     * @unofficial
+     * @BaseSourceEditor
+     */
+    readonly type: typeof Value;
+    /**
+     * Gets the keys {@link Value.objectAccess} accepts, such as `year` and `month` for a date.
+     *
+     * @returns The keys, or none for a value without any.
+     * @unofficial
+     */
+    keys(): string[];
+    /**
+     * Gets a part of the value by its key.
+     *
+     * @param key - One of {@link Value.keys}.
+     * @returns The part, or `null` if the value has no part with that key.
+     * @unofficial
+     */
+    objectAccess(key: string): Value | null;
+  }
 }
 
 /**

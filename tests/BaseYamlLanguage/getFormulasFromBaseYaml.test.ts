@@ -15,7 +15,10 @@ import type {
   Tree
 } from '@lezer/common';
 
-import { getFormulasFromBaseYaml } from 'src/BaseYamlLanguage/getFormulasFromBaseYaml';
+import {
+  getFormulasFromBaseYaml,
+  getSummariesFromBaseYaml
+} from 'src/BaseYamlLanguage/getFormulasFromBaseYaml';
 import type { ReadDocumentText } from 'src/BaseYamlLanguage/yamlKeyPath';
 
 /* ========================= TEST DATA ========================= */
@@ -79,5 +82,26 @@ describe('getDocumentFormulas', () => {
     const document: string = 'views:\n  - type: table\n';
     const tree: Tree = yamlLanguage.parser.parse(document);
     expect(getFormulasFromBaseYaml(tree, getReadDocumentTextOf(document))).toEqual({});
+  });
+});
+
+describe('getSummariesFromBaseYaml', () => {
+  test('reads the top-level summaries, not a view\'s', () => {
+    const document: string = [
+      'summaries:',
+      '  Top: values.max()',
+      '  "Two words": "values.unique().length"',
+      'views:',
+      '  - type: table',
+      '    name: All',
+      '    summaries:',
+      '      price: Top',
+      ''
+    ].join('\n');
+    const tree: Tree = yamlLanguage.parser.parse(document);
+    expect(getSummariesFromBaseYaml(tree, getReadDocumentTextOf(document))).toEqual({
+      'Top': 'values.max()',
+      'Two words': 'values.unique().length'
+    });
   });
 });

@@ -67,9 +67,10 @@ export class NativeFormulaSupport {
   /**
    * Creates the extensions for formula autocomplete in one editor.
    *
-   * @returns The extensions, or `null` if the Bases core plugin is off or Obsidian's formula support can't be found.
+   * @returns The extensions and the editor's formula context, or `null` if the Bases core plugin is off
+   * or Obsidian's formula support can't be found.
    */
-  createEditorExtensions(): Extension[] | null {
+  createEditorExtensions(): FormulaEditorExtensions | null {
     // Accessing undocumented API... keep this guard.
     try {
       const basesPlugin: unknown = this.app.internalPlugins.getEnabledPluginById('bases');
@@ -106,7 +107,7 @@ export class NativeFormulaSupport {
         extensions.push(shadowLanguage);
       }
 
-      return extensions;
+      return { extensions, formulaContext };
     } catch (error: unknown) {
       logError(`${UNAVAILABLE_MESSAGE} Couldn't create the editor extensions.`, error);
       return null;
@@ -284,3 +285,15 @@ function disposeComponent(component: Component): void {
     component._events.pop()?.();
   }
 }
+
+/* ========================= TYPES ========================= */
+
+/**
+ * The formula autocomplete extensions for one editor, and the editor's formula context.
+ */
+export type FormulaEditorExtensions = {
+  /** The extensions to add to the editor. */
+  extensions: Extension[];
+  /** The editor's formula context, which also reads property types for YAML value suggestions. */
+  formulaContext: FormulaContext;
+};

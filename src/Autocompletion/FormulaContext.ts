@@ -1,7 +1,15 @@
 /* ========================= IMPORTS ========================= */
 /* OBSIDIAN */
+import {
+  BooleanValue,
+  DateValue,
+  NullValue,
+  NumberValue
+} from 'obsidian';
+
 import type {
   App,
+  IconName,
   Value
 } from 'obsidian';
 
@@ -26,8 +34,12 @@ import type {
 
 /* PLUGIN */
 import { SummaryMockContext } from 'src/Autocompletion/SummaryMockContext';
+import { toPropertyExpression } from 'src/Autocompletion/propertyIds';
+import type { PropertyType } from 'src/Autocompletion/propertyIds';
+import { NO_RESULT_ICON } from 'src/Autocompletion/summaries';
 import { getFormulasFromBaseYaml } from 'src/BaseYamlLanguage/getFormulasFromBaseYaml';
 import { isInSummaryFormula } from 'src/BaseYamlLanguage/yamlKeyPath';
+import { logError } from 'src/Util/logError';
 
 import type {
   BasesFormula,
@@ -66,6 +78,12 @@ export class FormulaContext {
 
   /** Document the current mock context was created for. */
   private currentDoc: Text | null = null;
+
+  /** Whether a failure to read a property's type has been logged, so it's logged once per editor. */
+  private hasLoggedPropertyTypeError: boolean = false;
+
+  /** Whether a failure to read a summary's result icon has been logged, so it's logged once per editor. */
+  private hasLoggedSummaryIconError: boolean = false;
 
   constructor(app: App, mockContextClass: MockContextClass) {
     this.app = app;
@@ -131,6 +149,96 @@ export class FormulaContext {
   }
 
   /**
+   * Reads a property's type, by evaluating the property with the file's own mock context.
+   *
+   * @remarks
+   * Obsidian's summary menu and sort editor work out the type the same way, so formulas get their result's type.
+   * The summary context is never used, even while it's selected.
+   *
+   * @param state - Editor state, to update the context with the document's formulas first.
+   * @param propertyId - The property id, as written in the Base.
+   * @returns The property's type, or `'other'` if the context can't evaluate, or the evaluation fails.
+   */
+  readPropertyType(state: EditorState, propertyId: string): PropertyType {
+    this.update(state);
+    const context: BasesIdentifierContext = this.current;
+
+    // The plugin's fallback context can't evaluate
+    if (canEvaluate(context) === false) {
+      return 'other';
+    }
+
+    // Accessing undocumented API... keep this guard.
+    try {
+      const value: Value = context.evaluateIdent(toPropertyExpression(propertyId));
+
+      if (value instanceof NumberValue) {
+        return 'number';
+      }
+      if (value instanceof DateValue) {
+        return 'date';
+      }
+      if (value instanceof BooleanValue) {
+        return 'checkbox';
+      }
+      return 'other';
+    } catch (error: unknown) {
+      if (this.hasLoggedPropertyTypeError === false) {
+        logError('summary and sort direction suggestions carry on without property types. Couldn\'t evaluate a property.', error);
+        this.hasLoggedPropertyTypeError = true;
+      }
+      return 'other';
+    }
+  }
+
+  /**
+   * Reads the icon of a summary's result, by working out the summary on a stand-in for the property's values.
+   *
+   * @remarks
+   * Obsidian's summary menu shows the icon of each summary's result on the view's values. The editor has no view,
+   * so `values` holds one value instead: the empty value of the property's type that the file's own mock context gives,
+   * such as `0` for a number. The result has the type it would have on the view's values, unless its type depends
+   * on the values themselves, for example after a filter that the stand-in doesn't pass.
+   *
+   * Obsidian's mock context evaluates a formula with the context it's called on, so a copy of it with the identifiers
+   * of a {@link SummaryMockContext} works out summary formulas.
+   *
+   * @param state - Editor state, to update the context with the document's formulas first.
+   * @param propertyId - The property being summarised, as written in the Base.
+   * @param formula - The summary's formula.
+   * @returns The result's icon, or {@link NO_RESULT_ICON} if there's no result, the context can't evaluate,
+   * or the evaluation fails.
+   */
+  readSummaryIcon(state: EditorState, propertyId: string, formula: string): IconName {
+    this.update(state);
+    const context: BasesIdentifierContext = this.current;
+
+    // The plugin's fallback context can't evaluate
+    if (canEvaluate(context) === false) {
+      return NO_RESULT_ICON;
+    }
+
+    // Accessing undocumented API... keep this guard.
+    try {
+      const propertyValue: Value = context.evaluateIdent(toPropertyExpression(propertyId));
+      const valuesContext: SummaryMockContext = new SummaryMockContext([propertyValue]);
+
+      const summaryContext: BasesMockContext = Object.create(context) as BasesMockContext;
+      summaryContext.keys = (): string[] => valuesContext.keys();
+      summaryContext.getByIdentifier = (identifier: string): Value => valuesContext.getByIdentifier(identifier);
+
+      const result: Value = summaryContext.evaluateIdent(formula);
+      return result === NullValue.value ? NO_RESULT_ICON : result.icon;
+    } catch (error: unknown) {
+      if (this.hasLoggedSummaryIconError === false) {
+        logError('summary suggestions carry on without their result icons. Couldn\'t work out a summary.', error);
+        this.hasLoggedSummaryIconError = true;
+      }
+      return NO_RESULT_ICON;
+    }
+  }
+
+  /**
    * Creates the extension that selects the mock context for the cursor on every edit or cursor move.
    *
    * @remarks
@@ -158,6 +266,16 @@ export class FormulaContext {
 
     return Prec.highest(contextSelector);
   }
+}
+
+/**
+ * Returns whether a mock context can evaluate formula expressions: Obsidian's can, the plugin's fallback can't.
+ *
+ * @param context - The mock context.
+ * @returns `true` if it has `evaluateIdent()`.
+ */
+function canEvaluate(context: BasesIdentifierContext): context is BasesMockContext {
+  return typeof (context as Partial<BasesMockContext>).evaluateIdent === 'function';
 }
 
 /**

@@ -1,6 +1,7 @@
 /* ========================= IMPORTS ========================= */
 /* OBSIDIAN */
 import { Platform } from 'obsidian';
+import type { IconName } from 'obsidian';
 
 /* CODEMIRROR */
 import { autocompletion } from '@codemirror/autocomplete';
@@ -15,6 +16,14 @@ import type {
 
 /* PLUGIN */
 import { createYamlCompletionSource } from 'src/Autocompletion/yamlCompletionSource';
+import type { FormulaEditorExtensions } from 'src/Autocompletion/NativeFormulaSupport';
+
+import type {
+  PropertyType,
+  ReadPropertyType
+} from 'src/Autocompletion/propertyIds';
+import { NO_RESULT_ICON } from 'src/Autocompletion/summaries';
+import type { ReadSummaryIcon } from 'src/Autocompletion/summaries';
 import type BasesSourceEditorPlugin from 'src/main';
 import type { PluginSettings } from 'src/Settings/PluginSettings';
 
@@ -102,8 +111,19 @@ export function getCompletionInfoPositionConfig(view: EditorView, list: Rect, op
  * @returns The autocomplete extensions, including formula autocomplete if Obsidian's formula support can be found.
  */
 export function getAutocompleteExtensions(plugin: BasesSourceEditorPlugin): Extension[] {
+  const formulaSupport: FormulaEditorExtensions | null = plugin.nativeFormulaSupport.createEditorExtensions();
+
+  // Property types and summary results are read with Obsidian's formula support; without it, neither is known
+  const readPropertyType: ReadPropertyType = formulaSupport == null
+    ? readUnknownPropertyType
+    : (state: EditorState, propertyId: string): PropertyType => formulaSupport.formulaContext.readPropertyType(state, propertyId);
+
+  const readSummaryIcon: ReadSummaryIcon = formulaSupport == null
+    ? readNoSummaryIcon
+    : (state: EditorState, propertyId: string, formula: string): IconName => formulaSupport.formulaContext.readSummaryIcon(state, propertyId, formula);
+
   // Created once: CodeMirror tells a source's earlier results apart by the source function
-  const yamlCompletionSource: CompletionSource = createYamlCompletionSource(plugin.app);
+  const yamlCompletionSource: CompletionSource = createYamlCompletionSource(plugin.app, readPropertyType, readSummaryIcon);
 
   const extensions: Extension[] = [
     // Same popup configuration as Obsidian's formula editor, so the popup looks the same.
@@ -130,12 +150,29 @@ export function getAutocompleteExtensions(plugin: BasesSourceEditorPlugin): Exte
     EditorState.languageData.of((): readonly Record<string, unknown>[] => [{ autocomplete: yamlCompletionSource }])
   ];
 
-  const formulaExtensions: Extension[] | null = plugin.nativeFormulaSupport.createEditorExtensions();
-  if (formulaExtensions != null) {
-    extensions.push(...formulaExtensions);
+  if (formulaSupport != null) {
+    extensions.push(...formulaSupport.extensions);
   }
 
   return extensions;
+}
+
+/**
+ * Reads no property's type: the type reader used without Obsidian's formula support.
+ *
+ * @returns `'other'`, for every property.
+ */
+function readUnknownPropertyType(): PropertyType {
+  return 'other';
+}
+
+/**
+ * Reads no summary's result: the icon reader used without Obsidian's formula support.
+ *
+ * @returns The icon of a summary without a result, for every summary.
+ */
+function readNoSummaryIcon(): IconName {
+  return NO_RESULT_ICON;
 }
 
 /**

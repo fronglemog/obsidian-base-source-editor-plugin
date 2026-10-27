@@ -29,23 +29,67 @@ export const Platform: typeof _Platform = {
 };
 
 /**
- * Stand-in for Obsidian's `ListValue`: keeps the items it's created with.
+ * Stand-in for Obsidian's `NullValue`: one shared instance, as in Obsidian, with its icon.
  */
-export class ListValue {
-  data: unknown[];
+export class NullValue {
+  static readonly value: NullValue = new NullValue();
+  icon: string = 'lucide-file-question';
 
-  constructor(data: unknown[]) {
-    this.data = data;
+  toString(): string {
+    return 'null';
   }
 }
 
 /**
- * Stand-in for Obsidian's `NullValue`: one shared instance, as in Obsidian.
+ * Stand-in for Obsidian's `ListValue`: keeps the items it's created with, and has its icon.
  */
-export class NullValue {
-  static readonly value: NullValue = new NullValue();
+export class ListValue {
+  data: unknown[];
+  icon: string = 'lucide-list';
 
-  toString(): string {
-    return 'null';
+  constructor(data: unknown[]) {
+    this.data = data;
+  }
+
+  get(index: number): unknown {
+    return this.data[index] ?? NullValue.value;
+  }
+}
+
+/**
+ * Stand-in for Obsidian's `NumberValue`: keeps the number it's created with, and has its icon.
+ */
+export class NumberValue {
+  value: number;
+  icon: string = 'lucide-binary';
+
+  constructor(value: number) {
+    this.value = value;
+  }
+}
+
+/**
+ * Stand-in for Obsidian's `DateValue`: keeps the date it's created with, and has its icon,
+ * which depends on whether the date has a time.
+ */
+export class DateValue {
+  date: Date;
+  icon: string;
+
+  constructor(date: Date, time: boolean = true) {
+    this.date = date;
+    this.icon = time ? 'lucide-clock' : 'lucide-calendar';
+  }
+}
+
+/**
+ * Stand-in for Obsidian's `BooleanValue`: keeps the boolean it's created with, and has its icon.
+ */
+export class BooleanValue {
+  value: boolean;
+  icon: string = 'lucide-check-square';
+
+  constructor(value: boolean) {
+    this.value = value;
   }
 }

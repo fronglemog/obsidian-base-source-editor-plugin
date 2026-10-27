@@ -8,7 +8,8 @@ import {
 /* OBSIDIAN */
 import {
   ListValue,
-  NullValue
+  NullValue,
+  NumberValue
 } from 'obsidian';
 
 import { SummaryMockContext } from 'src/Autocompletion/SummaryMockContext';
@@ -25,6 +26,12 @@ describe('SummaryMockContext', () => {
 
     expect(context.getByIdentifier('values')).toStrictEqual(new ListValue([]));
     expect(context.getByIdentifier('VALUES')).toStrictEqual(new ListValue([]));
+  });
+
+  test('given values, values lists them', () => {
+    const context: SummaryMockContext = new SummaryMockContext([new NumberValue(3)]);
+
+    expect(context.getByIdentifier('values')).toStrictEqual(new ListValue([new NumberValue(3)]));
   });
 
   test('anything else is the null value', () => {
