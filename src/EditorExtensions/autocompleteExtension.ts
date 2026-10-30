@@ -38,12 +38,13 @@ import {
 const INFO_PANEL_MAX_WIDTH: number = 400;
 
 /**
- * Gets the position config for the completion info panel. For CodeMirror's `positionInfo` option.
+ * Gets the position config for the completion info panel on phones. For CodeMirror's `positionInfo` option.
  *
  * @remarks
  * Based on CodeMirror's default, with two changes:
- * - Space is measured within the editor, not the window, because the editor's pane clips anything outside it.
+ * - Space is measured within the editor, not the window, so the panel stays within the editor's area.
  * - When the panel fits on neither side of the list, it goes below or above the whole list, not over its options.
+ *   A phone keyboard has no arrow keys, so the panel only ever describes the first option, and would cover the rest.
  *
  * @param view - The editor view.
  * @param list - The completion list.
@@ -105,6 +106,21 @@ export function getCompletionInfoPositionConfig(view: EditorView, list: Rect, op
 }
 
 /**
+ * Gets the info panel's placement option for CodeMirror's `autocompletion()`: the plugin's own on phones,
+ * CodeMirror's default elsewhere.
+ *
+ * @remarks
+ * Obsidian's formula editor leaves the placement to CodeMirror's default, on desktop and tablets alike.
+ * It has no formula suggestions on phones, where the plugin uses {@link getCompletionInfoPositionConfig}.
+ *
+ * @param isPhone - Whether Obsidian is running on a phone.
+ * @returns `positionInfo` on phones, otherwise nothing, which leaves CodeMirror's default.
+ */
+export function getInfoPanelOptions(isPhone: boolean): { positionInfo?: typeof getCompletionInfoPositionConfig } {
+  return isPhone ? { positionInfo: getCompletionInfoPositionConfig } : {};
+}
+
+/**
  * Gets the extensions for autocomplete in a Base Source editor.
  *
  * @param plugin - The Base Source Editor plugin.
@@ -142,8 +158,8 @@ export function getAutocompleteExtensions(plugin: BasesSourceEditorPlugin): Exte
           position: 80
         }
       ],
-      // Not in Obsidian's configuration: keeps the info panel inside the editor's pane
-      positionInfo: getCompletionInfoPositionConfig
+      // Not in Obsidian's configuration, and only on phones, where Obsidian has no formula suggestions
+      ...getInfoPanelOptions(Platform.isPhone)
     }),
     // YAML key and value suggestions, at every position whatever its language: under `filters:`,
     // a key being typed is parsed as a formula until its `:` is typed

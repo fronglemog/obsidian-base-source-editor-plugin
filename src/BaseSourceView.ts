@@ -67,6 +67,7 @@ import { activeLineHighlight } from 'src/EditorExtensions/activeLine';
 import { getIndentationGuidesExtensions } from 'src/EditorExtensions/indentationGuides';
 import { getLineWrapExtensions } from 'src/EditorExtensions/lineWrap';
 import { getRenderWhitespaceExtensions } from 'src/EditorExtensions/renderWhitespace';
+import { getTooltipParentExtensions } from 'src/EditorExtensions/tooltipParent';
 import { textScrollMargins } from 'src/EditorExtensions/scrollMargins';
 import {
   getAutocompleteExtensions,
@@ -93,6 +94,7 @@ export class BaseSourceView extends TextFileView {
   private remeasureCompartment: Compartment = new Compartment();
   private searchBar: BaseSourceSearchBar | null = null;
   private autocompleteCompartment: Compartment = new Compartment();
+  private tooltipCompartment: Compartment = new Compartment();
   private hasAutocomplete: boolean = false;
 
   constructor(plugin: BasesSourceEditorPlugin, leaf: WorkspaceLeaf) {
@@ -198,6 +200,9 @@ export class BaseSourceView extends TextFileView {
     // Runs after CodeMirror's own `mousedown` listener, which the editor added when it was created
     const editor: EditorView = this.editor;
     this.registerDomEvent(editor.contentDOM, 'mousedown', () => fixMouseSelectionScroll(editor));
+
+    // A popout window has its own document, which the editor and its popups must use
+    this.register(editor.dom.onWindowMigrated((win: Window) => this.moveEditorToWindow(win)));
 
     if (Platform.isMobile) {
       this.registerDomEvent(
@@ -329,6 +334,23 @@ export class BaseSourceView extends TextFileView {
   }
 
   /**
+   * Makes the editor work in the window it was moved to, such as a popout window:
+   * CodeMirror uses that window's document, and the popups are drawn in its `<body>`.
+   *
+   * @param win - The window the editor was moved to.
+   */
+  private moveEditorToWindow(win: Window): void {
+    if (this.editor == null) {
+      return;
+    }
+
+    this.editor.setRoot(win.document);
+    this.editor.dispatch({
+      effects: this.tooltipCompartment.reconfigure(getTooltipParentExtensions(win.document))
+    });
+  }
+
+  /**
    * Creates the editor state for a document, with all of the editor's extensions.
    *
    * @param doc - Document text.
@@ -343,6 +365,7 @@ export class BaseSourceView extends TextFileView {
         bracketMatching(),
         closeBrackets(),
         this.autocompleteCompartment.of(this.getAutocompleteExtensionsForSettings()),
+        this.tooltipCompartment.of(getTooltipParentExtensions(this.contentEl.doc)),
         lineNumbers(),
         activeLineHighlight,
         textScrollMargins,
