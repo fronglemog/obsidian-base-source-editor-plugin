@@ -25,6 +25,11 @@ import { BaseYamlLanguage } from 'src/BaseYamlLanguage/BaseYamlLanguage';
 import { NativeFormulaSupport } from 'src/Autocompletion/NativeFormulaSupport';
 import { BaseSourceMobileToolbar } from 'src/Mobile/BaseSourceMobileToolbar';
 import { patchEditorCommands } from 'src/EditorCommands/patchEditorCommands';
+import {
+  SHOW_SUGGESTIONS_COMMAND_ID,
+  showSuggestions
+} from 'src/EditorCommands/showSuggestions';
+import { isAutocompleteEnabled } from 'src/EditorExtensions/autocompleteExtension';
 import { objectMerge } from 'src/Util/objectMerge';
 
 /* ========================= BasesSourceEditorPlugin ========================= */
@@ -101,6 +106,24 @@ export default class BasesSourceEditorPlugin extends Plugin {
 
         if (!checking) {
           toggleSourceMode(activeView);
+        }
+        return true;
+      }
+    });
+
+    /* Show suggestions */
+    this.addCommand({
+      id: SHOW_SUGGESTIONS_COMMAND_ID,
+      name: 'Show suggestions',
+      icon: 'lucide-wand',
+      checkCallback: (checking: boolean): boolean => {
+        const view: BaseSourceView | null = this.app.workspace.getActiveViewOfType(BaseSourceView);
+        if (view == null || isAutocompleteEnabled(this.settings) === false) {
+          return false;
+        }
+
+        if (!checking) {
+          view.runEditorCommand(showSuggestions);
         }
         return true;
       }

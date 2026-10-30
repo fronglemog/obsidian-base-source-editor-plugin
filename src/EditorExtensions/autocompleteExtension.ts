@@ -4,13 +4,26 @@ import { Platform } from 'obsidian';
 import type { IconName } from 'obsidian';
 
 /* CODEMIRROR */
-import { autocompletion } from '@codemirror/autocomplete';
+import {
+  acceptCompletion,
+  autocompletion,
+  completionKeymap
+} from '@codemirror/autocomplete';
 import type { CompletionSource } from '@codemirror/autocomplete';
-import { EditorState } from '@codemirror/state';
+
+import {
+  EditorState,
+  Prec
+} from '@codemirror/state';
 import type { Extension } from '@codemirror/state';
-import { Direction } from '@codemirror/view';
+
+import {
+  Direction,
+  keymap
+} from '@codemirror/view';
 import type {
   EditorView,
+  KeyBinding,
   Rect
 } from '@codemirror/view';
 
@@ -26,7 +39,11 @@ import type {
 import { NO_RESULT_ICON } from 'src/Autocompletion/summaries';
 import type { ReadSummaryIcon } from 'src/Autocompletion/summaries';
 import type BasesSourceEditorPlugin from 'src/main';
-import type { PluginSettings } from 'src/Settings/PluginSettings';
+
+import type {
+  AutocompleteAcceptKey,
+  PluginSettings
+} from 'src/Settings/PluginSettings';
 
 import {
   renderCompletionDetail,
@@ -121,6 +138,46 @@ export function getInfoPanelOptions(isPhone: boolean): { positionInfo?: typeof g
   return isPhone ? { positionInfo: getCompletionInfoPositionConfig } : {};
 }
 
+/** Tab accepts the selected suggestion. With no suggestions open, `acceptCompletion` returns `false`, so Tab indents as usual. */
+const TAB_ACCEPTS: KeyBinding = { key: 'Tab', run: acceptCompletion };
+
+/**
+ * Gets how the "Accept a suggestion with" setting changes CodeMirror's completion keys.
+ *
+ * @remarks
+ * - Enter: CodeMirror's own completion keys, unchanged, as in Obsidian's formula editor.
+ * - Tab and Enter: CodeMirror's own keys, plus Tab.
+ * - Tab: CodeMirror's own keys are turned off, and the same keys without Enter are added, plus Tab.
+ *   CodeMirror can only turn its keys off all together; filtering its own list keeps the other keys
+ *   the same as in Obsidian's copy of CodeMirror, which the plugin uses at runtime.
+ *
+ * @param acceptKey - The setting's value.
+ * @returns Whether CodeMirror's own completion keys stay on, and the key bindings to add. An unknown value counts as Enter.
+ */
+export function getAcceptKeyOptions(acceptKey: AutocompleteAcceptKey): AcceptKeyOptions {
+  if (acceptKey === 'tabAndEnter') {
+    return { defaultKeymap: true, keyBindings: [TAB_ACCEPTS] };
+  }
+
+  if (acceptKey === 'tab') {
+    const keysWithoutEnter: KeyBinding[] = completionKeymap.filter((binding: KeyBinding): boolean => binding.key !== 'Enter');
+    return { defaultKeymap: false, keyBindings: [...keysWithoutEnter, TAB_ACCEPTS] };
+  }
+
+  // 'enter', or a value this version doesn't know, for example from a hand-edited data.json
+  return { defaultKeymap: true, keyBindings: [] };
+}
+
+/**
+ * How the "Accept a suggestion with" setting changes CodeMirror's completion keys.
+ */
+export type AcceptKeyOptions = {
+  /** Whether CodeMirror's own completion keys stay on: `autocompletion()`'s `defaultKeymap` option. */
+  defaultKeymap: boolean;
+  /** Key bindings to add, ahead of the editor's other keys. */
+  keyBindings: KeyBinding[];
+};
+
 /**
  * Gets the extensions for autocomplete in a Base Source editor.
  *
@@ -145,6 +202,7 @@ export function getAutocompleteExtensions(plugin: BasesSourceEditorPlugin): Exte
 
   // Created once: CodeMirror tells a source's earlier results apart by the source function
   const yamlCompletionSource: CompletionSource = createYamlCompletionSource(plugin.app, readPropertyType, readSummaryIcon, readPropertyIcon);
+  const acceptKeyOptions: AcceptKeyOptions = getAcceptKeyOptions(plugin.settings.autocompleteAcceptKey);
 
   const extensions: Extension[] = [
     // Same popup configuration as Obsidian's formula editor, so the popup looks the same.
@@ -164,8 +222,12 @@ export function getAutocompleteExtensions(plugin: BasesSourceEditorPlugin): Exte
         }
       ],
       // Not in Obsidian's configuration, and only on phones, where Obsidian has no formula suggestions
-      ...getInfoPanelOptions(Platform.isPhone)
+      ...getInfoPanelOptions(Platform.isPhone),
+      // Off only when Tab alone accepts: the plugin's own keys, below, replace CodeMirror's
+      defaultKeymap: acceptKeyOptions.defaultKeymap
     }),
+    // The accept key's bindings, ahead of the editor's own keys, such as `indentWithTab`
+    Prec.highest(keymap.of(acceptKeyOptions.keyBindings)),
     // YAML key and value suggestions, at every position whatever its language: under `filters:`,
     // a key being typed is parsed as a formula until its `:` is typed
     EditorState.languageData.of((): readonly Record<string, unknown>[] => [{ autocomplete: yamlCompletionSource }])

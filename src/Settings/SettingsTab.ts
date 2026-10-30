@@ -20,6 +20,7 @@ import {
   setPluginSettingPath
 } from 'src/Settings/PluginSettings';
 import type {
+  AutocompleteAcceptKey,
   AutocompleteDevices,
   PluginSettingPath
 } from 'src/Settings/PluginSettings';
@@ -29,7 +30,7 @@ import { commandSuggester } from 'src/Mobile/CommandSuggester';
 import {
   getMobileToolbarCommands,
   getGlobalCommandsForToolbar,
-  TOOLBAR_COMMAND_IDS
+  getToolbarCommandIds
 } from 'src/Mobile/toolbarCommands';
 
 /* ========================= BasesSourceEditorPluginSettingsTab ========================= */
@@ -206,7 +207,7 @@ export class BasesSourceEditorPluginSettingsTab extends PluginSettingTab {
         items: [
           {
             name: 'Autocomplete',
-            desc: 'Suggestions and function hints while typing formulas.',
+            desc: 'Suggestions for formulas, keys and values, and function hints.',
             searchable: true,
             control: {
               key: 'autocomplete',
@@ -216,6 +217,21 @@ export class BasesSourceEditorPluginSettingsTab extends PluginSettingTab {
                 desktopAndTablet: 'Enabled (desktop/tablet only)',
                 allDevices: 'Enabled (all devices)'
               } satisfies Record<AutocompleteDevices, string>
+            }
+          },
+          {
+            name: 'Accept a suggestion with',
+            desc: 'The key that inserts the selected suggestion.',
+            searchable: true,
+            visible: () => this.plugin.settings.autocomplete !== 'off',
+            control: {
+              key: 'autocompleteAcceptKey',
+              type: 'dropdown',
+              options: {
+                enter: 'Enter',
+                tab: 'Tab',
+                tabAndEnter: 'Tab and Enter'
+              } satisfies Record<AutocompleteAcceptKey, string>
             }
           }
         ]
@@ -250,7 +266,7 @@ export class BasesSourceEditorPluginSettingsTab extends PluginSettingTab {
     const toolbarCommands: Command[] = getMobileToolbarCommands(app, this.plugin.settings.mobileToolbarCommands);
     const toolbarCommandIds: string[] = toolbarCommands.map((command: Command): string => command.id);
 
-    const availableCommandIdsToAdd: string[] = TOOLBAR_COMMAND_IDS.filter((commandId: string): boolean => !toolbarCommandIds.includes(commandId));
+    const availableCommandIdsToAdd: string[] = getToolbarCommandIds(this.plugin.manifest.id).filter((commandId: string): boolean => !toolbarCommandIds.includes(commandId));
     const availableCommandsToAdd: Command[] = getMobileToolbarCommands(app, availableCommandIdsToAdd);
 
     const settingsItems: SettingDefinitionItem<PluginSettingPath>[] = [
@@ -305,7 +321,7 @@ export class BasesSourceEditorPluginSettingsTab extends PluginSettingTab {
    * @param toolbarCommandIds - IDs of the commands currently on the toolbar. Edited in place.
    */
   private async addCommandFromSuggester(toolbarCommandIds: string[]): Promise<void> {
-    const globalCommands: Command[] = getGlobalCommandsForToolbar(this.plugin.app, toolbarCommandIds);
+    const globalCommands: Command[] = getGlobalCommandsForToolbar(this.plugin.app, toolbarCommandIds, getToolbarCommandIds(this.plugin.manifest.id));
     const command: Command | null = await commandSuggester(this.plugin, globalCommands);
 
     if (command == null) {

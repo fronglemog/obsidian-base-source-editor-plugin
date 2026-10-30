@@ -5,11 +5,14 @@ import type {
   Command
 } from 'obsidian';
 
+/* PLUGIN */
+import { SHOW_SUGGESTIONS_COMMAND_ID } from 'src/EditorCommands/showSuggestions';
+
 /* ========================= TOOLBAR COMMANDS ========================= */
 
 /**
- * Commands offered under "More toolbar options" in the mobile toolbar settings, in this order.
- * Only includes `editor:*` commands that have been patched by this plugin.
+ * Obsidian's `editor:*` commands offered under "More toolbar options" in the mobile toolbar settings, in this order.
+ * Only includes commands that have been patched by this plugin. The plugin's own commands come before them: {@link getToolbarCommandIds}.
  */
 export const TOOLBAR_COMMAND_IDS: readonly string[] = [
   'editor:undo',
@@ -32,6 +35,17 @@ export const TOOLBAR_COMMAND_IDS: readonly string[] = [
   'editor:open-search-replace',
   'editor:toggle-keyboard'
 ];
+
+/**
+ * Gets the commands offered under "More toolbar options" in the mobile toolbar settings, in this order:
+ * the plugin's own commands, then the patched editor commands ({@link TOOLBAR_COMMAND_IDS}).
+ *
+ * @param pluginId - The plugin's id, from its manifest, which Obsidian puts in front of its command ids.
+ * @returns The full command ids.
+ */
+export function getToolbarCommandIds(pluginId: string): string[] {
+  return [`${pluginId}:${SHOW_SUGGESTIONS_COMMAND_ID}`, ...TOOLBAR_COMMAND_IDS];
+}
 
 /**
  * Gets commands by ID, in the same order. IDs of commands that can't be found are skipped.
@@ -57,17 +71,18 @@ export function getMobileToolbarCommands(app: App, commandIds: readonly string[]
  *
  * @param app - Obsidian app.
  * @param toolbarCommandIds - IDs of commands already on the toolbar, which are left out.
+ * @param offeredCommandIds - IDs of commands offered under "More toolbar options", which are left out.
  * @returns The commands to offer.
  */
-export function getGlobalCommandsForToolbar(app: App, toolbarCommandIds: readonly string[]): Command[] {
+export function getGlobalCommandsForToolbar(app: App, toolbarCommandIds: readonly string[], offeredCommandIds: readonly string[]): Command[] {
   const commands: Command[] = Object.values(app.commands.commands);
 
   const globalCommands: Command[] = commands.filter((command: Command): boolean => {
     const isEditorCommand: boolean = app.commands.editorCommands[command.id] != null;
-    const isSupportedCommand: boolean = TOOLBAR_COMMAND_IDS.includes(command.id);
+    const isOfferedCommand: boolean = offeredCommandIds.includes(command.id);
     const isOnToolbar: boolean = toolbarCommandIds.includes(command.id);
 
-    return !isEditorCommand && !isSupportedCommand && !isOnToolbar;
+    return !isEditorCommand && !isOfferedCommand && !isOnToolbar;
   });
   return globalCommands;
 }

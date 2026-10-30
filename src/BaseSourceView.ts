@@ -73,6 +73,7 @@ import {
   getAutocompleteExtensions,
   isAutocompleteEnabled
 } from 'src/EditorExtensions/autocompleteExtension';
+import type { AutocompleteAcceptKey } from 'src/Settings/PluginSettings';
 
 import { getDocumentChange } from 'src/getDocumentChange';
 import { fixMouseSelectionScroll } from 'src/mouseSelectionScroll';
@@ -96,6 +97,8 @@ export class BaseSourceView extends TextFileView {
   private autocompleteCompartment: Compartment = new Compartment();
   private tooltipCompartment: Compartment = new Compartment();
   private hasAutocomplete: boolean = false;
+  /** The accept key the autocomplete extensions were built with, or `null` while autocomplete is off. */
+  private autocompleteAcceptKey: AutocompleteAcceptKey | null = null;
 
   constructor(plugin: BasesSourceEditorPlugin, leaf: WorkspaceLeaf) {
     super(leaf);
@@ -506,14 +509,17 @@ export class BaseSourceView extends TextFileView {
   }
 
   /**
-   * Applies the "Autocomplete" setting.
+   * Applies the "Autocomplete" and "Accept a suggestion with" settings.
    *
    * @remarks
-   * Only reconfigures when autocomplete is turned on or off: every settings change calls this,
+   * Only reconfigures when autocomplete is turned on or off, or its accept key changes: every settings change calls this,
    * and reconfiguring would close an open popup.
    */
   updateAutocomplete(): void {
-    if (isAutocompleteEnabled(this.plugin.settings) === this.hasAutocomplete) {
+    const isEnabled: boolean = isAutocompleteEnabled(this.plugin.settings);
+    const acceptKey: AutocompleteAcceptKey | null = isEnabled ? this.plugin.settings.autocompleteAcceptKey : null;
+
+    if (isEnabled === this.hasAutocomplete && acceptKey === this.autocompleteAcceptKey) {
       return;
     }
 
@@ -523,12 +529,13 @@ export class BaseSourceView extends TextFileView {
   }
 
   /**
-   * Gets the autocomplete extensions for the current settings, and records whether autocomplete is on.
+   * Gets the autocomplete extensions for the current settings, and records whether autocomplete is on, and its accept key.
    *
    * @returns The extensions, or none if autocomplete is off.
    */
   private getAutocompleteExtensionsForSettings(): Extension[] {
     this.hasAutocomplete = isAutocompleteEnabled(this.plugin.settings);
+    this.autocompleteAcceptKey = this.hasAutocomplete ? this.plugin.settings.autocompleteAcceptKey : null;
     return this.hasAutocomplete ? getAutocompleteExtensions(this.plugin) : [];
   }
 

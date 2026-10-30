@@ -11,6 +11,7 @@ export const PLUGIN_DEFAULT_SETTINGS: PluginSettings = {
   renderWhitespace: false,
   whitespaceOpacity: 30,
   autocomplete: 'desktopAndTablet',
+  autocompleteAcceptKey: 'enter',
   mobileToolbarCommands: [
     'command-palette:open',
     'editor:undo',
@@ -38,10 +39,13 @@ export interface PluginSettings {
   renderWhitespace: boolean;
   whitespaceOpacity: number;
   autocomplete: AutocompleteDevices;
+  autocompleteAcceptKey: AutocompleteAcceptKey;
   mobileToolbarCommands: string[];
 }
 
 export type AutocompleteDevices = 'off' | 'desktopAndTablet' | 'allDevices';
+
+export type AutocompleteAcceptKey = 'enter' | 'tab' | 'tabAndEnter';
 
 /**
  * Dot-notation paths of {@link PluginSettings} that correspond to settings of specific types.
