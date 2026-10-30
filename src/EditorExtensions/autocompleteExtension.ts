@@ -20,6 +20,7 @@ import type { FormulaEditorExtensions } from 'src/Autocompletion/NativeFormulaSu
 
 import type {
   PropertyType,
+  ReadPropertyIcon,
   ReadPropertyType
 } from 'src/Autocompletion/propertyIds';
 import { NO_RESULT_ICON } from 'src/Autocompletion/summaries';
@@ -129,7 +130,7 @@ export function getInfoPanelOptions(isPhone: boolean): { positionInfo?: typeof g
 export function getAutocompleteExtensions(plugin: BasesSourceEditorPlugin): Extension[] {
   const formulaSupport: FormulaEditorExtensions | null = plugin.nativeFormulaSupport.createEditorExtensions();
 
-  // Property types and summary results are read with Obsidian's formula support; without it, neither is known
+  // Property types, summary results and file property icons are read with Obsidian's formula support; without it, none is known
   const readPropertyType: ReadPropertyType = formulaSupport == null
     ? readUnknownPropertyType
     : (state: EditorState, propertyId: string): PropertyType => formulaSupport.formulaContext.readPropertyType(state, propertyId);
@@ -138,8 +139,12 @@ export function getAutocompleteExtensions(plugin: BasesSourceEditorPlugin): Exte
     ? readNoSummaryIcon
     : (state: EditorState, propertyId: string, formula: string): IconName => formulaSupport.formulaContext.readSummaryIcon(state, propertyId, formula);
 
+  const readPropertyIcon: ReadPropertyIcon = formulaSupport == null
+    ? readNoPropertyIcon
+    : (state: EditorState, propertyId: string): IconName | null => formulaSupport.formulaContext.readPropertyIcon(state, propertyId);
+
   // Created once: CodeMirror tells a source's earlier results apart by the source function
-  const yamlCompletionSource: CompletionSource = createYamlCompletionSource(plugin.app, readPropertyType, readSummaryIcon);
+  const yamlCompletionSource: CompletionSource = createYamlCompletionSource(plugin.app, readPropertyType, readSummaryIcon, readPropertyIcon);
 
   const extensions: Extension[] = [
     // Same popup configuration as Obsidian's formula editor, so the popup looks the same.
@@ -189,6 +194,15 @@ function readUnknownPropertyType(): PropertyType {
  */
 function readNoSummaryIcon(): IconName {
   return NO_RESULT_ICON;
+}
+
+/**
+ * Reads no property's icon: the icon reader used without Obsidian's formula support.
+ *
+ * @returns `null`, for every property.
+ */
+function readNoPropertyIcon(): null {
+  return null;
 }
 
 /**

@@ -1,8 +1,11 @@
 /* ========================= IMPORTS ========================= */
 /* OBSIDIAN */
-import type { 
+import type {
   Platform as _Platform
 } from 'obsidian';
+
+/* YAML */
+import { stringify } from 'yaml';
 
 /* ================================================== */
 
@@ -92,4 +95,14 @@ export class BooleanValue {
   constructor(value: boolean) {
     this.value = value;
   }
+}
+
+/**
+ * Stand-in for Obsidian's `stringifyYaml()`, which wraps the same `yaml` library's `stringify()`.
+ *
+ * @param value - The value to write as YAML.
+ * @returns The YAML text, ending with a line break.
+ */
+export function stringifyYaml(value: unknown): string {
+  return stringify(value);
 }

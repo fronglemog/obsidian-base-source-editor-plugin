@@ -1,24 +1,22 @@
+/* ========================= IMPORTS ========================= */
+/* OBSIDIAN */
+import { stringifyYaml } from 'obsidian';
+
 /* ========================= YAML TEXT ========================= */
 
-/** Text YAML reads back unchanged without quotes: a word, which may also contain digits, `-` and `_`. */
-const PLAIN_TEXT: RegExp = /^[A-Za-z][\w-]*$/;
-
-/** Words YAML reads as something other than text: booleans and null, in any case. */
-const NON_TEXT_WORDS: RegExp = /^(?:true|false|null)$/i;
-
 /**
- * Writes text as a YAML value, in double quotes if YAML wouldn't read it back as the same text without them.
+ * Writes text as a YAML value, in quotes only where Obsidian would write it in quotes.
  *
  * @remarks
- * Errs on the side of quoting: only plain words are left without quotes.
- * Text in JSON's double quotes is also valid YAML, with the same escapes.
+ * Uses Obsidian's `stringifyYaml()`, which Obsidian also saves Bases with, so a value is written as Obsidian writes it:
+ * `film - year` and `Filtered mean` without quotes, `"File: name"` with them.
+ * Text too long for one line, which `stringifyYaml()` would fold onto several, is written in JSON's double quotes instead:
+ * also valid YAML, and on one line.
  *
  * @param text - The text.
  * @returns The YAML value, such as `medium`, or `", "` for text that needs quotes.
  */
 export function toYamlText(text: string): string {
-  if (PLAIN_TEXT.test(text) === true && NON_TEXT_WORDS.test(text) === false) {
-    return text;
-  }
-  return JSON.stringify(text);
+  const yamlText: string = stringifyYaml(text).trimEnd();
+  return yamlText.includes('\n') ? JSON.stringify(text) : yamlText;
 }

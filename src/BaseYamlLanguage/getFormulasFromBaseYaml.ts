@@ -19,6 +19,8 @@ import type { ReadDocumentText } from 'src/BaseYamlLanguage/yamlKeyPath';
 
 const FORMULAS_KEY: string = 'formulas';
 const SUMMARIES_KEY: string = 'summaries';
+const PROPERTIES_KEY: string = 'properties';
+const DISPLAY_NAME_KEY: string = 'displayName';
 
 /**
  * Gets the formulas defined under top-level `formulas` key of a Base YAML document.
@@ -43,6 +45,51 @@ export function getFormulasFromBaseYaml(tree: Tree, readDocumentText: ReadDocume
  */
 export function getSummariesFromBaseYaml(tree: Tree, readDocumentText: ReadDocumentText): Record<string, string> {
   return getTopLevelFormulas(tree, readDocumentText, SUMMARIES_KEY);
+}
+
+/**
+ * Gets the display names set under the top-level `properties` key of a Base YAML document.
+ *
+ * @remarks
+ * Obsidian only applies a display name set for a property id written in full, such as `note.title`,
+ * so each is kept under its property id as written.
+ *
+ * @param tree - Syntax tree of the Base YAML document.
+ * @param readDocumentText - Function that reads the document text between two positions.
+ * @returns Each display name, by the property id it's set for, with quotes and quote escapes removed.
+ */
+export function getPropertyDisplayNamesFromBaseYaml(tree: Tree, readDocumentText: ReadDocumentText): Record<string, string> {
+  const displayNames: Record<string, string> = {};
+
+  // Formula trees mounted inside values are skipped: only the YAML structure is read
+  tree.iterate({
+    mode: IterMode.IgnoreMounts,
+    enter: (nodeRef: SyntaxNodeRef): boolean => {
+      if (nodeRef.name !== 'Pair') {
+        return true;
+      }
+
+      const keyPath: string[] | null = getYamlKeyPath(nodeRef.node, readDocumentText);
+      if (keyPath == null || keyPath[0] !== PROPERTIES_KEY) {
+        return false;
+      }
+
+      // `properties` itself, then a property's settings: look inside them
+      if (keyPath.length < 3) {
+        return true;
+      }
+
+      const [, propertyId, key] = keyPath;
+      const displayName: string | null = getPairValueText(nodeRef.node, readDocumentText);
+
+      if (keyPath.length === 3 && key === DISPLAY_NAME_KEY && propertyId != null && displayName != null) {
+        displayNames[propertyId] = displayName;
+      }
+      return false;
+    }
+  });
+
+  return displayNames;
 }
 
 /**

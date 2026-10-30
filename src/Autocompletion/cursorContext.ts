@@ -23,6 +23,15 @@ import type { ReadDocumentText } from 'src/BaseYamlLanguage/yamlKeyPath';
 /** A line that can hold a key being typed: indentation, an optional list dash, the key, and the rest of the line. */
 const KEY_LINE: RegExp = /^( *)(- +)?([A-Za-z]*)(.*)$/;
 
+/**
+ * A line that can hold a property id being typed as a key: indentation, then the property id so far, with no `:` yet.
+ * Unlike a schema key, a property id can hold spaces, dots and dashes.
+ */
+const PROPERTY_KEY_LINE: RegExp = /^( *)((?:[^\s#:'"[\]{}-][^#:]*)?)$/;
+
+/** A list item's line: indentation, the `-` and the spaces after it, then the item's plain text so far. */
+const LIST_ITEM_LINE: RegExp = /^( *)(- +)((?:[^\s#:'"[\]{}][^#:]*)?)$/;
+
 /** Quotes around a quoted key or value. */
 const QUOTES: RegExp = /^(['"])(.*)\1$/s;
 
@@ -78,6 +87,36 @@ export function getKeyPosition(tree: Tree, doc: Text, pos: number): KeyPosition 
 }
 
 /**
+ * Gets the key position at a document position where a property id is being typed as a key, or could be:
+ * a line holding only the property id so far, or nothing, with no `:` yet.
+ *
+ * @remarks
+ * The keys under `properties`, and in a view's `summaries` and `columnSize`, are property ids, such as `film - year`.
+ * The mapping is found from the line's indentation, as for {@link getKeyPosition}.
+ *
+ * @param tree - Syntax tree of the document.
+ * @param doc - The document.
+ * @param pos - Document position, such as the cursor.
+ * @returns The key position, from the start of the property id to the end of the line, or `null` if `pos` isn't in one.
+ */
+export function getPropertyKeyPosition(tree: Tree, doc: Text, pos: number): KeyPosition | null {
+  const line: Line = doc.lineAt(pos);
+  const match: RegExpExecArray | null = PROPERTY_KEY_LINE.exec(line.text);
+  if (match == null) {
+    return null;
+  }
+
+  const [, indent = ''] = match;
+  const from: number = line.from + indent.length;
+  if (pos < from) {
+    return null;
+  }
+
+  const readDocumentText: ReadDocumentText = (textFrom: number, textTo: number): string => doc.sliceString(textFrom, textTo);
+  return getNewKeyPosition(tree, doc, line, { from, to: line.to, isRename: false }, readDocumentText);
+}
+
+/**
  * Gets the key position for the first key of a new list item.
  *
  * @param tree - Syntax tree of the document.
@@ -127,7 +166,8 @@ function getNewKeyPosition(tree: Tree, doc: Text, line: Line, range: KeyRange, r
         continue;
       }
 
-      const column: number = node.from - doc.lineAt(node.from).from;
+      const start: number = node.name === 'BlockMapping' ? getMappingStart(node) : node.from;
+      const column: number = start - doc.lineAt(start).from;
       if (column > keyColumn) {
         continue;
       }
@@ -180,11 +220,12 @@ function getValueKeyPosition(pair: SyntaxNode, doc: Text, line: Line, range: Key
   }
 
   const keyColumn: number = range.from - line.from;
-  const valueLine: Line = doc.lineAt(value.from);
+  const valueStart: number = value.name === 'BlockMapping' ? getMappingStart(value) : value.from;
+  const valueLine: Line = doc.lineAt(valueStart);
   const isOnLaterLine: boolean = valueLine.number > doc.lineAt(pair.from).number;
 
   if (value.name === 'BlockMapping') {
-    if (isOnLaterLine === false || value.from - valueLine.from !== keyColumn) {
+    if (isOnLaterLine === false || valueStart - valueLine.from !== keyColumn) {
       return null;
     }
     return describeMapping(value, pairKeyPath, range, readDocumentText);
@@ -244,6 +285,19 @@ function describeMapping(mapping: SyntaxNode | null, mappingKeyPath: string[] | 
  * @returns The value without quotes, or `null` if the mapping has no such key with a value.
  */
 function getMappingValue(mapping: SyntaxNode | null, key: string, readDocumentText: ReadDocumentText): string | null {
+  const value: SyntaxNode | null = getMappingValueNode(mapping, key, readDocumentText);
+  return value == null ? null : unquote(readDocumentText(value.from, value.to));
+}
+
+/**
+ * Gets the value's node of a key in a mapping, such as a view's `order` list.
+ *
+ * @param mapping - The mapping's node, or `null` for a mapping with no keys yet.
+ * @param key - The key.
+ * @param readDocumentText - Reads text from the document.
+ * @returns The value's node, or `null` if the mapping has no such key with a value.
+ */
+function getMappingValueNode(mapping: SyntaxNode | null, key: string, readDocumentText: ReadDocumentText): SyntaxNode | null {
   const pairs: SyntaxNode[] = mapping?.getChildren('Pair') ?? [];
 
   for (const pair of pairs) {
@@ -251,10 +305,43 @@ function getMappingValue(mapping: SyntaxNode | null, key: string, readDocumentTe
     const value: SyntaxNode | null = getPairValue(pair);
 
     if (keyNode != null && value != null && unquote(readDocumentText(keyNode.from, keyNode.to)) === key) {
-      return unquote(readDocumentText(value.from, value.to));
+      return value;
     }
   }
   return null;
+}
+
+/**
+ * Gets the property ids in the `order` of the view a line belongs to, as written: the view's columns.
+ *
+ * @remarks
+ * The view is found from the nearest line above with content, as a key typed on its own line belongs to the mapping above it.
+ *
+ * @param tree - Syntax tree of the document.
+ * @param doc - The document.
+ * @param pos - Document position, such as the cursor.
+ * @returns The property ids, without quotes, or none if the line isn't in a view, or the view has no `order`.
+ */
+export function getViewOrder(tree: Tree, doc: Text, pos: number): string[] {
+  const lineAbove: Line | null = getContentLineAbove(doc, doc.lineAt(pos));
+  if (lineAbove == null) {
+    return [];
+  }
+
+  const readDocumentText: ReadDocumentText = (textFrom: number, textTo: number): string => doc.sliceString(textFrom, textTo);
+  const contentEnd: number = lineAbove.from + lineAbove.text.trimEnd().length;
+
+  for (
+    let node: SyntaxNode | null = tree.resolve(contentEnd, -1);
+    node != null;
+    node = node.parent
+  ) {
+    if (node.name === 'Item' && getYamlKeyPath(node, readDocumentText)?.join('/') === 'views/#') {
+      const order: SyntaxNode | null = getMappingValueNode(node.getChild('BlockMapping'), 'order', readDocumentText);
+      return order == null ? [] : getListItemTexts(order, null, readDocumentText);
+    }
+  }
+  return [];
 }
 
 /* ========================= VALUE POSITION ========================= */
@@ -265,7 +352,8 @@ function getMappingValue(mapping: SyntaxNode | null, key: string, readDocumentTe
  * @remarks
  * Only plain values count: a key, `:`, at least one space, then the value or nothing. Quoted values, block scalars,
  * lists in brackets and values that start on a later line don't. A comment after the value isn't part of it.
- * The position can be anywhere in the value, including its start: `type: ‸table`.
+ * The position can be anywhere in the value, including its start: `type: ‸table`, or after spaces typed after it
+ * at the end of the line: `property: film ‸`, where the value being typed is `film `.
  *
  * @param tree - Syntax tree of the document.
  * @param doc - The document.
@@ -286,6 +374,11 @@ export function getValuePosition(tree: Tree, doc: Text, pos: number): ValuePosit
     return null;
   }
 
+  // Spaces typed after the value only count at the end of the line, so a pick doesn't take the space before a comment
+  if (value != null && value.to < pos && doc.sliceString(pos, doc.lineAt(pos).to).trim() !== '') {
+    return null;
+  }
+
   const keyPath: string[] | null = getYamlKeyPath(pair, readDocumentText);
   if (keyPath == null) {
     return null;
@@ -294,7 +387,7 @@ export function getValuePosition(tree: Tree, doc: Text, pos: number): ValuePosit
   return {
     keyPath,
     from: value?.from ?? pos,
-    to: value?.to ?? pos,
+    to: Math.max(value?.to ?? pos, pos),
     typeValue: getMappingValue(pair.parent, 'type', readDocumentText),
     propertyValue: getMappingValue(pair.parent, 'property', readDocumentText)
   };
@@ -315,17 +408,98 @@ function getPairValueAt(tree: Tree, pos: number, readDocumentText: ReadDocumentT
     return { pair: node.parent, value: node };
   }
 
+  const nodeBeforeSpaces: SyntaxNode | null = getNodeBeforeSpaces(tree, pos, readDocumentText);
+
+  // After a value and spaces typed after it, such as `property: film ‸`: the value's node ends before the spaces
+  if (nodeBeforeSpaces?.name === 'Literal' && nodeBeforeSpaces.parent?.name === 'Pair') {
+    return { pair: nodeBeforeSpaces.parent, value: nodeBeforeSpaces };
+  }
+
   // At an empty value, or at the start of one: after a key's `:` and at least one space
-  const colon: SyntaxNode | null = getNodeBeforeSpaces(tree, pos, readDocumentText);
-  if (colon?.name !== ':' || colon.parent?.name !== 'Pair') {
+  if (nodeBeforeSpaces?.name !== ':' || nodeBeforeSpaces.parent?.name !== 'Pair') {
     return null;
   }
 
-  const value: SyntaxNode | null = colon.nextSibling;
+  const value: SyntaxNode | null = nodeBeforeSpaces.nextSibling;
   if (value != null && (value.name !== 'Literal' || value.from !== pos)) {
     return null;
   }
-  return { pair: colon.parent, value };
+  return { pair: nodeBeforeSpaces.parent, value };
+}
+
+/* ========================= LIST ITEM POSITION ========================= */
+
+/**
+ * Gets the list item position at a document position: where a plain list item is being typed, or could be,
+ * such as a property id in a view's `order`.
+ *
+ * @remarks
+ * Only a `-`, at least one space, then the item's plain text or nothing counts. An item holding a mapping,
+ * a quoted value or a list doesn't.
+ *
+ * @param tree - Syntax tree of the document.
+ * @param doc - The document.
+ * @param pos - Document position, such as the cursor.
+ * @returns The list item position, from the start of the item's text to the end of the line, or `null` if `pos` isn't in one.
+ */
+export function getListItemPosition(tree: Tree, doc: Text, pos: number): ListItemPosition | null {
+  const line: Line = doc.lineAt(pos);
+  const match: RegExpExecArray | null = LIST_ITEM_LINE.exec(line.text);
+  if (match == null) {
+    return null;
+  }
+
+  const [, indent = '', dash = ''] = match;
+  const from: number = line.from + indent.length + dash.length;
+  if (pos < from) {
+    return null;
+  }
+
+  const dashNode: SyntaxNode = tree.resolve(line.from + indent.length + 1, -1);
+  const item: SyntaxNode | null = dashNode.nextSibling;
+  const list: SyntaxNode | null = item?.parent ?? null;
+  if (dashNode.name !== '-' || item?.name !== 'Item' || list == null) {
+    return null;
+  }
+
+  // A plain item, or an empty one
+  const content: SyntaxNode | null = item.firstChild;
+  if (content != null && content.name !== 'Literal') {
+    return null;
+  }
+
+  const readDocumentText: ReadDocumentText = (textFrom: number, textTo: number): string => doc.sliceString(textFrom, textTo);
+  const listKeyPath: string[] | null = getYamlKeyPath(list, readDocumentText);
+  if (listKeyPath == null) {
+    return null;
+  }
+
+  return {
+    listKeyPath,
+    from,
+    to: line.to,
+    existingItems: getListItemTexts(list, item, readDocumentText)
+  };
+}
+
+/**
+ * Gets the texts of a list's items.
+ *
+ * @param list - The list's node.
+ * @param skippedItem - An item to leave out, such as the one being typed, or `null`.
+ * @param readDocumentText - Reads text from the document.
+ * @returns The items' texts, without quotes. Empty items are left out.
+ */
+function getListItemTexts(list: SyntaxNode, skippedItem: SyntaxNode | null, readDocumentText: ReadDocumentText): string[] {
+  const texts: string[] = [];
+
+  for (const item of list.getChildren('Item')) {
+    const content: SyntaxNode | null = item.firstChild;
+    if (content != null && item.from !== skippedItem?.from) {
+      texts.push(unquote(readDocumentText(content.from, content.to)));
+    }
+  }
+  return texts;
 }
 
 /* ========================= HELPERS ========================= */
@@ -362,6 +536,21 @@ function getPairValue(pair: SyntaxNode): SyntaxNode | null {
     return null;
   }
   return value;
+}
+
+/**
+ * Gets where a mapping's keys start: the start of its first key.
+ *
+ * @remarks
+ * A mapping's node can start before its first key. With the `@lezer/lr` version Obsidian runs (1.4.10),
+ * a mapping that is a key's value starts right after that key's `:`, on the key's line,
+ * and a list item's mapping starts right after the item's `-`.
+ *
+ * @param mapping - The mapping's node.
+ * @returns The start of the mapping's first key, or the start of the mapping's node if it has no keys.
+ */
+function getMappingStart(mapping: SyntaxNode): number {
+  return mapping.getChild('Pair')?.from ?? mapping.from;
 }
 
 /**
@@ -430,12 +619,26 @@ export type ValuePosition = {
   keyPath: string[];
   /** Start of the value, or the position itself if the value is empty. */
   from: number;
-  /** End of the value, before any comment, or the position itself if the value is empty. */
+  /** End of the value, before any comment, or the position itself if the value is empty or the position is after it. */
   to: number;
   /** The value of the mapping's `type` key, such as a view's type, or `null` if it has none. */
   typeValue: string | null;
   /** The value of the mapping's `property` key, such as the property a sort item sorts by, or `null` if it has none. */
   propertyValue: string | null;
+};
+
+/**
+ * A position where a plain list item is being typed, or could be.
+ */
+export type ListItemPosition = {
+  /** Key path of the list, such as `['views', '#', 'order']`. From {@link getYamlKeyPath}. */
+  listKeyPath: string[];
+  /** Start of the item's text, or the position itself if the item is empty. */
+  from: number;
+  /** End of the line. */
+  to: number;
+  /** The texts of the list's other items, without quotes. */
+  existingItems: string[];
 };
 
 /**

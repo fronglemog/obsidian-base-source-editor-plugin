@@ -11,10 +11,13 @@ import { toYamlText } from 'src/Autocompletion/yamlText';
 /* ========================= TESTS ========================= */
 
 describe('toYamlText', () => {
-  test('leaves plain words unquoted', () => {
+  test('leaves text unquoted where YAML reads it back unchanged, as Obsidian writes it', () => {
     expect(toYamlText('medium')).toBe('medium');
-    expect(toYamlText('none')).toBe('none');
     expect(toYamlText('extra-tall_2')).toBe('extra-tall_2');
+    expect(toYamlText('film - year')).toBe('film - year');
+    expect(toYamlText('Filtered mean')).toBe('Filtered mean');
+    expect(toYamlText('formula.Year (stars)')).toBe('formula.Year (stars)');
+    expect(toYamlText('say "hi"')).toBe('say "hi"');
   });
 
   test('quotes empty text', () => {
@@ -30,11 +33,17 @@ describe('toYamlText', () => {
   test('quotes text YAML would read as a number, or change', () => {
     expect(toYamlText('200')).toBe('"200"');
     expect(toYamlText(', ')).toBe('", "');
-    expect(toYamlText('a: b')).toBe('"a: b"');
+    expect(toYamlText('File: name')).toBe('"File: name"');
     expect(toYamlText('a #b')).toBe('"a #b"');
+    expect(toYamlText('- a')).toBe('"- a"');
   });
 
-  test('escapes quotes inside quoted text', () => {
-    expect(toYamlText('say "hi"')).toBe(String.raw`"say \"hi\""`);
+  test('text starting with a double quote is written in single quotes', () => {
+    expect(toYamlText('"q"')).toBe('\'"q"\'');
+  });
+
+  test('text too long for one line is written in double quotes, on one line', () => {
+    const longText: string = 'a '.repeat(50) + 'end';
+    expect(toYamlText(longText)).toBe(JSON.stringify(longText));
   });
 });

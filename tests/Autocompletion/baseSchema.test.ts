@@ -14,6 +14,8 @@ import type {
 /* PLUGIN */
 import {
   getKeySuggestions,
+  getListItemSuggestions,
+  getPropertyKeySuggestions,
   getSchemaKeys,
   getValueSuggestions
 } from 'src/Autocompletion/baseSchema';
@@ -25,11 +27,15 @@ import type {
 
 import type {
   KeyPosition,
+  ListItemPosition,
   ValuePosition
 } from 'src/Autocompletion/cursorContext';
 
 import type { ViewType } from 'src/Autocompletion/viewRegistrations';
-import type { PropertyType } from 'src/Autocompletion/propertyIds';
+import type {
+  PropertyCandidate,
+  PropertyType
+} from 'src/Autocompletion/propertyIds';
 
 /* ========================= TEST DATA ========================= */
 
@@ -123,7 +129,7 @@ function readViewOptions(viewType: string): BasesOptions[] {
     { key: 'cardSize', type: 'slider', displayName: 'Card size', default: 200 },
     { key: 'separator', type: 'text', displayName: 'Property separator', default: ', ' },
     { key: 'caption', type: 'text', displayName: 'Caption' },
-    { key: 'image', type: 'property', displayName: 'Image property' },
+    { key: 'image', type: 'property', displayName: 'Image property', filter: (propertyId: string): boolean => propertyId === 'file.file' || propertyId.startsWith('file.') === false },
     { key: 'name', type: 'text', displayName: 'Name', default: 'Untitled' }
   ];
 }
@@ -144,7 +150,7 @@ function readPropertyType(propertyId: string): PropertyType {
  * @returns One custom summary, with a name that needs quotes.
  */
 function readCustomSummaries(): Record<string, string> {
-  return { 'Top 2': 'values.slice(0, 2)' };
+  return { 'Top: 2': 'values.slice(0, 2)' };
 }
 
 /**
@@ -158,14 +164,55 @@ function readSummaryIcon(_propertyId: string, formula: string): IconName {
   return formula.startsWith('values.slice(') ? 'lucide-list' : 'lucide-binary';
 }
 
+/**
+ * Stands in for the properties read from Obsidian and the file: some file properties, a formula,
+ * an aliases property, and a note property whose name needs quotes.
+ *
+ * @returns The properties, in the order Obsidian's property picker lists them.
+ */
+function readProperties(): PropertyCandidate[] {
+  return [
+    { propertyId: 'file.file', icon: 'lucide-file', isAliases: false },
+    { propertyId: 'file.name', icon: 'lucide-text', isAliases: false },
+    { propertyId: 'file.ctime', icon: 'lucide-clock', isAliases: false },
+    { propertyId: 'file.backlinks', icon: 'lucide-list', isAliases: false },
+    { propertyId: 'formula.Film', icon: 'lucide-square-function', isAliases: false },
+    { propertyId: 'note.aliases', icon: 'lucide-forward', isAliases: true },
+    { propertyId: 'note.film - year', icon: 'lucide-binary', isAliases: false },
+    { propertyId: 'note.File: name', icon: 'lucide-text', isAliases: false }
+  ];
+}
+
+/**
+ * Stands in for the names Obsidian shows: its own for two file properties, one replaced by the file's display name,
+ * and a note property's display name.
+ *
+ * @returns The names, by full property id.
+ */
+function readDisplayNames(): Record<string, string> {
+  return { 'file.ctime': 'created time', 'file.name': 'File', 'note.film - year': 'Year' };
+}
+
 /** The stand-ins for Obsidian and the file. */
 const SOURCES: ValueSources = {
   readViewTypes,
   readViewOptions,
   readPropertyType,
   readCustomSummaries,
-  readSummaryIcon
+  readSummaryIcon,
+  readProperties,
+  readDisplayNames
 };
+
+/**
+ * Gets the labels of suggestions, which are the property ids as written, without quotes.
+ *
+ * @param suggestions - The suggestions.
+ * @returns Their labels.
+ */
+function getLabels(suggestions: ValueSuggestion[]): (string | undefined)[] {
+  return suggestions.map((suggestion: ValueSuggestion): string | undefined => suggestion.label);
+}
 
 /**
  * Gets the value suggestions at a value position, with the stand-ins for Obsidian.
@@ -286,7 +333,7 @@ describe('getValueSuggestions', () => {
       { value: 'Checked', label: 'Checked', detail: 'values.filter(value == true).length', icon },
       { value: 'Empty', label: 'Empty', detail: 'values.filter(value.isType("null")).length', icon },
       { value: 'Filled', label: 'Filled', detail: 'values.filter(!value.isType("null")).length', icon },
-      { value: '"Top 2"', label: 'Top 2', detail: 'values.slice(0, 2)', icon: 'lucide-list' },
+      { value: '"Top: 2"', label: 'Top: 2', detail: 'values.slice(0, 2)', icon: 'lucide-list' },
       { value: 'Unchecked', label: 'Unchecked', detail: 'values.filter(value == false).length', icon },
       { value: 'Unique', label: 'Unique', detail: 'values.unique().length', icon }
     ]);
@@ -294,7 +341,7 @@ describe('getValueSuggestions', () => {
 
   test('a summary for a property whose type isn\'t known: the summaries of any type, and the custom ones', () => {
     const values: string[] = getValueSuggestionsAt(['views', '#', 'summaries', 'title']).map((suggestion: ValueSuggestion): string => suggestion.value);
-    expect(values).toEqual(['Empty', 'Filled', '"Top 2"', 'Unique']);
+    expect(values).toEqual(['Empty', 'Filled', '"Top: 2"', 'Unique']);
   });
 
   test('a dropdown option: its choices, with the empty one as ""', () => {
@@ -315,7 +362,6 @@ describe('getValueSuggestions', () => {
 
   test('nothing for an option without a default, or of another type', () => {
     expect(getValueSuggestionsAt(['views', '#', 'caption'], 'table')).toEqual([]);
-    expect(getValueSuggestionsAt(['views', '#', 'image'], 'table')).toEqual([]);
   });
 
   test('nothing for a view\'s own keys, even if its type declares an option with that key', () => {
@@ -330,6 +376,55 @@ describe('getValueSuggestions', () => {
   test('nothing outside views, sort items and groupBy', () => {
     expect(getValueSuggestionsAt(['type'])).toEqual([]);
     expect(getValueSuggestionsAt(['properties', 'note.status', 'displayName'])).toEqual([]);
-    expect(getValueSuggestionsAt(['views', '#', 'sort', '#', 'property'])).toEqual([]);
+  });
+});
+
+describe('property ids', () => {
+  test('a sort item\'s property: every property but the file itself and its backlinks, short, with its icon and display name', () => {
+    expect(getValueSuggestionsAt(['views', '#', 'sort', '#', 'property'])).toEqual([
+      { value: 'file.name', label: 'file.name', detail: 'File', icon: 'lucide-text' },
+      { value: 'file.ctime', label: 'file.ctime', detail: 'created time', icon: 'lucide-clock' },
+      { value: 'formula.Film', label: 'formula.Film', icon: 'lucide-square-function' },
+      { value: 'aliases', label: 'aliases', icon: 'lucide-forward' },
+      { value: 'film - year', label: 'film - year', detail: 'Year', icon: 'lucide-binary' },
+      { value: '"File: name"', label: 'File: name', icon: 'lucide-text' }
+    ]);
+  });
+
+  test('groupBy\'s property: no file names, paths or times, and no aliases', () => {
+    expect(getLabels(getValueSuggestionsAt(['views', '#', 'groupBy', 'property']))).toEqual(['file.backlinks', 'formula.Film', 'film - year', 'File: name']);
+  });
+
+  test('a property option: the properties its filter lets through, in full', () => {
+    expect(getLabels(getValueSuggestionsAt(['views', '#', 'image'], 'table'))).toEqual(['file.file', 'formula.Film', 'note.aliases', 'note.film - year', 'note.File: name']);
+  });
+
+  test('an item in a view\'s order: every property but the file itself, short, without the columns already there', () => {
+    const position: ListItemPosition = { listKeyPath: ['views', '#', 'order'], from: 0, to: 0, existingItems: ['film - year', 'note.aliases'] };
+    expect(getLabels(getListItemSuggestions(position, SOURCES))).toEqual(['file.name', 'file.ctime', 'file.backlinks', 'formula.Film', 'File: name']);
+  });
+
+  test('nothing in another list', () => {
+    const position: ListItemPosition = { listKeyPath: ['views', '#', 'groupOrder'], from: 0, to: 0, existingItems: [] };
+    expect(getListItemSuggestions(position, SOURCES)).toEqual([]);
+  });
+
+  test('a key in a view\'s summaries: the view\'s columns without a summary, short', () => {
+    const position: KeyPosition = createKeyPosition(['views', '#', 'summaries'], ['film - year']);
+    expect(getLabels(getPropertyKeySuggestions(position, ['file.name', 'film - year', 'formula.Film'], SOURCES))).toEqual(['file.name', 'formula.Film']);
+  });
+
+  test('a key in a view\'s columnSize: the view\'s columns without a width, in full', () => {
+    const position: KeyPosition = createKeyPosition(['views', '#', 'columnSize'], ['file.name']);
+    expect(getLabels(getPropertyKeySuggestions(position, ['file.name', 'film - year', 'formula.Film'], SOURCES))).toEqual(['formula.Film', 'note.film - year']);
+  });
+
+  test('a key under properties: every property not there yet, in full', () => {
+    const position: KeyPosition = createKeyPosition(['properties'], ['note.aliases', 'file.name']);
+    expect(getLabels(getPropertyKeySuggestions(position, [], SOURCES))).toEqual(['file.file', 'file.ctime', 'file.backlinks', 'formula.Film', 'note.film - year', 'note.File: name']);
+  });
+
+  test('nothing in a mapping whose keys aren\'t property ids', () => {
+    expect(getPropertyKeySuggestions(createKeyPosition(['views', '#']), ['file.name'], SOURCES)).toEqual([]);
   });
 });

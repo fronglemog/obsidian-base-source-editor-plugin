@@ -1,3 +1,24 @@
+/**
+ * Tests that parse YAML with CodeMirror's YAML parser.
+ *
+ * @remarks
+ * The YAML parser runs on `@lezer/lr`. The plugin's build leaves `@lezer/lr` out, so in Obsidian the parser uses
+ * Obsidian's own copy, while these tests use the copy in `node_modules`. `pnpm-workspace.yaml` pins that copy
+ * to 1.4.10, the version Obsidian 1.14.5 runs, so the trees here are the trees the plugin gets in Obsidian.
+ *
+ * Versions of `@lezer/lr` can differ in where nodes start. Since 1.4.7, a mapping that is a key's value starts
+ * right after the key's `:`; with 1.4.5 it started at its first key, on the next line. Code that works out
+ * a column from where a node starts is the kind that breaks.
+ *
+ * When Obsidian updates its copy, these tests keep passing, because they still run 1.4.10. What you'd see instead
+ * is code that passes here but fails in Obsidian. The drift check in `_local/obsidian copies/` reports the change:
+ * its `lezer-lr-version` entry looks for four pieces of code that together only 1.4.10 has. To find Obsidian's
+ * new version, compare its `@lezer/lr` code in `app.js` with the versions published on unpkg. Then pin that version
+ * and run the tests: the tests that fail show what the new version changed.
+ *
+ * @packageDocumentation
+ */
+
 /* ========================= IMPORTS ========================= */
 import {
   describe,
@@ -235,6 +256,36 @@ describe('FormulaContext.readSummaryIcon', () => {
 
     expect(formulaContext.readSummaryIcon(state, 'price', 'values.broken()')).toBe('lucide-square-function');
     expect(formulaContext.readSummaryIcon(state, 'price', 'values.broken()')).toBe('lucide-square-function');
+    expect(consoleError).toHaveBeenCalledTimes(1);
+
+    consoleError.mockRestore();
+  });
+});
+
+describe('FormulaContext.readPropertyIcon', () => {
+  test('the icon of a property\'s value', () => {
+    const formulaContext: FormulaContext = new FormulaContext({} as App, EvaluatingMockContext);
+    const state: EditorState = EditorState.create({ doc: DOCUMENT, extensions: yamlLanguage });
+
+    expect(formulaContext.readPropertyIcon(state, 'file.ctime')).toBe('lucide-clock');
+    expect(formulaContext.readPropertyIcon(state, 'price')).toBe('lucide-binary');
+    expect(formulaContext.readPropertyIcon(state, 'title')).toBe('lucide-file-question');
+  });
+
+  test('no icon with a context that can\'t evaluate', () => {
+    const formulaContext: FormulaContext = new FormulaContext({} as App, NoteOnlyMockContext);
+    const state: EditorState = EditorState.create({ doc: DOCUMENT, extensions: yamlLanguage });
+
+    expect(formulaContext.readPropertyIcon(state, 'file.ctime')).toBeNull();
+  });
+
+  test('a failed evaluation gives no icon, and is logged once', () => {
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const formulaContext: FormulaContext = new FormulaContext({} as App, EvaluatingMockContext);
+    const state: EditorState = EditorState.create({ doc: DOCUMENT, extensions: yamlLanguage });
+
+    expect(formulaContext.readPropertyIcon(state, 'broken')).toBeNull();
+    expect(formulaContext.readPropertyIcon(state, 'broken')).toBeNull();
     expect(consoleError).toHaveBeenCalledTimes(1);
 
     consoleError.mockRestore();

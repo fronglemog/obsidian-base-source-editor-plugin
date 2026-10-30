@@ -1639,10 +1639,11 @@ export interface MetadataTypeManager extends Events {
    * Get expected widget type for property and the one inferred from the property value.
    *
    * @param property - Property name.
-   * @param value - Property value in one note.
+   * @param value - Property value in one note. Obsidian's property picker leaves it out, to read the type alone.
    * @returns Type information for the property: see {@link TypeInfo}.
+   * @BaseSourceEditor
    */
-  getTypeInfo(property: string, value: unknown): TypeInfo;
+  getTypeInfo(property: string, value?: unknown): TypeInfo;
   /**
    * Get property widget for a type, ignoring case.
    *

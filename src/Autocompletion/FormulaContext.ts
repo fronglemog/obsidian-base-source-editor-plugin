@@ -85,6 +85,9 @@ export class FormulaContext {
   /** Whether a failure to read a summary's result icon has been logged, so it's logged once per editor. */
   private hasLoggedSummaryIconError: boolean = false;
 
+  /** Whether a failure to read a property's icon has been logged, so it's logged once per editor. */
+  private hasLoggedPropertyIconError: boolean = false;
+
   constructor(app: App, mockContextClass: MockContextClass) {
     this.app = app;
     this.mockContextClass = mockContextClass;
@@ -188,6 +191,38 @@ export class FormulaContext {
         this.hasLoggedPropertyTypeError = true;
       }
       return 'other';
+    }
+  }
+
+  /**
+   * Reads the icon of a property's value, by evaluating the property with the file's own mock context.
+   *
+   * @remarks
+   * Obsidian's property picker shows a file property's icon this way, such as a clock for `file.ctime`.
+   * The summary context is never used, even while it's selected.
+   *
+   * @param state - Editor state, to update the context with the document's formulas first.
+   * @param propertyId - The property id, as written in the Base.
+   * @returns The icon, or `null` if the context can't evaluate, or the evaluation fails.
+   */
+  readPropertyIcon(state: EditorState, propertyId: string): IconName | null {
+    this.update(state);
+    const context: BasesIdentifierContext = this.current;
+
+    // The plugin's fallback context can't evaluate
+    if (canEvaluate(context) === false) {
+      return null;
+    }
+
+    // Accessing undocumented API... keep this guard.
+    try {
+      return context.evaluateIdent(toPropertyExpression(propertyId)).icon;
+    } catch (error: unknown) {
+      if (this.hasLoggedPropertyIconError === false) {
+        logError('property suggestions carry on without the icons of file properties. Couldn\'t evaluate a property.', error);
+        this.hasLoggedPropertyIconError = true;
+      }
+      return null;
     }
   }
 

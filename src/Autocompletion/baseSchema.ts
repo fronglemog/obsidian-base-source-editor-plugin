@@ -2,17 +2,33 @@
 /* OBSIDIAN */
 import type {
   BasesOptions,
+  BasesPropertyId,
   IconName
 } from 'obsidian';
 
 /* PLUGIN */
 import type {
   KeyPosition,
+  ListItemPosition,
   ValuePosition
 } from 'src/Autocompletion/cursorContext';
 
 import type { ViewType } from 'src/Autocompletion/viewRegistrations';
-import type { PropertyType } from 'src/Autocompletion/propertyIds';
+
+import {
+  getShownDisplayName,
+  isGroupableProperty,
+  isOrderableProperty,
+  isSortableProperty,
+  toFullPropertyId,
+  toShortPropertyId
+} from 'src/Autocompletion/propertyIds';
+
+import type {
+  PropertyCandidate,
+  PropertyType
+} from 'src/Autocompletion/propertyIds';
+
 import { getSummarySuggestions } from 'src/Autocompletion/summaries';
 import type { SummarySuggestion } from 'src/Autocompletion/summaries';
 import { toYamlText } from 'src/Autocompletion/yamlText';
@@ -161,15 +177,17 @@ export function getKeySuggestions(position: KeyPosition, readViewOptionKeys: (vi
 }
 
 /**
- * Gets the values to suggest at a value position: a view's type, a sort direction, a summary name in a view's `summaries`,
- * or the value of a view's option.
+ * Gets the values to suggest at a value position: a view's type, the property or direction of a sort item or `groupBy`,
+ * a summary name in a view's `summaries`, or the value of a view's option.
  *
  * @remarks
+ * A sort item's or `groupBy`'s property is one Obsidian's sort or group-by editor offers, in the short form Obsidian writes.
  * A sort direction's grey label depends on the type of the property beside it, as in Obsidian's sort editor;
  * its icon is the one Obsidian's table column menu gives the matching sort item.
  * A summary name depends on the type of the property it summarises, as in Obsidian's summary menu.
  * A view option's values depend on the option's type: a dropdown's choices, `true` and `false` for a toggle,
- * and the default of a slider or text option. A dropdown's empty choice is suggested as `""`.
+ * the default of a slider or text option, and for a property option, the properties its filter lets through,
+ * in full, as Obsidian writes them. A dropdown's empty choice is suggested as `""`.
  * A view's own keys, such as `name`, get no values, whatever its type's options declare.
  *
  * @param position - The value position, from `getValuePosition()`.
@@ -180,11 +198,16 @@ export function getValueSuggestions(position: ValuePosition, sources: ValueSourc
   const key: string | undefined = position.keyPath.at(-1);
   const mappingKeyPath: string[] = position.keyPath.slice(0, -1);
 
+  if (isSortPath(mappingKeyPath) === true && key === 'property') {
+    const isOffered: (property: PropertyCandidate) => boolean = mappingKeyPath.at(-1) === 'groupBy' ? isGroupableProperty : isSortableProperty;
+    return getPropertySuggestions(sources, toShortPropertyId, isOffered);
+  }
+
   if (isSortPath(mappingKeyPath) === true && key === 'direction') {
     return getDirectionSuggestions(position.propertyValue, sources);
   }
 
-  if (isViewSummariesPath(mappingKeyPath) === true && key != null) {
+  if (isViewMappingPath(mappingKeyPath, 'summaries') === true && key != null) {
     return getSummaryNameSuggestions(key, sources);
   }
 
@@ -208,16 +231,112 @@ export function getValueSuggestions(position: ValuePosition, sources: ValueSourc
   if (option == null) {
     return [];
   }
-  return getOptionValueSuggestions(option);
+  return getOptionValueSuggestions(option, sources);
+}
+
+/**
+ * Gets the property ids to suggest at a key position where keys are property ids: under `properties`,
+ * and in a view's `summaries` and `columnSize`.
+ *
+ * @remarks
+ * Under `properties`, every property, in full: Obsidian looks display names up by the full property id.
+ * In a view's `summaries` and `columnSize`, only the view's columns, as Obsidian sets summaries and widths
+ * from the columns: in the short form in `summaries`, and in full in `columnSize`, as Obsidian writes them.
+ * Property ids already there are left out.
+ *
+ * @param position - The key position, from `getPropertyKeyPosition()`.
+ * @param viewOrder - The property ids in the view's `order`, from `getViewOrder()`.
+ * @param sources - Where the properties and display names come from.
+ * @returns The property ids, or none if the mapping's keys aren't property ids.
+ */
+export function getPropertyKeySuggestions(position: KeyPosition, viewOrder: string[], sources: ValueSources): ValueSuggestion[] {
+  const mappingKeyPath: string[] = position.mappingKeyPath;
+
+  if (mappingKeyPath.length === 1 && mappingKeyPath[0] === 'properties') {
+    return getPropertySuggestions(sources, toFullPropertyId, isAnyProperty, position.existingKeys);
+  }
+
+  const columns: Set<string> = new Set(viewOrder.map((propertyId: string): string => toFullPropertyId(propertyId)));
+  const isColumn = (property: PropertyCandidate): boolean => columns.has(property.propertyId);
+
+  if (isViewMappingPath(mappingKeyPath, 'summaries') === true) {
+    return getPropertySuggestions(sources, toShortPropertyId, isColumn, position.existingKeys);
+  }
+  if (isViewMappingPath(mappingKeyPath, 'columnSize') === true) {
+    return getPropertySuggestions(sources, toFullPropertyId, isColumn, position.existingKeys);
+  }
+  return [];
+}
+
+/**
+ * Gets the property ids to suggest at a list item position in a view's `order`: the view's columns.
+ *
+ * @remarks
+ * The properties Obsidian's "Properties" menu offers, in the short form Obsidian writes. Columns already there are left out.
+ *
+ * @param position - The list item position, from `getListItemPosition()`.
+ * @param sources - Where the properties and display names come from.
+ * @returns The property ids, or none if the list isn't a view's `order`.
+ */
+export function getListItemSuggestions(position: ListItemPosition, sources: ValueSources): ValueSuggestion[] {
+  if (position.listKeyPath.join('/') !== 'views/#/order') {
+    return [];
+  }
+  return getPropertySuggestions(sources, toShortPropertyId, isOrderableProperty, position.existingItems);
+}
+
+/**
+ * Gets property ids to suggest, in the order Obsidian's property picker lists them,
+ * each with its icon and the name Obsidian shows for it.
+ *
+ * @remarks
+ * Each property id is shown, and matched against what's typed, without the quotes it may be written with.
+ *
+ * @param sources - Where the properties and display names come from.
+ * @param writePropertyId - Writes a property id in the form Obsidian writes it here: short or full.
+ * @param isOffered - Whether a property is offered here.
+ * @param usedPropertyIds - Property ids already used here, in either form, which are left out.
+ * @returns The property ids, quoted if they need it.
+ */
+function getPropertySuggestions(
+  sources: ValueSources,
+  writePropertyId: (propertyId: string) => string,
+  isOffered: (property: PropertyCandidate) => boolean,
+  usedPropertyIds: string[] = []
+): ValueSuggestion[] {
+  const usedFullIds: Set<string> = new Set(usedPropertyIds.map((propertyId: string): string => toFullPropertyId(propertyId)));
+  const displayNames: Record<string, string> = sources.readDisplayNames();
+
+  return sources.readProperties()
+    .filter((property: PropertyCandidate): boolean => isOffered(property) === true && usedFullIds.has(property.propertyId) === false)
+    .map((property: PropertyCandidate): ValueSuggestion => {
+      const propertyId: string = writePropertyId(property.propertyId);
+      return {
+        value: toYamlText(propertyId),
+        label: propertyId,
+        detail: getShownDisplayName(property.propertyId, displayNames) ?? undefined,
+        icon: property.icon ?? undefined
+      };
+    });
+}
+
+/**
+ * Returns `true` for any property: where every property is offered.
+ *
+ * @returns `true`.
+ */
+function isAnyProperty(): boolean {
+  return true;
 }
 
 /**
  * Gets the values to suggest for a view option, by the option's type.
  *
  * @param option - The view option.
+ * @param sources - Where a property option's properties come from.
  * @returns The values, or none for an option type without fixed values or a default.
  */
-function getOptionValueSuggestions(option: BasesOptions): ValueSuggestion[] {
+function getOptionValueSuggestions(option: BasesOptions, sources: ValueSources): ValueSuggestion[] {
   switch (option.type) {
     case 'dropdown': {
       return Object.entries(option.options).map(([value, label]: [string, string]): ValueSuggestion => ({
@@ -233,6 +352,10 @@ function getOptionValueSuggestions(option: BasesOptions): ValueSuggestion[] {
     }
     case 'text': {
       return option.default == null ? [] : [{ value: toYamlText(option.default), detail: DEFAULT_DETAIL }];
+    }
+    case 'property': {
+      const filter: ((propertyId: BasesPropertyId) => boolean) | undefined = option.filter;
+      return getPropertySuggestions(sources, toFullPropertyId, (property: PropertyCandidate): boolean => filter == null || filter(property.propertyId));
     }
     default: {
       return [];
@@ -337,13 +460,14 @@ function isViewPath(keyPath: string[]): boolean {
 }
 
 /**
- * Returns whether a key path is a view's `summaries`: the mapping of property ids to summary names.
+ * Returns whether a key path is a mapping under a key of a view, such as `summaries`: property ids to summary names.
  *
  * @param keyPath - Key path, from `getYamlKeyPath()`.
- * @returns `true` if the key path is a view's `summaries`.
+ * @param key - The view's key, such as `summaries` or `columnSize`.
+ * @returns `true` if the key path is that key's, in a view.
  */
-function isViewSummariesPath(keyPath: string[]): boolean {
-  return keyPath.length === 3 && isViewPath(keyPath.slice(0, 2)) === true && keyPath[2] === 'summaries';
+function isViewMappingPath(keyPath: string[], key: string): boolean {
+  return keyPath.length === 3 && isViewPath(keyPath.slice(0, 2)) === true && keyPath[2] === key;
 }
 
 /* ========================= TYPES ========================= */
@@ -379,4 +503,11 @@ export type ValueSources = {
   readCustomSummaries: () => Record<string, string>;
   /** Reads the icon of a summary's result, from the property id and the summary's formula. */
   readSummaryIcon: (propertyId: string, formula: string) => IconName;
+  /** Reads the properties a Base can name, in full, in the order Obsidian's property picker lists them. */
+  readProperties: () => PropertyCandidate[];
+  /**
+   * Reads the names Obsidian shows for properties, by property id: its own for the file properties,
+   * replaced by the display names set under the Base's `properties`.
+   */
+  readDisplayNames: () => Record<string, string>;
 };
