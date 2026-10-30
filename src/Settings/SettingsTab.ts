@@ -56,7 +56,56 @@ export class BasesSourceEditorPluginSettingsTab extends PluginSettingTab {
   }
 
   override getSettingDefinitions(): SettingDefinitionItem<PluginSettingPath>[] {
-    const settingsDefinitions: SettingDefinitionItem<PluginSettingPath>[] = [
+    return [
+      {
+        heading: 'Mobile',
+        type: 'group',
+        visible: Platform.isMobile,
+        items: [
+          {
+            name: 'Configure mobile toolbar',
+            desc: 'Manage toolbar options',
+            searchable: true,
+            type: 'page',
+            items: this.getMobileToolbarSettingsItems()
+          },
+        ]
+      },
+      {
+        heading: 'Autocomplete',
+        type: 'group',
+        items: [
+          {
+            name: 'Autocomplete',
+            desc: 'Suggestions for formulas, keys and values, and function hints.',
+            searchable: true,
+            control: {
+              key: 'autocomplete',
+              type: 'dropdown',
+              options: {
+                off: 'Off',
+                desktopAndTablet: 'Enabled (desktop/tablet only)',
+                allDevices: 'Enabled (all devices)'
+              } satisfies Record<AutocompleteDevices, string>
+            }
+          },
+          {
+            name: 'Accept a suggestion with',
+            desc: 'The key that inserts the selected suggestion.',
+            searchable: true,
+            visible: () => this.plugin.settings.autocomplete !== 'off',
+            control: {
+              key: 'autocompleteAcceptKey',
+              type: 'dropdown',
+              options: {
+                enter: 'Enter',
+                tab: 'Tab',
+                tabAndEnter: 'Tab and Enter'
+              } satisfies Record<AutocompleteAcceptKey, string>
+            }
+          }
+        ]
+      },
       {
         heading: 'Font size',
         type: 'group',
@@ -74,6 +123,7 @@ export class BasesSourceEditorPluginSettingsTab extends PluginSettingTab {
             name: 'Font size',
             desc: 'Font size for the Base Source editor.',
             searchable: true,
+            visible: () => this.plugin.settings.fontCustomSize === true,
             control: {
               key: 'fontSize',
               type: 'slider',
@@ -81,8 +131,7 @@ export class BasesSourceEditorPluginSettingsTab extends PluginSettingTab {
               min: 10,
               max: 30,
               step: 1,
-              displayFormat: (value: number): string => `${value}px`,
-              disabled: () => this.plugin.settings.fontCustomSize === false
+              displayFormat: (value: number): string => `${value}px`
             }
           }
         ]
@@ -188,6 +237,7 @@ export class BasesSourceEditorPluginSettingsTab extends PluginSettingTab {
             name: 'Whitespace opacity',
             desc: 'Fine-tune the visibility of whitespace characters.',
             searchable: true,
+            visible: () => this.plugin.settings.renderWhitespace === true,
             control: {
               key: 'whitespaceOpacity',
               type: 'slider',
@@ -195,64 +245,12 @@ export class BasesSourceEditorPluginSettingsTab extends PluginSettingTab {
               min: 10,
               max: 100,
               step: 10,
-              displayFormat: (value: number): string => `${value}%`,
-              disabled: () => this.plugin.settings.renderWhitespace === false
+              displayFormat: (value: number): string => `${value}%`
             }
           }
-        ]
-      },
-      {
-        heading: 'Autocomplete',
-        type: 'group',
-        items: [
-          {
-            name: 'Autocomplete',
-            desc: 'Suggestions for formulas, keys and values, and function hints.',
-            searchable: true,
-            control: {
-              key: 'autocomplete',
-              type: 'dropdown',
-              options: {
-                off: 'Off',
-                desktopAndTablet: 'Enabled (desktop/tablet only)',
-                allDevices: 'Enabled (all devices)'
-              } satisfies Record<AutocompleteDevices, string>
-            }
-          },
-          {
-            name: 'Accept a suggestion with',
-            desc: 'The key that inserts the selected suggestion.',
-            searchable: true,
-            visible: () => this.plugin.settings.autocomplete !== 'off',
-            control: {
-              key: 'autocompleteAcceptKey',
-              type: 'dropdown',
-              options: {
-                enter: 'Enter',
-                tab: 'Tab',
-                tabAndEnter: 'Tab and Enter'
-              } satisfies Record<AutocompleteAcceptKey, string>
-            }
-          }
-        ]
-      },
-      {
-        heading: 'Mobile',
-        type: 'group',
-        visible: Platform.isMobile,
-        items: [
-          {
-            name: 'Configure mobile toolbar',
-            desc: 'Manage toolbar options',
-            searchable: true,
-            type: 'page',
-            items: this.getMobileToolbarSettingsItems()
-          },
         ]
       }
     ];
-
-    return settingsDefinitions;
   }
 
   /**
@@ -269,7 +267,7 @@ export class BasesSourceEditorPluginSettingsTab extends PluginSettingTab {
     const availableCommandIdsToAdd: string[] = getToolbarCommandIds(this.plugin.manifest.id).filter((commandId: string): boolean => !toolbarCommandIds.includes(commandId));
     const availableCommandsToAdd: Command[] = getMobileToolbarCommands(app, availableCommandIdsToAdd);
 
-    const settingsItems: SettingDefinitionItem<PluginSettingPath>[] = [
+    return [
       {
         heading: 'Manage toolbar options',
         type: 'list',
@@ -312,7 +310,6 @@ export class BasesSourceEditorPluginSettingsTab extends PluginSettingTab {
         }))
       }
     ];
-    return settingsItems;
   }
 
   /**
