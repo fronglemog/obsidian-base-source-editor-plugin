@@ -36,6 +36,8 @@
     "eslint.config.mjs",
     "vitest.config.ts",
     "scripts/**/*.ts",
+    "scripts/**/*.mts",
+    "scripts/**/*.js",
     "scripts/**/*.mjs",
     "tests/**/*.ts",
     "src/**/*.ts"
