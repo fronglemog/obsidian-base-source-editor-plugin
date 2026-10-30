@@ -7,3 +7,5 @@ minimumReleaseAgeExclude:
   - '@vitest/spy@5.0.5'
   - vitest@5.0.5
   - '@obsidian-typings/obsidian-public-1.14.4@1.13.0'
+overrides:
+  '@lezer/lr': 1.4.10
