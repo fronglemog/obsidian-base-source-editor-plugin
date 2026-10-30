@@ -201,8 +201,10 @@ export class BaseSourceView extends TextFileView {
     const editor: EditorView = this.editor;
     this.registerDomEvent(editor.contentDOM, 'mousedown', () => fixMouseSelectionScroll(editor));
 
-    // A popout window has its own document, which the editor and its popups must use
-    this.register(editor.dom.onWindowMigrated((win: Window) => this.moveEditorToWindow(win)));
+    // A popout window has its own document, and the editor and its popups have to use it.
+    // Registered on the editor's parent, not `editor.dom`: CodeMirror rewrites the class list of `editor.dom`,
+    // which drops Obsidian's `node-insert-event` class and stops the listener
+    this.register(this.contentEl.onWindowMigrated((win: Window) => this.moveEditorToWindow(win)));
 
     if (Platform.isMobile) {
       this.registerDomEvent(
