@@ -1,11 +1,11 @@
 # Base Source Editor
 
-An [Obsidian](https://obsidian.md) plugin that adds a feature-rich editor for editing the YAML source code of [Bases](https://obsidian.md/help/bases).
+An [Obsidian](https://obsidian.md) plugin that adds a feature-rich text editor for editing the YAML source code of [Bases](https://obsidian.md/help/bases).
 
 ## Features
 
 - **Text editor for `.base` files**
-	- Open a Base (`.base` file extension) in the **Base Source Editor**, and edit the YAML source code of a Base without leaving the Obsidian app.
+	- Open a Base (`.base` file extension) in the **Base Source Editor**, and edit the raw YAML source code without leaving the Obsidian app.
 	- Supports editor commands including:
 		- Undo/redo
 		- Indent/unindent
