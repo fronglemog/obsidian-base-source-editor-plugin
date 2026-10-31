@@ -18,13 +18,13 @@ I intend to keep this plugin limited in scope - focused purely on the experience
 
 - [x] Theme-aware syntax highlighting
 - [x] Parse formulas using Obsidian's native Base formula parser
-	- [ ] Validation of formulas - show errors if a formula is invalid.
+	- [ ] Validation of formulas - show errors if a formula is invalid
 	- [x] Autocompletion of formulas
-	- [ ] Autocompletion/suggest file properties using vault metadata cache
+	- [x] Autocompletion/suggest file properties using vault metadata cache
 - [ ] Display little red squiggles and hints if the YAML is not valid
-- [ ] Autocompletion of YAML key names
-- [ ] Autocompletion of values
+- [x] Autocompletion of YAML key names
+- [x] Autocompletion of values
 
 ## UX
 
-- [x] Add a command toolbar on mobile, similar to Obsidian's mobile toolbar for Markdown notes.
+- [x] Add a command toolbar on mobile, similar to Obsidian's mobile toolbar for Markdown notes

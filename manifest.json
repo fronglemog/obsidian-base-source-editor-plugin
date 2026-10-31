@@ -1,7 +1,7 @@
 {
 	"id": "base-source-editor",
 	"name": "Base Source Editor",
-	"version": "0.6.2",
+	"version": "0.7.0",
 	"minAppVersion": "1.14.4",
 	"description": "Edit Bases as YAML in source mode.",
 	"author": "fronglemog",

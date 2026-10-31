@@ -1,35 +1,41 @@
 # Base Source Editor
 
-An [Obsidian](https://obsidian.md) plugin that adds a **Base Source Editor**, for editing the YAML source code of [Bases](https://obsidian.md/help/bases).
+An [Obsidian](https://obsidian.md) plugin that adds a feature-rich editor for editing the YAML source code of [Bases](https://obsidian.md/help/bases).
 
 ## Features
 
-- Edit Base files as plain-text YAML without leaving Obsidian.
-- Autocompletion for formulas.
-- Search & replace, mirroring Obsidian's native behaviour. Supports case-sensitive search.
-	- The search/replace command is accessed the same way as for native Markdown notes, either from the Command palette or the file menu.
-- Theme-aware YAML syntax highlighting, utilising Obsidian's built-in CSS variables.
-- Obsidian's editor commands work in Base Source mode, including:
-	- Undo/Redo.
-	- Indent/Unindent.
-	- Move line up/down.
-	- Delete current line.
-- Editor settings
-	- Font size, independent of Obsidian's core font size setting.
-	- Line wrapping and readable line length.
-	- Indentation guides, with an optional custom colour and opacity.
-	- Render whitespace characters, with adjustable opacity.
-- Full mobile support - including a mobile toolbar with customisable commands.
+- **Text editor for `.base` files**
+	- Open a Base (`.base` file extension) in the **Base Source Editor**, and edit the YAML source code of a Base without leaving the Obsidian app.
+	- Supports editor commands including:
+		- Undo/redo
+		- Indent/unindent
+		- Move line up/down
+		- Delete current line
+- **Autocompletion**
+	- Suggests keys, values and formulas as you type.
+	- Suggests property names from your vault, file properties, and the Base's own formulas.
+	- Formula suggestions and function hints work the same as Obsidian's native formula editor.
+	- Show suggestions at any time with `Ctrl+Space`, or with the **Show suggestions** command.
+	- Choose which key accepts a suggestion: `Enter`, `Tab`, or both.
+- **Syntax highlighting**
+	- Theme-aware YAML syntax highlighting, utilising Obsidian's built-in CSS variables.
+- **Search & replace**
+	- Supports case-sensitive search.
+- **Customisable appearance**
+	- Editor font size
+	- Line wrapping and readable line length
+	- Indentation guides
+	- Rendering of whitespace characters (spaces, tabs)
+- **Mobile command toolbar**
 
 View the [Roadmap](./ROADMAP.md) to see planned features.
 
-## Usage
-
-Base Source mode can be toggled using:
-- The command 'Toggle source mode' from the Command palette.
-- The 'Source mode/Base mode' toggle visible when the Base is open, similar to the 'Source mode/Reading mode' toggle for Markdown notes
-
 ## Installation
+
+### Requirements
+
+- Obsidian version: `1.14.4+`
+- Bases core plugin must be **enabled**
 
 ### Obsidian Community Directory
 
@@ -38,9 +44,15 @@ Base Source mode can be toggled using:
 
 ### Inside Obsidian
 
-1. Open the plugin browser inside Obsidian, and search for `base source editor`.
+1. Open the community plugin browser inside Obsidian, and search for `base source editor`.
 2. Select the `Base Source Editor` plugin.
 3. Click `Install`.
+
+## Usage
+
+A Base can be opened in the Base Source Editor by:
+- Using the command 'Toggle source mode' from the Command palette,
+- Using the 'Source mode/Base mode' toggle visible when a Base is open.
 
 ## Developing
 
@@ -62,11 +74,11 @@ I'm more than happy to accept feedback, issues, bug reports and pull requests.
 
 ### AI policy
 
-I use AI as a tool to support my learning and development. I welcome contributions or feedback from those who have done so with considered and appropriate use of AI.
+I use AI as a tool to support development. I welcome contributions or feedback from those who have done so with considered and appropriate use of AI.
 
 However, AI **slop** is not welcome. Contributions written or submitted by AI agents are not welcome.
 
-I reserve the right to decline, reject or otherwise ignore any contributions that I judge to be **AI slop**. Judgement of contributions as **AI slop** will be made at my sole discretion, without mercy. 
+I reserve the right to decline, reject or otherwise ignore any contributions that I judge to be **AI slop**.  
 
 ## License
 
