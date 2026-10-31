@@ -6,7 +6,6 @@ import globals from 'globals';
 
 /* PLUGINS */
 import tseslint from 'typescript-eslint';
-import eslintPluginTsDoc from 'eslint-plugin-tsdoc';
 import eslintPluginUnicorn from 'eslint-plugin-unicorn';
 import eslintPluginObsidianmd from 'eslint-plugin-obsidianmd';
 
@@ -26,7 +25,6 @@ export default defineConfig([
     plugins: {
       js,
       '@typescript-eslint': tseslint.plugin,
-      tsdoc: eslintPluginTsDoc,
       unicorn: eslintPluginUnicorn
     },
     extends: [
@@ -89,19 +87,16 @@ export default defineConfig([
       '@typescript-eslint/consistent-type-imports': 'error',
       '@typescript-eslint/no-deprecated': 'warn',
       '@typescript-eslint/no-empty-function' : 'off',
-      '@typescript-eslint/no-empty-object-type' : 'off',
+      '@typescript-eslint/no-empty-object-type' : 'error',
       '@typescript-eslint/no-explicit-any' : 'off',
       '@typescript-eslint/no-misused-promises' : 'warn',
       '@typescript-eslint/no-namespace' : 'warn',
-      '@typescript-eslint/no-redundant-type-constituents' : 'off',
+      '@typescript-eslint/no-redundant-type-constituents' : 'error',
       '@typescript-eslint/no-unnecessary-type-assertion': 'warn',
       '@typescript-eslint/no-unsafe-assignment' : 'warn',
       '@typescript-eslint/no-unsafe-member-access': 'warn',
       '@typescript-eslint/no-unused-vars' : 'warn',
       '@typescript-eslint/only-throw-error': 'error',
-
-      // TSDoc
-      'tsdoc/syntax': 'warn',
 
       // eslint-plugin-unicorn
       'unicorn/consistent-boolean-name': 'off',

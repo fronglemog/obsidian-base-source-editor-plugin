@@ -1,4 +1,3 @@
-/* eslint-disable tsdoc/syntax */
 /* ========================= IMPORTS ========================= */
 import type {
   App,
@@ -1747,8 +1746,7 @@ export interface MetadataTypeManager extends Events {
  * @public
  * @unofficial
  */
-export interface MetadataTypeManagerPropertiesRecord extends Record<string, PropertyInfo> {
-}
+export type MetadataTypeManagerPropertiesRecord = Record<string, PropertyInfo>
 
 /**
  * Registered type widgets, by type.
@@ -1809,8 +1807,7 @@ export interface MetadataTypeManagerRegisteredTypeWidgetsRecord extends Record<P
  * @public
  * @unofficial
  */
-export interface MetadataTypeManagerTypesRecord extends Record<string, PropertyWidgetEntry> {
-}
+export type MetadataTypeManagerTypesRecord = Record<string, PropertyWidgetEntry>
 
 /**
  * A property's name and type, as {@link MetadataTypeManager} keeps them.
@@ -1866,7 +1863,7 @@ export interface PropertyWidgetEntry {
  * @unofficial
  * @BaseSourceEditor
  */
-export type PropertyWidgetType = 'aliases' | 'checkbox' | 'date' | 'datetime' | 'file' | 'folder' | 'multitext' | 'number' | 'property' | 'tags' | 'text' | string;
+export type PropertyWidgetType = 'aliases' | 'checkbox' | 'date' | 'datetime' | 'file' | 'folder' | 'multitext' | 'number' | 'property' | 'tags' | 'text' | (string & {});
 
 /**
  * Information about a property's expected and inferred widget types, from {@link MetadataTypeManager.getTypeInfo}.
