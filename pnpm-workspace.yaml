@@ -1,11 +1,16 @@
+# Packages to allow/deny script execution
 allowBuilds:
   esbuild: true
   unrs-resolver: true
+
+# Minimum age of package (minutes)
+# Default: 1440 
+minimumReleaseAge: 1440
 minimumReleaseAgeExclude:
-  - eslint@10.11.0
-  - '@vitest/mocker@5.0.5'
-  - '@vitest/spy@5.0.5'
-  - vitest@5.0.5
-  - '@obsidian-typings/obsidian-public-1.14.4@1.13.0'
+  - 'obsidian'
+  - '@obsidian-typings/*'
+minimumReleaseAgeExcludePrune: true
+
+# Override dependencies (including transitive dependencies)
 overrides:
   '@lezer/lr': 1.4.10
