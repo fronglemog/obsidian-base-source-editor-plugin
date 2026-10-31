@@ -11,7 +11,7 @@ export default defineConfig({
     },
     include : [
       ...configDefaults.include,
-      '/tests'
+      '/tests/**'
     ],
     exclude: [
       ...configDefaults.exclude,
