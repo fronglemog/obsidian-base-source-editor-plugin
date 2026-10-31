@@ -16,11 +16,9 @@ export default defineConfig([
     '**/node_modules/',
     '**/build/**',
     '_local/**',
-    // 'eslint.config.mjs',
-    // 'esbuild.config.mjs',
-    // 'version-bump.mjs'
   ]),
 
+  /* GLOBAL: ALL FILES */
   {
     files: [
       '**/*.{js,mjs,cjs,ts,mts,cts}',
@@ -29,8 +27,7 @@ export default defineConfig([
       js,
       '@typescript-eslint': tseslint.plugin,
       tsdoc: eslintPluginTsDoc,
-      unicorn: eslintPluginUnicorn,
-      obsidianmd: eslintPluginObsidianmd
+      unicorn: eslintPluginUnicorn
     },
     extends: [
       js.configs.recommended,
@@ -38,7 +35,6 @@ export default defineConfig([
       tseslint.configs.recommended,
       tseslint.configs.recommendedTypeCheckedOnly,
       eslintPluginUnicorn.configs.recommended,
-      eslintPluginObsidianmd.configs.recommended,
     ],
     languageOptions: {
       globals: {
@@ -53,9 +49,32 @@ export default defineConfig([
         projectService: true,
       },
     },
+    rules: {},
+  },
+
+  /* OBSIDIAN: PLUGIN SOURCE CODE ONLY */
+  {
+    files: [
+      'src/**/*.ts'
+    ],
+    plugins: {
+      obsidianmd: eslintPluginObsidianmd
+    },
+    extends: [
+      eslintPluginObsidianmd.configs.recommended,
+    ],
+    languageOptions: {},
+    rules: {}
+  },
+
+  /* RULE OVERRIDES */
+  // ALL FILES
+  {
+    files: [
+      '**/*.{js,mjs,cjs,ts,mts,cts}',
+    ],
     rules: {
       // ESLint
-      'eslint-comments/require-description': 'off',
       'no-empty': 'warn',
       'no-prototype-builtins': 'off',
       'no-return-assign': 'warn',
@@ -147,14 +166,6 @@ export default defineConfig([
       'unicorn/prefer-type-error': 'off',
       'unicorn/require-module-specifiers': 'error',
       'unicorn/single-line-block-comment-style': 'off',
-
-      // eslint-plugin-obsidianmd
-      // 'obsidianmd/no-static-styles-assignment' : 'warn',
-      // 'obsidianmd/ui/sentence-case' : 'off',
-      // 'obsidianmd/validate-manifest' : 'off',
-      // 'obsidianmd/no-global-this': 'off',
-      // 'obsidianmd/no-nodejs-modules': 'off',
-      // 'obsidianmd/no-console': 'off'
-    },
-  },
+    }
+  }
 ]);

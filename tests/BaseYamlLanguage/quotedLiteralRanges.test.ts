@@ -44,7 +44,6 @@ describe('getQuotedLiteralRanges', () => {
       expect(getRangesForLine(line)).toEqual([{ from: 4, to: 24 }]);
     });
 
-    // eslint-disable-next-line unicorn/prefer-string-raw
     test('leaves out the backslash of \\"', () => {
       const line: string = String.raw`x: "note[\"film - title\"]"`;
       const ranges: DocumentRange[] = getRangesForLine(line);
@@ -61,13 +60,11 @@ describe('getQuotedLiteralRanges', () => {
       expect(getTextFromRanges(line, getRangesForLine(line))).toBe(String.raw`a\b`);
     });
 
-    // eslint-disable-next-line unicorn/prefer-string-raw
     test('leaves out the backslash of \\/', () => {
       const line: string = String.raw`x: "a\/b"`;
       expect(getTextFromRanges(line, getRangesForLine(line))).toBe('a/b');
     });
 
-    // eslint-disable-next-line unicorn/prefer-string-raw
     test('keeps escapes that decode to a different character, such as \\n', () => {
       const line: string = String.raw`x: "a\nb"`;
       expect(getRangesForLine(line)).toEqual([{ from: 4, to: 8 }]);
