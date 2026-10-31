@@ -12,6 +12,8 @@ export const PLUGIN_DEFAULT_SETTINGS: PluginSettings = {
   whitespaceOpacity: 30,
   autocomplete: 'desktopAndTablet',
   autocompleteAcceptKey: 'enter',
+  autocompleteKeyInsert: 'structure',
+  autocompleteSuggestAfterKey: true,
   mobileToolbarCommands: [
     'command-palette:open',
     'editor:undo',
@@ -40,12 +42,16 @@ export interface PluginSettings {
   whitespaceOpacity: number;
   autocomplete: AutocompleteDevices;
   autocompleteAcceptKey: AutocompleteAcceptKey;
+  autocompleteKeyInsert: AutocompleteKeyInsert;
+  autocompleteSuggestAfterKey: boolean;
   mobileToolbarCommands: string[];
 }
 
 export type AutocompleteDevices = 'off' | 'desktopAndTablet' | 'allDevices';
 
 export type AutocompleteAcceptKey = 'enter' | 'tab' | 'tabAndEnter';
+
+export type AutocompleteKeyInsert = 'structure' | 'colon';
 
 /**
  * Dot-notation paths of {@link PluginSettings} that correspond to settings of specific types.

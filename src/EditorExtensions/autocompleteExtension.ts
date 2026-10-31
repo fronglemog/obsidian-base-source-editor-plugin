@@ -32,6 +32,11 @@ import { createYamlCompletionSource } from 'src/Autocompletion/yamlCompletionSou
 import type { FormulaEditorExtensions } from 'src/Autocompletion/NativeFormulaSupport';
 
 import type {
+  KeyInsertSettings,
+  ReadKeyInsertSettings
+} from 'src/Autocompletion/keyInserts';
+
+import type {
   PropertyType,
   ReadPropertyIcon,
   ReadPropertyType
@@ -201,7 +206,13 @@ export function getAutocompleteExtensions(plugin: BasesSourceEditorPlugin): Exte
     : (state: EditorState, propertyId: string): IconName | null => formulaSupport.formulaContext.readPropertyIcon(state, propertyId);
 
   // Created once: CodeMirror tells a source's earlier results apart by the source function
-  const yamlCompletionSource: CompletionSource = createYamlCompletionSource(plugin.app, readPropertyType, readSummaryIcon, readPropertyIcon);
+  // Read when a key is picked, so changing these settings needs no rebuild, which would close an open popup
+  const readKeyInsertSettings: ReadKeyInsertSettings = (): KeyInsertSettings => ({
+    keyInsert: plugin.settings.autocompleteKeyInsert,
+    suggestAfterKey: plugin.settings.autocompleteSuggestAfterKey
+  });
+
+  const yamlCompletionSource: CompletionSource = createYamlCompletionSource(plugin.app, readPropertyType, readSummaryIcon, readPropertyIcon, readKeyInsertSettings);
   const acceptKeyOptions: AcceptKeyOptions = getAcceptKeyOptions(plugin.settings.autocompleteAcceptKey);
 
   const extensions: Extension[] = [

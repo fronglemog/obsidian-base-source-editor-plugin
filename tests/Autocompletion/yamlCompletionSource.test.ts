@@ -37,7 +37,9 @@ import type {
 
 /* CODEMIRROR */
 import {
+  autocompletion,
   CompletionContext,
+  completionStatus,
   insertCompletionText
 } from '@codemirror/autocomplete';
 
@@ -54,6 +56,7 @@ import type { EditorView } from '@codemirror/view';
 
 /* PLUGIN */
 import { createYamlCompletionSource } from 'src/Autocompletion/yamlCompletionSource';
+import type { KeyInsertSettings } from 'src/Autocompletion/keyInserts';
 import type { PropertyType } from 'src/Autocompletion/propertyIds';
 
 /* ========================= TEST DATA ========================= */
@@ -72,6 +75,12 @@ const DOCUMENT: string = [
 
 /** Position right after `price: f`, where the summary names are suggested. */
 const SUMMARY_POSITION: number = DOCUMENT.indexOf('price: f') + 'price: f'.length;
+
+/** The default settings for picked keys: "Key and value structure", and the suggestions open after a key. */
+const STRUCTURE_SETTINGS: KeyInsertSettings = { keyInsert: 'structure', suggestAfterKey: true };
+
+/** The start of a view, with its type and name, for the keys typed after it. */
+const VIEW: string = 'views:\n  - type: table\n    name: All\n';
 
 /* ========================= HELPERS ========================= */
 
@@ -104,11 +113,15 @@ function readPropertyIcon(): IconName {
 
 /**
  * Stands in for Obsidian's app, with one note property in the vault: `film - year`, a number.
+ * The Bases core plugin counts as turned off, so views have no options.
  *
  * @returns The app.
  */
 function createApp(): App {
   return {
+    internalPlugins: {
+      getEnabledPluginById: (): null => null
+    },
     metadataTypeManager: {
       getAllProperties: () => ({ 'film - year': { name: 'film - year', widget: 'number' } }),
       getTypeInfo: () => ({ expected: { type: 'number', icon: 'lucide-binary' } })
@@ -117,15 +130,25 @@ function createApp(): App {
 }
 
 /**
+ * Creates the completion source, with stand-ins for Obsidian.
+ *
+ * @param settings - The settings for picked keys.
+ * @returns The completion source.
+ */
+function createCompletionSource(settings: KeyInsertSettings): CompletionSource {
+  return createYamlCompletionSource(createApp(), readPropertyType, readSummaryIcon, readPropertyIcon, (): KeyInsertSettings => settings);
+}
+
+/**
  * Gets the suggestions at a position in the test document, as on Ctrl+Space.
  *
  * @param state - Editor state of the test document.
  * @param pos - Position to complete at.
+ * @param settings - The settings for picked keys.
  * @returns The suggestions.
  */
-function getCompletionsAt(state: EditorState, pos: number): CompletionResult {
-  const completionSource: CompletionSource = createYamlCompletionSource(createApp(), readPropertyType, readSummaryIcon, readPropertyIcon);
-  const result = completionSource(new CompletionContext(state, pos, true)) as CompletionResult | null;
+function getCompletionsAt(state: EditorState, pos: number, settings: KeyInsertSettings = STRUCTURE_SETTINGS): CompletionResult {
+  const result = createCompletionSource(settings)(new CompletionContext(state, pos, true)) as CompletionResult | null;
   if (result == null) {
     throw new Error('Expected suggestions.');
   }
@@ -178,11 +201,44 @@ function pickTextCompletion(state: EditorState, result: CompletionResult, label:
  * Gets the suggestions at the end of a document, as on Ctrl+Space.
  *
  * @param document - The document.
+ * @param settings - The settings for picked keys.
  * @returns The editor state of the document, and the suggestions.
  */
-function getCompletionsAtEnd(document: string): { state: EditorState; result: CompletionResult } {
+function getCompletionsAtEnd(document: string, settings: KeyInsertSettings = STRUCTURE_SETTINGS): { state: EditorState; result: CompletionResult } {
   const state: EditorState = EditorState.create({ doc: document, extensions: yamlLanguage });
-  return { state, result: getCompletionsAt(state, document.length) };
+  return { state, result: getCompletionsAt(state, document.length, settings) };
+}
+
+/**
+ * Picks a key suggestion at the end of a document, in a stand-in for the real editor whose state follows what's dispatched to it.
+ * The state has CodeMirror's autocompletion, so whether the suggestions are opening again can be read after the pick.
+ *
+ * @param document - The document.
+ * @param label - Label of the key to pick.
+ * @param settings - The settings for picked keys.
+ * @returns The document after the pick, and CodeMirror's completion status: `'pending'` while suggestions are being asked for.
+ */
+function pickKeyAtEnd(document: string, label: string, settings: KeyInsertSettings): { doc: string; status: string | null } {
+  const completionSource: CompletionSource = createCompletionSource(settings);
+  let state: EditorState = EditorState.create({ doc: document, extensions: [yamlLanguage, autocompletion({ override: [completionSource] })] });
+
+  const result = completionSource(new CompletionContext(state, document.length, true)) as CompletionResult | null;
+  const completion: Completion | undefined = result?.options.find((option: Completion): boolean => option.label === label);
+  if (result == null || completion == null || typeof completion.apply !== 'function') {
+    throw new TypeError(`Expected a key "${label}" with an insert function.`);
+  }
+
+  const view: EditorView = {
+    get state(): EditorState {
+      return state;
+    },
+    dispatch: (...specs: TransactionSpec[]): void => {
+      state = state.update(...specs).state;
+    }
+  } as unknown as EditorView;
+
+  completion.apply(view, completion, result.from, result.to ?? document.length);
+  return { doc: state.doc.toString(), status: completionStatus(state) };
 }
 
 /* ========================= TESTS ========================= */
@@ -223,14 +279,53 @@ describe('createYamlCompletionSource: property ids', () => {
     expect(pickTextCompletion(state, result, 'film - year').endsWith('      - film - year')).toBe(true);
   });
 
-  test('a key under properties: inserted in full, with its colon', () => {
+  test('a key under properties: inserted in full; it holds the property\'s settings, on a new line', () => {
     const { state, result } = getCompletionsAtEnd(`properties:\n  fi`);
-    expect(pickTextCompletion(state, result, 'note.film - year').startsWith('properties:\n  note.film - year: ')).toBe(true);
+    expect(pickCompletion(state, result, 'note.film - year')).toBe('properties:\n  note.film - year:\n    ');
+  });
+
+  test('a key under properties, with "Key and colon": inserted in full, with its colon', () => {
+    const { state, result } = getCompletionsAtEnd(`properties:\n  fi`, { keyInsert: 'colon', suggestAfterKey: true });
+    expect(pickCompletion(state, result, 'note.film - year')).toBe('properties:\n  note.film - year: ');
   });
 
   test('a key in a view\'s summaries: the view\'s columns, inserted short, with its colon', () => {
     const { state, result } = getCompletionsAtEnd(`${view}    order:\n      - film - year\n    summaries:\n      `);
     expect(result.options.map((option: Completion): string => option.label)).toEqual(['film - year']);
-    expect(pickTextCompletion(state, result, 'film - year').endsWith('    summaries:\n      film - year: ')).toBe(true);
+    expect(pickCompletion(state, result, 'film - year').endsWith('    summaries:\n      film - year: ')).toBe(true);
+  });
+});
+
+describe('createYamlCompletionSource: picked keys', () => {
+  test('"Key and value structure": a list gets a new line with "- "', () => {
+    expect(pickKeyAtEnd('vi', 'views', STRUCTURE_SETTINGS).doc).toBe('views:\n  - ');
+    expect(pickKeyAtEnd(`${VIEW}    so`, 'sort', STRUCTURE_SETTINGS).doc).toBe(`${VIEW}    sort:\n      - `);
+  });
+
+  test('"Key and value structure": other keys get a new, indented line', () => {
+    expect(pickKeyAtEnd(`${VIEW}    gr`, 'groupBy', STRUCTURE_SETTINGS).doc).toBe(`${VIEW}    groupBy:\n      `);
+  });
+
+  test('"Key and value structure": a single value gets ": "', () => {
+    expect(pickKeyAtEnd('views:\n  - ty', 'type', STRUCTURE_SETTINGS).doc).toBe('views:\n  - type: ');
+  });
+
+  test('"Key and colon": every key gets ": "', () => {
+    expect(pickKeyAtEnd('vi', 'views', { keyInsert: 'colon', suggestAfterKey: true }).doc).toBe('views: ');
+    expect(pickKeyAtEnd(`${VIEW}    gr`, 'groupBy', { keyInsert: 'colon', suggestAfterKey: true }).doc).toBe(`${VIEW}    groupBy: `);
+  });
+
+  test('"Suggest what comes after a key": the suggestions open after the pick only while it\'s on, in both modes', () => {
+    expect(pickKeyAtEnd('vi', 'views', STRUCTURE_SETTINGS).status).toBe('pending');
+    expect(pickKeyAtEnd('vi', 'views', { keyInsert: 'colon', suggestAfterKey: true }).status).toBe('pending');
+    expect(pickKeyAtEnd('vi', 'views', { keyInsert: 'structure', suggestAfterKey: false }).status).toBeNull();
+  });
+
+  test('renaming a key replaces only its name', () => {
+    const document: string = `${VIEW}    gr: x\n`;
+    const state: EditorState = EditorState.create({ doc: document, extensions: yamlLanguage });
+    const result: CompletionResult = getCompletionsAt(state, document.indexOf('gr: x') + 'gr'.length);
+
+    expect(pickTextCompletion(state, result, 'groupBy')).toBe(`${VIEW}    groupBy: x\n`);
   });
 });

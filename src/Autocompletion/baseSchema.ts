@@ -79,6 +79,21 @@ const UNDECLARED_VIEW_KEYS: Map<string, readonly string[]> = new Map([
   ['table', ['columnSize']]
 ]);
 
+/**
+ * Keys whose value holds other keys, by the key path of their mapping, joined with `/`.
+ * `filters` can also be a single formula, but Obsidian's Bases view always writes keys there: `and` with a list.
+ */
+const KEYS_HOLDING_KEYS: ReadonlyMap<string, readonly string[]> = new Map([
+  ['', ['filters', 'formulas', 'properties', 'summaries']],
+  ['views/#', ['filters', 'groupBy', 'summaries', 'columnSize']]
+]);
+
+/** Keys whose value is a list, by the key path of their mapping, joined with `/`. A filter's `and`, `or` and `not` too. */
+const KEYS_HOLDING_LISTS: ReadonlyMap<string, readonly string[]> = new Map([
+  ['', ['views']],
+  ['views/#', ['order', 'sort', 'groupOrder']]
+]);
+
 /** Values of `direction`, in a sort item and in `groupBy`. */
 const SORT_DIRECTIONS: readonly string[] = ['ASC', 'DESC'];
 
@@ -174,6 +189,46 @@ export function getKeySuggestions(position: KeyPosition, readViewOptionKeys: (vi
 
   const uniqueKeys: string[] = [...new Set(keys)];
   return uniqueKeys.filter((key: string): boolean => isSuggestedKey(key, position.existingKeys));
+}
+
+/**
+ * Gets what a key's value holds, from Obsidian's schema for `.base` files: a single value, other keys, or a list.
+ *
+ * @remarks
+ * A property id under `properties` holds its settings, such as `displayName`.
+ * A view's options take a single value, apart from a `multitext` option, which holds a list.
+ * A key the schema doesn't describe, such as a formula's name, counts as a single value.
+ *
+ * @param position - The key position, from `getKeyPosition()` or `getPropertyKeyPosition()`.
+ * @param key - The key.
+ * @param readViewOptions - Reads the options of a view type.
+ * @returns What the key's value holds.
+ */
+export function getKeyValueKind(position: KeyPosition, key: string, readViewOptions: (viewType: string) => BasesOptions[]): KeyValueKind {
+  const mappingKeyPath: string[] = position.mappingKeyPath;
+
+  if (isFilterMappingPath(mappingKeyPath) === true) {
+    return FILTER_KEYS.includes(key) ? 'list' : 'value';
+  }
+  if (mappingKeyPath.length === 1 && mappingKeyPath[0] === 'properties') {
+    return 'mapping';
+  }
+
+  const path: string = mappingKeyPath.join('/');
+  if (KEYS_HOLDING_LISTS.get(path)?.includes(key) === true) {
+    return 'list';
+  }
+  if (KEYS_HOLDING_KEYS.get(path)?.includes(key) === true) {
+    return 'mapping';
+  }
+
+  if (isViewPath(mappingKeyPath) === true && position.typeValue != null) {
+    const option: BasesOptions | undefined = readViewOptions(position.typeValue).find((viewOption: BasesOptions): boolean => viewOption.key === key);
+    if (option?.type === 'multitext') {
+      return 'list';
+    }
+  }
+  return 'value';
 }
 
 /**
@@ -471,6 +526,11 @@ function isViewMappingPath(keyPath: string[], key: string): boolean {
 }
 
 /* ========================= TYPES ========================= */
+
+/**
+ * What a key's value holds: a single value, other keys, or a list.
+ */
+export type KeyValueKind = 'value' | 'mapping' | 'list';
 
 /**
  * A value to suggest.

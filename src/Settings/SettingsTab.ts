@@ -22,6 +22,7 @@ import {
 import type {
   AutocompleteAcceptKey,
   AutocompleteDevices,
+  AutocompleteKeyInsert,
   PluginSettingPath
 } from 'src/Settings/PluginSettings';
 
@@ -102,6 +103,30 @@ export class BasesSourceEditorPluginSettingsTab extends PluginSettingTab {
                 tab: 'Tab',
                 tabAndEnter: 'Tab and Enter'
               } satisfies Record<AutocompleteAcceptKey, string>
+            }
+          },
+          {
+            name: 'When picking a key, insert',
+            desc: 'What to add after a key picked from the suggestions.',
+            searchable: true,
+            visible: () => this.plugin.settings.autocomplete !== 'off',
+            control: {
+              key: 'autocompleteKeyInsert',
+              type: 'dropdown',
+              options: {
+                structure: 'Key and value structure',
+                colon: 'Key and colon'
+              } satisfies Record<AutocompleteKeyInsert, string>
+            }
+          },
+          {
+            name: 'Suggest what comes after a key',
+            desc: 'After picking a key, show the suggestions for its value or first item.',
+            searchable: true,
+            visible: () => this.plugin.settings.autocomplete !== 'off',
+            control: {
+              key: 'autocompleteSuggestAfterKey',
+              type: 'toggle'
             }
           }
         ]

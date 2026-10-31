@@ -10,7 +10,8 @@ import type {
 /* CODEMIRROR */
 import {
   insertCompletionText,
-  pickedCompletion
+  pickedCompletion,
+  startCompletion
 } from '@codemirror/autocomplete';
 
 import type {
@@ -28,6 +29,7 @@ import type { Tree } from '@lezer/common';
 /* PLUGIN */
 import {
   getKeySuggestions,
+  getKeyValueKind,
   getListItemSuggestions,
   getPropertyKeySuggestions,
   getValueSuggestions
@@ -69,6 +71,13 @@ import type {
 } from 'src/Autocompletion/propertyIds';
 
 import { getFilePropertyNames } from 'src/Autocompletion/filePropertyNames';
+import { getKeyInsertText } from 'src/Autocompletion/keyInserts';
+
+import type {
+  KeyInsertSettings,
+  ReadKeyInsertSettings
+} from 'src/Autocompletion/keyInserts';
+
 import type { ReadSummaryIcon } from 'src/Autocompletion/summaries';
 import { getNoteProperties } from 'src/Autocompletion/vaultProperties';
 
@@ -106,12 +115,14 @@ const SORT_TEXT_DIGITS: number = 4;
  * the view types after `type:`, property ids, and so on.
  *
  * @remarks
- * At a key position, it suggests the keys the mapping can have that aren't there yet. A picked key is inserted with `: `;
- * when renaming an existing key, only its name is replaced. On an empty line or a `- `, it only suggests on Ctrl+Space,
+ * At a key position, it suggests the keys the mapping can have that aren't there yet. A picked key is inserted
+ * by the "When picking a key, insert" setting: with `: `, or with what its value needs, such as a new line and `- `.
+ * Then, with the "Suggest what comes after a key" setting on, the suggestions open as on Ctrl+Space.
+ * When renaming an existing key, only its name is replaced. On an empty line or a `- `, it only suggests on Ctrl+Space,
  * so indenting a new line doesn't open the popup.
  *
  * Where a key or a list item is a property id (under `properties`, in a view's `summaries`, `columnSize` and `order`),
- * it suggests property ids, in the form Obsidian writes there; a key is inserted with `: `.
+ * it suggests property ids, in the form Obsidian writes there; a key is inserted as other keys are.
  *
  * At a value position, it suggests the values the key takes, in the order Obsidian lists them.
  * The suggestions are filtered by the text before the cursor, and a picked value replaces the whole value.
@@ -122,13 +133,15 @@ const SORT_TEXT_DIGITS: number = 4;
  * @param readPropertyType - Reads a property's type, for summary names and sort direction labels.
  * @param readSummaryIcon - Reads the icon of a summary's result, for summary names.
  * @param readPropertyIcon - Reads the icon of a property's value, for file properties.
+ * @param readKeyInsertSettings - Reads the settings for picked keys.
  * @returns The completion source.
  */
 export function createYamlCompletionSource(
   app: App,
   readPropertyType: ReadPropertyType,
   readSummaryIcon: ReadSummaryIcon,
-  readPropertyIcon: ReadPropertyIcon
+  readPropertyIcon: ReadPropertyIcon,
+  readKeyInsertSettings: ReadKeyInsertSettings
 ): CompletionSource {
   const completionSource: CompletionSource = (context: CompletionContext): CompletionResult | null => {
     const tree: Tree = syntaxTree(context.state);
@@ -149,7 +162,9 @@ export function createYamlCompletionSource(
       readDisplayNames: (): Record<string, string> => ({ ...getFilePropertyNames(), ...getPropertyDisplayNamesFromBaseYaml(tree, readDocumentText) })
     };
 
-    return getKeyCompletions(app, context, tree) ?? getPropertyIdCompletions(context, tree, sources) ?? getValueCompletions(context, tree, sources);
+    return getKeyCompletions(app, context, tree, sources, readKeyInsertSettings)
+      ?? getPropertyIdCompletions(context, tree, sources, readKeyInsertSettings)
+      ?? getValueCompletions(context, tree, sources);
   };
 
   return completionSource;
@@ -161,9 +176,17 @@ export function createYamlCompletionSource(
  * @param app - The app, for the view types' options.
  * @param context - The completion context.
  * @param tree - Syntax tree of the document.
+ * @param sources - Where the view types' options come from, for what a picked key's value holds.
+ * @param readKeyInsertSettings - Reads the settings for picked keys.
  * @returns The key suggestions, or `null` if the position isn't a key position or there's nothing to suggest.
  */
-function getKeyCompletions(app: App, context: CompletionContext, tree: Tree): CompletionResult | null {
+function getKeyCompletions(
+  app: App,
+  context: CompletionContext,
+  tree: Tree,
+  sources: ValueSources,
+  readKeyInsertSettings: ReadKeyInsertSettings
+): CompletionResult | null {
   const position: KeyPosition | null = getKeyPosition(tree, context.state.doc, context.pos);
   if (position == null) {
     return null;
@@ -181,7 +204,7 @@ function getKeyCompletions(app: App, context: CompletionContext, tree: Tree): Co
 
   const options: Completion[] = keys.map((key: string): Completion => ({
     label: key,
-    apply: position.isRename === true ? key : `${key}: `,
+    apply: position.isRename === true ? key : createKeyApply(key, position, sources, readKeyInsertSettings),
     boost: KEY_BOOST
   }));
 
@@ -200,18 +223,24 @@ function getKeyCompletions(app: App, context: CompletionContext, tree: Tree): Co
  * @param context - The completion context.
  * @param tree - Syntax tree of the document.
  * @param sources - Where the properties and display names come from.
+ * @param readKeyInsertSettings - Reads the settings for picked keys.
  * @returns The property id suggestions, or `null` if the position takes no property id or there's nothing to suggest.
  */
-function getPropertyIdCompletions(context: CompletionContext, tree: Tree, sources: ValueSources): CompletionResult | null {
+function getPropertyIdCompletions(
+  context: CompletionContext,
+  tree: Tree,
+  sources: ValueSources,
+  readKeyInsertSettings: ReadKeyInsertSettings
+): CompletionResult | null {
   const keyPosition: KeyPosition | null = getPropertyKeyPosition(tree, context.state.doc, context.pos);
   if (keyPosition != null) {
     const keys: ValueSuggestion[] = getPropertyKeySuggestions(keyPosition, getViewOrder(tree, context.state.doc, context.pos), sources);
-    return createPropertyIdResult(context, keyPosition, keys, ': ');
+    return createPropertyIdResult(context, keyPosition, keys, (propertyId: string): Completion['apply'] => createKeyApply(propertyId, keyPosition, sources, readKeyInsertSettings));
   }
 
   const itemPosition: ListItemPosition | null = getListItemPosition(tree, context.state.doc, context.pos);
   if (itemPosition != null) {
-    return createPropertyIdResult(context, itemPosition, getListItemSuggestions(itemPosition, sources), '');
+    return createPropertyIdResult(context, itemPosition, getListItemSuggestions(itemPosition, sources), (propertyId: string): Completion['apply'] => propertyId);
   }
   return null;
 }
@@ -222,10 +251,15 @@ function getPropertyIdCompletions(context: CompletionContext, tree: Tree, source
  * @param context - The completion context.
  * @param range - Where the property id is typed: from its start to the end of the line, which a pick replaces.
  * @param suggestions - The property ids.
- * @param suffix - Text inserted after a picked property id, such as a key's `: `.
+ * @param getApply - Gets what a picked property id inserts, from the property id as it's written in the file.
  * @returns The completion result, or `null` if there's nothing to suggest yet.
  */
-function createPropertyIdResult(context: CompletionContext, range: { from: number; to: number }, suggestions: ValueSuggestion[], suffix: string): CompletionResult | null {
+function createPropertyIdResult(
+  context: CompletionContext,
+  range: { from: number; to: number },
+  suggestions: ValueSuggestion[],
+  getApply: (propertyId: string) => Completion['apply']
+): CompletionResult | null {
   // While typing, only once part of a property id is typed
   if (suggestions.length === 0 || (context.explicit === false && context.pos === range.from)) {
     return null;
@@ -237,7 +271,7 @@ function createPropertyIdResult(context: CompletionContext, range: { from: numbe
     detail: suggestion.detail,
     type: suggestion.icon,
     sortText: String(index).padStart(SORT_TEXT_DIGITS, '0'),
-    apply: `${suggestion.value}${suffix}`
+    apply: getApply(suggestion.value)
   }));
 
   return {
@@ -245,6 +279,37 @@ function createPropertyIdResult(context: CompletionContext, range: { from: numbe
     to: range.to,
     options,
     validFor: PROPERTY_ID_TEXT
+  };
+}
+
+/**
+ * Creates the insert function of a key suggestion, which reads the settings for picked keys when the key is picked.
+ *
+ * @param key - The key, as it's written in the file.
+ * @param position - The key position.
+ * @param sources - Where the view types' options come from, for what the key's value holds.
+ * @param readKeyInsertSettings - Reads the settings for picked keys.
+ * @returns The insert function.
+ */
+function createKeyApply(
+  key: string,
+  position: KeyPosition,
+  sources: ValueSources,
+  readKeyInsertSettings: ReadKeyInsertSettings
+): (view: EditorView, completion: Completion, from: number, to: number) => void {
+  return (view: EditorView, completion: Completion, from: number, to: number): void => {
+    const settings: KeyInsertSettings = readKeyInsertSettings();
+    const text: string = getKeyInsertText(view.state, key, from, getKeyValueKind(position, key, sources.readViewOptions), settings.keyInsert);
+
+    view.dispatch({
+      ...insertCompletionText(view.state, text, from, to),
+      annotations: pickedCompletion.of(completion)
+    });
+
+    // As on Ctrl+Space, so the sources suggest at an empty value or line too; with nothing to suggest, nothing opens
+    if (settings.suggestAfterKey === true) {
+      startCompletion(view);
+    }
   };
 }
 

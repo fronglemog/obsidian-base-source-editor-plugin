@@ -14,6 +14,7 @@ import type {
 /* PLUGIN */
 import {
   getKeySuggestions,
+  getKeyValueKind,
   getListItemSuggestions,
   getPropertyKeySuggestions,
   getSchemaKeys,
@@ -81,6 +82,23 @@ function readViewOptionKeys(viewType: string): string[] {
     return ['cardSize'];
   }
   return [];
+}
+
+/**
+ * Stands in for the view options read from Obsidian, for what a key's value holds:
+ * a table has a dropdown and a multitext option.
+ *
+ * @param viewType - The view's type.
+ * @returns The view type's options.
+ */
+function readKindViewOptions(viewType: string): BasesOptions[] {
+  if (viewType !== 'table') {
+    return [];
+  }
+  return [
+    { key: 'rowHeight', type: 'dropdown', displayName: 'Row height', options: { '': 'Short', medium: 'Medium' } },
+    { key: 'tags', type: 'multitext', displayName: 'Tags' }
+  ];
 }
 
 /**
@@ -302,6 +320,57 @@ describe('getKeySuggestions', () => {
 
   test('nothing for mappings the schema doesn\'t describe', () => {
     expect(getKeySuggestions(createKeyPosition(['formulas'], ['Title']), readViewOptionKeys)).toEqual([]);
+  });
+});
+
+describe('getKeyValueKind', () => {
+  test('top-level keys', () => {
+    for (const key of ['filters', 'formulas', 'properties', 'summaries']) {
+      expect(getKeyValueKind(createKeyPosition([]), key, readKindViewOptions)).toBe('mapping');
+    }
+    expect(getKeyValueKind(createKeyPosition([]), 'views', readKindViewOptions)).toBe('list');
+  });
+
+  test('a view\'s own keys', () => {
+    const view: KeyPosition = createKeyPosition(['views', '#'], ['type'], 'table');
+
+    for (const key of ['filters', 'groupBy', 'summaries', 'columnSize']) {
+      expect(getKeyValueKind(view, key, readKindViewOptions)).toBe('mapping');
+    }
+    for (const key of ['order', 'sort', 'groupOrder']) {
+      expect(getKeyValueKind(view, key, readKindViewOptions)).toBe('list');
+    }
+    for (const key of ['type', 'name', 'limit']) {
+      expect(getKeyValueKind(view, key, readKindViewOptions)).toBe('value');
+    }
+  });
+
+  test('a view\'s options: a list for multitext, a single value for the others', () => {
+    expect(getKeyValueKind(createKeyPosition(['views', '#'], ['type'], 'table'), 'tags', readKindViewOptions)).toBe('list');
+    expect(getKeyValueKind(createKeyPosition(['views', '#'], ['type'], 'table'), 'rowHeight', readKindViewOptions)).toBe('value');
+    expect(getKeyValueKind(createKeyPosition(['views', '#']), 'tags', readKindViewOptions)).toBe('value');
+  });
+
+  test('a filter\'s and, or and not hold a list, at the top level, in a view and in a group', () => {
+    for (const mappingKeyPath of [['filters'], ['views', '#', 'filters'], ['filters', 'and', '#']]) {
+      expect(getKeyValueKind(createKeyPosition(mappingKeyPath), 'or', readKindViewOptions)).toBe('list');
+    }
+  });
+
+  test('a sort item, groupBy and a property\'s settings take single values', () => {
+    expect(getKeyValueKind(createKeyPosition(['views', '#', 'sort', '#']), 'property', readKindViewOptions)).toBe('value');
+    expect(getKeyValueKind(createKeyPosition(['views', '#', 'groupBy']), 'direction', readKindViewOptions)).toBe('value');
+    expect(getKeyValueKind(createKeyPosition(['properties', 'note.price']), 'displayName', readKindViewOptions)).toBe('value');
+  });
+
+  test('a property id: holds its settings under properties, a single value in a view\'s summaries and columnSize', () => {
+    expect(getKeyValueKind(createKeyPosition(['properties']), 'note.price', readKindViewOptions)).toBe('mapping');
+    expect(getKeyValueKind(createKeyPosition(['views', '#', 'summaries']), 'price', readKindViewOptions)).toBe('value');
+    expect(getKeyValueKind(createKeyPosition(['views', '#', 'columnSize']), 'note.price', readKindViewOptions)).toBe('value');
+  });
+
+  test('a key the schema doesn\'t describe: a single value', () => {
+    expect(getKeyValueKind(createKeyPosition(['formulas']), 'Title', readKindViewOptions)).toBe('value');
   });
 });
 
