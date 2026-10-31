@@ -70,22 +70,34 @@ export class FormulaContext {
   private mockContextClass: MockContextClass;
   private current: BasesIdentifierContext;
 
-  /** Context for summary formulas, where the only identifier is `values`. */
+  /** 
+   * Context for summary formulas, where the only identifier is `values`.
+   */
   private summaryContext: BasesIdentifierContext = new SummaryMockContext();
 
-  /** Whether the proxy forwards to the summary context instead of the current one. */
+  /**
+   * Whether the proxy forwards to the summary context instead of the current one.
+   */
   private isSummarySelected: boolean = false;
 
-  /** Document the current mock context was created for. */
+  /**
+   * Document the current mock context was created for.
+   */
   private currentDoc: Text | null = null;
 
-  /** Whether a failure to read a property's type has been logged, so it's logged once per editor. */
+  /**
+   * Whether a failure to read a property's type has been logged, so it's logged once per editor.
+   */
   private hasLoggedPropertyTypeError: boolean = false;
 
-  /** Whether a failure to read a summary's result icon has been logged, so it's logged once per editor. */
+  /**
+   * Whether a failure to read a summary's result icon has been logged, so it's logged once per editor.
+   */
   private hasLoggedSummaryIconError: boolean = false;
 
-  /** Whether a failure to read a property's icon has been logged, so it's logged once per editor. */
+  /**
+   * Whether a failure to read a property's icon has been logged, so it's logged once per editor.
+   */
   private hasLoggedPropertyIconError: boolean = false;
 
   constructor(app: App, mockContextClass: MockContextClass) {

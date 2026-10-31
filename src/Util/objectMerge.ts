@@ -125,8 +125,6 @@ function isPlainObject(value: unknown): value is Record<PropertyKey, unknown> {
   return prototype === null || Object.getPrototypeOf(prototype) === null;
 }
 
-/* ========================= TYPES ========================= */
-
 /**
  * Intersects every type in a tuple, so `[A, B, C]` becomes `A & B & C`.
  * `null` and `undefined` are dropped, because {@link objectMerge} skips them.

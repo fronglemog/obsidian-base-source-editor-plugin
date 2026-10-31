@@ -297,8 +297,6 @@ export function getNodeBeforeSpaces(tree: Tree, pos: number, readDocumentText: R
   return tree.resolve(spacesStart, -1);
 }
 
-/* ========================= TYPES ========================= */
-
 /**
  * Reads the document's text between two positions. Same shape as {@link Input.read}.
  */

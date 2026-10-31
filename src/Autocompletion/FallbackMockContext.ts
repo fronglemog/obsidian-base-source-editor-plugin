@@ -29,7 +29,9 @@ import type {
 
 /* ========================= FallbackMockContext ========================= */
 
-/** Identifiers a formula can always use, besides the vault's properties. */
+/** 
+ * Identifiers a formula can always use, besides the vault's properties.
+ */
 const BUILT_IN_IDENTIFIERS: string[] = ['this', 'note', 'file', 'formula'];
 
 const DateValueClass = DateValue as unknown as DateValueConstructor;
@@ -40,14 +42,16 @@ const ObjectValueClass = ObjectValue as unknown as ObjectValueConstructor;
  * A mock context built from Obsidian's public value classes, for when Obsidian's own mock context class can't be found.
  *
  * @remarks
- * It can't evaluate formulas, so it keeps only their names: `formula.` lists them without result types.
+ * The mock context cannot evaluate formulas, so it keeps only their names: `formula.` lists them without result types.
  * `tags` properties are lists of tags with the list icon: Obsidian's own class for them isn't exported.
  */
 export class FallbackMockContext implements BasesIdentifierContext {
   private app: App;
   private formulaNames: string[];
 
-  /** Every vault property with an empty value of its type, by name: `null` until first needed. */
+  /**
+   * Every vault property with an empty value of its type, by name: `null` until first needed.
+   */
   private props: Record<string, Value> | null = null;
 
   constructor(app: App, formulas: Record<string, BasesFormula>) {

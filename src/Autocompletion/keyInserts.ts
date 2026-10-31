@@ -11,7 +11,7 @@ import type { EditorState } from '@codemirror/state';
 import type { KeyValueKind } from 'src/Autocompletion/baseSchema';
 import type { AutocompleteKeyInsert } from 'src/Settings/PluginSettings';
 
-/* ========================= KEY INSERTS ========================= */
+/* ================================================== */
 
 /**
  * Gets the text inserted for a key picked from the suggestions, by the "When picking a key, insert" setting.
@@ -39,15 +39,18 @@ export function getKeyInsertText(state: EditorState, key: string, keyFrom: numbe
   return kind === 'list' ? `${key}:\n${childIndent}- ` : `${key}:\n${childIndent}`;
 }
 
-/* ========================= TYPES ========================= */
-
 /**
  * The settings for keys picked from the suggestions.
  */
 export type KeyInsertSettings = {
-  /** The "When picking a key, insert" setting. */
+  /**
+   * The "When picking a key, insert" setting.
+   */
   keyInsert: AutocompleteKeyInsert;
-  /** The "Suggest what comes after a key" setting: whether the suggestions open by themselves after a key is picked. */
+
+  /**
+   * The "Suggest what comes after a key" setting: whether the suggestions open by themselves after a key is picked.
+   */
   suggestAfterKey: boolean;
 };
 

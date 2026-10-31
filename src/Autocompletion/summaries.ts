@@ -79,8 +79,6 @@ export function getSummarySuggestions(propertyType: PropertyType, customSummarie
   return summaries.sort((first: SummarySuggestion, second: SummarySuggestion): number => SUMMARY_ORDER.compare(first.name, second.name));
 }
 
-/* ========================= TYPES ========================= */
-
 /**
  * A summary to suggest.
  */

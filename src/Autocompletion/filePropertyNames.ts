@@ -2,13 +2,14 @@
 /* PLUGIN */
 import { logError } from 'src/Util/logError';
 
-/* ========================= FILE PROPERTY NAMES ========================= */
+/* ================================================== */
 
 const FALLBACK_MESSAGE: string = 'file properties are shown with their British English names.';
 
-/** Keys of Obsidian's translations of the file properties' names. */
-const NAME_KEYS: Readonly<Record<string, string>> = {
-  'file.file': 'plugins.bases.label-file-prop-file',
+/**
+ * Keys of Obsidian's translations of the file properties' names.
+ */
+const NAME_KEYS: Readonly<Record<string, string>> = {  'file.file': 'plugins.bases.label-file-prop-file',
   'file.name': 'plugins.bases.label-file-prop-name',
   'file.basename': 'plugins.bases.label-file-prop-base-name',
   'file.fullname': 'plugins.bases.label-file-prop-full-name',
@@ -24,7 +25,9 @@ const NAME_KEYS: Readonly<Record<string, string>> = {
   'file.tags': 'plugins.bases.label-file-prop-tags'
 };
 
-/** Obsidian's British English names for the file properties, used where Obsidian's own can't be read. */
+/**
+ * Obsidian's British English names for the file properties, used where Obsidian's own can't be read.
+ */
 const BRITISH_ENGLISH_NAMES: Readonly<Record<string, string>> = {
   'file.file': 'file',
   'file.name': 'name',
@@ -105,8 +108,6 @@ function logFailureOnce(failure: string, error?: unknown): void {
 
   logError(`${FALLBACK_MESSAGE} ${failure}`, error);
 }
-
-/* ========================= TYPES ========================= */
 
 /**
  * The parts of Obsidian's `i18next` global the plugin uses: a library's translation lookup, not Obsidian's own class.

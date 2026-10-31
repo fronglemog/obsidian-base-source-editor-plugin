@@ -72,7 +72,7 @@ export class BaseSourceMobileToolbar extends Component {
 
     if (Platform.isIosApp && Platform.isMobile) {
       const floatingOptionsEl: HTMLElement = containerEl.createDiv('mobile-toolbar-floating-options mod-raised');
-      this.createOption(floatingOptionsEl, KEYBOARD_TOGGLE_COMMAND_ID, 'keyboard-toggle');
+      createMobileToolbarOption(this.plugin, floatingOptionsEl, KEYBOARD_TOGGLE_COMMAND_ID, 'keyboard-toggle');
     }
   }
 
@@ -204,30 +204,9 @@ export class BaseSourceMobileToolbar extends Component {
 
     this.optionsListEl.empty();
     for (const command of commands) {
-      this.createOption(this.optionsListEl, command.id, command.icon ?? 'question-mark-glyph');
+      createMobileToolbarOption(this.plugin, this.optionsListEl, command.id, command.icon ?? 'question-mark-glyph');
     }
     this.lastCommandIds = commandIds;
-  }
-
-  /**
-   * Adds a toolbar button that runs a command.
-   *
-   * @param parentEl - Element to add the button to.
-   * @param commandId - ID of the command to run.
-   * @param icon - Icon to show.
-   */
-  private createOption(parentEl: HTMLElement, commandId: string, icon: IconName): void {
-    const app: App = this.plugin.app;
-
-    const optionEl: HTMLElement = parentEl.createDiv('mobile-toolbar-option');
-    setIcon(optionEl, icon);
-
-    // Stops the tap from taking focus from the editor, which would close the keyboard and hide the toolbar
-    optionEl.addEventListener('mousedown', (evt: MouseEvent) => evt.preventDefault());
-    optionEl.addEventListener('click', (evt: MouseEvent) => {
-      app.commands.executeCommandById(commandId, evt);
-      evt.preventDefault();
-    });
   }
 
   /**
@@ -259,6 +238,27 @@ export class BaseSourceMobileToolbar extends Component {
       animation
     );
   }
+}
+
+/**
+ * Adds a toolbar button that runs a command.
+ *
+ * @param parentEl - Element to add the button to.
+ * @param commandId - ID of the command to run.
+ * @param icon - Icon to show.
+ */
+function createMobileToolbarOption(plugin: BasesSourceEditorPlugin, parentEl: HTMLElement, commandId: string, icon: IconName): void {
+  const app: App = plugin.app;
+  
+  const optionEl: HTMLElement = parentEl.createDiv('mobile-toolbar-option');
+  setIcon(optionEl, icon);
+
+  // Stops the tap from taking focus from the editor, which would close the keyboard and hide the toolbar
+  optionEl.addEventListener('mousedown', (evt: MouseEvent) => evt.preventDefault());
+  optionEl.addEventListener('click', (evt: MouseEvent) => {
+    app.commands.executeCommandById(commandId, evt);
+    evt.preventDefault();
+  });
 }
 
 /**

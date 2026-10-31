@@ -72,8 +72,6 @@ export const pasteClipboard: CMEditorCommand = (view: EditorView): boolean => {
   return true;
 };
 
-/* ========================= HELPERS ========================= */
-
 /**
  * Gets the text of the editor's selection.
  *

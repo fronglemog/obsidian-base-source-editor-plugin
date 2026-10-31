@@ -34,7 +34,7 @@ import type { SummarySuggestion } from 'src/Autocompletion/summaries';
 import { toYamlText } from 'src/Autocompletion/yamlText';
 import { isFilterMappingPath } from 'src/BaseYamlLanguage/yamlKeyPath';
 
-/* ========================= BASE SCHEMA ========================= */
+/* ================================================== */
 
 /** Keys at the top level of a Base. Obsidian still reads `display`, but only to move it into `properties`. */
 const TOP_LEVEL_KEYS: readonly string[] = ['filters', 'formulas', 'properties', 'summaries', 'views', 'newItemFolder', 'newItemTemplate'];
@@ -52,8 +52,8 @@ const VIEW_KEYS: readonly string[] = ['type', 'name', 'filters', 'order', 'sort'
 const REQUIRED_VIEW_KEYS: readonly string[] = ['type', 'name'];
 
 /**
- * Keys of a sort item, and of `groupBy`. Both are required, in this order:
- * Obsidian ignores a sort item that lacks one, and won't load a Base whose `groupBy` lacks one.
+ * Keys for `sort` and `groupBy`. Both are required, in this order.
+ * If these keys are missing: `sort` won't apply to the view, and `groupBy` will prevent the Base from loading.
  */
 const SORT_KEYS: readonly string[] = ['property', 'direction'];
 
@@ -61,8 +61,7 @@ const SORT_KEYS: readonly string[] = ['property', 'direction'];
 const PROPERTY_SETTINGS_KEYS: readonly string[] = ['displayName'];
 
 /**
- * Keys in the schema that aren't suggested. Obsidian reads them from the file,
- * but nothing in its Bases view sets them, so they're left to be typed by hand.
+ * Keys in the schema that aren't suggested. Obsidian reads them from the file, but nothing in its Bases view sets them.
  */
 const UNSUGGESTED_KEYS: ReadonlySet<string> = new Set(['newItemFolder', 'newItemTemplate']);
 
@@ -98,13 +97,18 @@ const KEYS_HOLDING_LISTS: ReadonlyMap<string, readonly string[]> = new Map([
 const SORT_DIRECTIONS: readonly string[] = ['ASC', 'DESC'];
 
 /**
- * Icons of the sort directions: those of the sort items in the menu of a table's column header,
- * whatever the property's type. Obsidian's sort menu has none.
+ * Icons of the sort directions: those of the sort items in the menu of a table's column header, whatever the property type.
  */
-const DIRECTION_ICONS: Readonly<Record<string, IconName>> = { ASC: 'lucide-arrow-down-wide-narrow', DESC: 'lucide-arrow-up-narrow-wide' };
+const DIRECTION_ICONS: Readonly<Record<string, IconName>> = {
+  ASC: 'lucide-arrow-down-wide-narrow',
+  DESC: 'lucide-arrow-up-narrow-wide'
+};
 
 /** Grey labels of the sort directions for a text property, or a property of another type: Obsidian's default. */
-const TEXT_DIRECTION_LABELS: Readonly<Record<string, string>> = { ASC: 'A → Z', DESC: 'Z → A' };
+const TEXT_DIRECTION_LABELS: Readonly<Record<string, string>> = {
+  ASC: 'A → Z',
+  DESC: 'Z → A'
+};
 
 /** Grey labels of the sort directions by the type of the property being sorted, where they aren't {@link TEXT_DIRECTION_LABELS}. */
 const DIRECTION_LABELS: ReadonlyMap<PropertyType, Readonly<Record<string, string>>> = new Map<PropertyType, Readonly<Record<string, string>>>([
@@ -154,7 +158,7 @@ export function getSchemaKeys(mappingKeyPath: string[]): readonly string[] | nul
  * @remarks
  * A mapping without all its required keys gets only the first one missing:
  * `type`, then `name` in a view; `property`, then `direction` in a sort item or `groupBy`.
- * After that, a view also gets its type's options, and keys its type saves without declaring them.
+ * A view also gets its type's options, and keys its type saves without declaring them.
  * A filter has only one key, so a filter that has one gets none.
  * Keys that Obsidian's Bases view never sets aren't suggested, nor keys that need another key that isn't there yet.
  *
@@ -236,9 +240,7 @@ export function getKeyValueKind(position: KeyPosition, key: string, readViewOpti
  * a summary name in a view's `summaries`, or the value of a view's option.
  *
  * @remarks
- * A sort item's or `groupBy`'s property is one Obsidian's sort or group-by editor offers, in the short form Obsidian writes.
- * A sort direction's grey label depends on the type of the property beside it, as in Obsidian's sort editor;
- * its icon is the one Obsidian's table column menu gives the matching sort item.
+ * A sort direction's label depends on the property type. Its icon is the one Obsidian's table column menu gives the matching sort item.
  * A summary name depends on the type of the property it summarises, as in Obsidian's summary menu.
  * A view option's values depend on the option's type: a dropdown's choices, `true` and `false` for a toggle,
  * the default of a slider or text option, and for a property option, the properties its filter lets through,
@@ -308,7 +310,7 @@ export function getPropertyKeySuggestions(position: KeyPosition, viewOrder: stri
   const mappingKeyPath: string[] = position.mappingKeyPath;
 
   if (mappingKeyPath.length === 1 && mappingKeyPath[0] === 'properties') {
-    return getPropertySuggestions(sources, toFullPropertyId, isAnyProperty, position.existingKeys);
+    return getPropertySuggestions(sources, toFullPropertyId, (): boolean => true, position.existingKeys);
   }
 
   const columns: Set<string> = new Set(viewOrder.map((propertyId: string): string => toFullPropertyId(propertyId)));
@@ -373,15 +375,6 @@ function getPropertySuggestions(
         icon: property.icon ?? undefined
       };
     });
-}
-
-/**
- * Returns `true` for any property: where every property is offered.
- *
- * @returns `true`.
- */
-function isAnyProperty(): boolean {
-  return true;
 }
 
 /**
@@ -525,8 +518,6 @@ function isViewMappingPath(keyPath: string[], key: string): boolean {
   return keyPath.length === 3 && isViewPath(keyPath.slice(0, 2)) === true && keyPath[2] === key;
 }
 
-/* ========================= TYPES ========================= */
-
 /**
  * What a key's value holds: a single value, other keys, or a list.
  */
@@ -536,35 +527,58 @@ export type KeyValueKind = 'value' | 'mapping' | 'list';
  * A value to suggest.
  */
 export type ValueSuggestion = {
-  /** The value as it's written in the file, in quotes if it needs them. */
+  /** 
+   * The value as it's written in the file, in quotes if it needs them.
+   */
   value: string;
   /**
-   * Text shown in the popup, and matched against what's typed, if it isn't `value`:
-   * for example a summary name without the quotes it's written with.
+   * Text shown in the popup, and matched against what's typed, if it isn't `value`. For example, a summary name without quotes.
    */
   label?: string;
-  /** Grey text shown beside the value, such as the name Obsidian shows for it. */
+  /** 
+   * Text shown beside the value, such as the name Obsidian shows for it.
+   */
   detail?: string;
-  /** Icon shown before the value. */
+  /**
+   * Icon shown before the value.
+   */
   icon?: IconName;
 };
 
 /**
- * Where value suggestions come from: Obsidian and the file. Each is only read where a value position needs it.
+ * Where value suggestions come from.
  */
 export type ValueSources = {
-  /** Reads the registered view types. */
+  /**
+   * Reads Obsidian's registered view types.
+   */
   readViewTypes: () => ViewType[];
-  /** Reads the options of a view type. */
+
+  /**
+   * Reads the options of a registered view type.
+   */
   readViewOptions: (viewType: string) => BasesOptions[];
-  /** Reads a property's type, from its property id. */
+
+  /**
+   * Reads a property's type, from its property id.
+   */
   readPropertyType: (propertyId: string) => PropertyType;
-  /** Reads the custom summaries from the top-level `summaries`: each name, with its formula. */
+
+  /**
+   * Reads the custom summaries from the top-level `summaries`: each name, with its formula.
+   */
   readCustomSummaries: () => Record<string, string>;
-  /** Reads the icon of a summary's result, from the property id and the summary's formula. */
+
+  /**
+   * Reads the icon of a summary's result, from the property id and the summary's formula.
+   */
   readSummaryIcon: (propertyId: string, formula: string) => IconName;
-  /** Reads the properties a Base can name, in full, in the order Obsidian's property picker lists them. */
+
+  /**
+   * Reads the properties a Base can name, in full, in the order Obsidian's property picker lists them.
+   */
   readProperties: () => PropertyCandidate[];
+
   /**
    * Reads the names Obsidian shows for properties, by property id: its own for the file properties,
    * replaced by the display names set under the Base's `properties`.

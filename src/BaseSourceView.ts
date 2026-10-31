@@ -106,13 +106,11 @@ export class BaseSourceView extends TextFileView {
   }
 
   override canAcceptExtension(extension: string): boolean {
-    const acceptedExtension: string = 'base';
-    return extension === acceptedExtension;
+    return extension === 'base';
   }
 
   override getDisplayText(): string {
-    const displayText: string = this.file?.basename ?? 'Bases source';
-    return displayText;
+    return this.file?.basename ?? 'Bases source';
   }
 
   getViewType(): string {
@@ -120,13 +118,11 @@ export class BaseSourceView extends TextFileView {
   }
 
   override getIcon(): IconName {
-    const iconName: string = 'code-xml';
-    return iconName;
+    return 'code-xml';
   }
 
   getViewData(): string {
-    const viewData: string = this.editor?.state.doc.toString() ?? this.data;
-    return viewData;
+    return this.editor?.state.doc.toString() ?? this.data;
   }
 
   /**
@@ -268,8 +264,7 @@ export class BaseSourceView extends TextFileView {
    * @returns `true` if the editor has focus.
    */
   hasEditorFocus(): boolean {
-    const hasEditorFocus: boolean = this.editor?.hasFocus ?? false;
-    return hasEditorFocus;
+    return this.editor?.hasFocus ?? false;
   }
 
   /**
@@ -362,7 +357,7 @@ export class BaseSourceView extends TextFileView {
    * @returns The editor state.
    */
   private createEditorState(doc: string): EditorState {
-    const editorState: EditorState = EditorState.create({
+    return EditorState.create({
       doc: doc,
       extensions: [
         this.plugin.baseYamlLanguage.getLanguageSupport(),
@@ -390,8 +385,6 @@ export class BaseSourceView extends TextFileView {
         EditorView.updateListener.of((update: ViewUpdate) => this.onEditorUpdate(update))
       ]
     });
-
-    return editorState;
   }
 
   /**

@@ -92,11 +92,10 @@ export function createFormulaCompletionSource(languageSupport: BasesFormulaLangu
 }
 
 /**
- * Creates the completion source for an empty formula value, such as `Title: ` with nothing typed, on Ctrl+Space.
+ * Creates the completion source for an empty formula value, such as `Title: `.
  *
  * @remarks
  * Offers what Obsidian's formula editor shows at an empty formula: everything a formula can start with.
- * Obsidian's own autocomplete only offers it when the whole document is empty, and isn't asked where a value has no formula yet.
  * Before each request, it updates `formulaContext` and selects the summary context in a summary formula.
  * Inside a quoted YAML string, the completions' inserts are escaped for the quotes.
  *

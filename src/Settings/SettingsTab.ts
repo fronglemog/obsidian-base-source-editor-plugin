@@ -45,8 +45,7 @@ export class BasesSourceEditorPluginSettingsTab extends PluginSettingTab {
   }
 
   override getControlValue(key: string): unknown {
-    const pluginSettingPath = getPluginSettingPath(this.plugin.settings, key);
-    return pluginSettingPath;
+    return getPluginSettingPath(this.plugin.settings, key);
   }
   
   override async setControlValue(key: string, value: unknown): Promise<void> {

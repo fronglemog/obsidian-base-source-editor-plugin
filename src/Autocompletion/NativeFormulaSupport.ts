@@ -286,8 +286,6 @@ function disposeComponent(component: Component): void {
   }
 }
 
-/* ========================= TYPES ========================= */
-
 /**
  * The formula autocomplete extensions for one editor, and the editor's formula context.
  */

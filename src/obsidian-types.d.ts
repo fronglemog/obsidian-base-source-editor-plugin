@@ -10,7 +10,6 @@ import type {
   BasesViewRegistration,
   CachedMetadata,
   Command,
-  Component,
   Constructor,
   DateValue,
   Debouncer,

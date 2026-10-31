@@ -18,9 +18,11 @@ import {
 
 import type { ReadDocumentText } from 'src/BaseYamlLanguage/yamlKeyPath';
 
-/* ========================= KEY POSITION ========================= */
+/* ================================================== */
 
-/** A line that can hold a key being typed: indentation, an optional list dash, the key, and the rest of the line. */
+/**
+ * A line that can hold a key being typed: indentation, an optional list dash, the key, and the rest of the line.
+ */
 const KEY_LINE: RegExp = /^( *)(- +)?([A-Za-z]*)(.*)$/;
 
 /**
@@ -29,10 +31,14 @@ const KEY_LINE: RegExp = /^( *)(- +)?([A-Za-z]*)(.*)$/;
  */
 const PROPERTY_KEY_LINE: RegExp = /^( *)((?:[^\s#:'"[\]{}-][^#:]*)?)$/;
 
-/** A list item's line: indentation, the `-` and the spaces after it, then the item's plain text so far. */
+/**
+ * A list item's line: indentation, the `-` and the spaces after it, then the item's plain text so far.
+ */
 const LIST_ITEM_LINE: RegExp = /^( *)(- +)((?:[^\s#:'"[\]{}][^#:]*)?)$/;
 
-/** Quotes around a quoted key or value. */
+/**
+ * Quotes around a quoted key or value.
+ */
 const QUOTES: RegExp = /^(['"])(.*)\1$/s;
 
 /**
@@ -344,8 +350,6 @@ export function getViewOrder(tree: Tree, doc: Text, pos: number): string[] {
   return [];
 }
 
-/* ========================= VALUE POSITION ========================= */
-
 /**
  * Gets the value position at a document position: where the value of a key is being typed on the key's line, or could be.
  *
@@ -502,8 +506,6 @@ function getListItemTexts(list: SyntaxNode, skippedItem: SyntaxNode | null, read
   return texts;
 }
 
-/* ========================= HELPERS ========================= */
-
 /**
  * Gets the pair whose key starts at a position.
  *
@@ -582,22 +584,25 @@ function unquote(text: string): string {
   return text.replace(QUOTES, '$2');
 }
 
-/* ========================= TYPES ========================= */
-
 /**
  * A position where a key of a YAML mapping is being typed, or could be.
  */
 export type KeyPosition = {
   /** Key path of the mapping the key belongs to, from {@link getYamlKeyPath}. */
   mappingKeyPath: string[];
+
   /** Start of the key being typed or renamed. */
   from: number;
+
   /** End of the key being typed or renamed. */
   to: number;
+
   /** Whether an existing key, followed by its `:`, is being renamed. */
   isRename: boolean;
+
   /** Keys already in the mapping, apart from the one at the position. */
   existingKeys: string[];
+
   /** The value of the mapping's `type` key, such as a view's type, or `null` if it has none. */
   typeValue: string | null;
 };
@@ -615,15 +620,29 @@ type KeyRange = {
  * A position where the value of a key is being typed on the key's line, or could be.
  */
 export type ValuePosition = {
-  /** Key path of the value: its mapping's key path, then its key. From {@link getYamlKeyPath}. */
+  /**
+   * Key path of the value: its mapping's key path, then its key. From {@link getYamlKeyPath}.
+   */
   keyPath: string[];
-  /** Start of the value, or the position itself if the value is empty. */
+  
+  /**
+   * Start of the value, or the position itself if the value is empty.
+   */
   from: number;
-  /** End of the value, before any comment, or the position itself if the value is empty or the position is after it. */
+
+  /**
+   * End of the value, before any comment, or the position itself if the value is empty or the position is after it.
+   */
   to: number;
-  /** The value of the mapping's `type` key, such as a view's type, or `null` if it has none. */
+
+  /**
+   * The value of the mapping's `type` key, such as a view's type, or `null` if it has none.
+   */
   typeValue: string | null;
-  /** The value of the mapping's `property` key, such as the property a sort item sorts by, or `null` if it has none. */
+
+  /**
+   * The value of the mapping's `property` key, such as the property a sort item sorts by, or `null` if it has none.
+   */
   propertyValue: string | null;
 };
 
@@ -631,13 +650,24 @@ export type ValuePosition = {
  * A position where a plain list item is being typed, or could be.
  */
 export type ListItemPosition = {
-  /** Key path of the list, such as `['views', '#', 'order']`. From {@link getYamlKeyPath}. */
+  /**
+   * Key path of the list, such as `['views', '#', 'order']`. From {@link getYamlKeyPath}.
+   */
   listKeyPath: string[];
-  /** Start of the item's text, or the position itself if the item is empty. */
+
+  /**
+   * Start of the item's text, or the position itself if the item is empty.
+   */
   from: number;
-  /** End of the line. */
+
+  /**
+   * End of the line.
+   */
   to: number;
-  /** The texts of the list's other items, without quotes. */
+
+  /**
+   * The texts of the list's other items, without quotes.
+   */
   existingItems: string[];
 };
 

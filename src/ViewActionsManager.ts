@@ -95,8 +95,6 @@ export class ViewActionsManager {
   }
 }
 
-/* ========================= TYPES ========================= */
-
 /**
  * A view header action.
  */

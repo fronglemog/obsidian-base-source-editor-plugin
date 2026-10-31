@@ -193,8 +193,6 @@ export function isOrderableProperty(property: PropertyCandidate): boolean {
   return property.propertyId !== 'file.file';
 }
 
-/* ========================= TYPES ========================= */
-
 /**
  * The type of a property's values, as far as summaries and sort directions depend on it.
  * `'other'` covers every other type, and a property whose type can't be read.

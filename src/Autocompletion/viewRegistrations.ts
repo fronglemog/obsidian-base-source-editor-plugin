@@ -163,8 +163,6 @@ function logFailureOnce(failure: string, error?: unknown): void {
   logError(`${UNAVAILABLE_MESSAGE} ${failure}`, error);
 }
 
-/* ========================= TYPES ========================= */
-
 /**
  * A view type registered with Obsidian's Bases plugin.
  */
