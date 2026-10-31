@@ -52,7 +52,6 @@ export class BasesSourceEditorPluginSettingsTab extends PluginSettingTab {
   override async setControlValue(key: string, value: unknown): Promise<void> {
     setPluginSettingPath(this.plugin.settings, key, value);
     await this.plugin.saveSettings();
-
     this.plugin.updateBaseSourceViews();
   }
 
@@ -73,62 +72,68 @@ export class BasesSourceEditorPluginSettingsTab extends PluginSettingTab {
         ]
       },
       {
-        heading: 'Autocomplete',
+        heading: 'Autocompletion',
         type: 'group',
         items: [
           {
-            name: 'Autocomplete',
-            desc: 'Suggestions for formulas, keys and values, and function hints.',
+            name: 'Autocompletion',
+            desc: 'Show suggestions for keys and values, formulas, and function hints.',
             searchable: true,
             control: {
-              key: 'autocomplete',
+              key: 'autocompletion',
               type: 'dropdown',
               options: {
                 off: 'Off',
-                desktopAndTablet: 'Enabled (desktop/tablet only)',
+                desktopAndTablet: 'Enabled (desktop/tablet)',
                 allDevices: 'Enabled (all devices)'
               } satisfies Record<AutocompleteDevices, string>
             }
           },
           {
-            name: 'Accept a suggestion with',
-            desc: 'The key that inserts the selected suggestion.',
+            name: 'Autocompletion behaviour',
+            desc: '',
             searchable: true,
-            visible: () => this.plugin.settings.autocomplete !== 'off',
-            control: {
-              key: 'autocompleteAcceptKey',
-              type: 'dropdown',
-              options: {
-                enter: 'Enter',
-                tab: 'Tab',
-                tabAndEnter: 'Tab and Enter'
-              } satisfies Record<AutocompleteAcceptKey, string>
-            }
+            type: 'page',
+            visible: () => this.plugin.settings.autocompletion !== 'off',
+            items: [
+              {
+                name: 'Accept suggestions using',
+                desc: 'Which key to press to insert the current suggestion.',
+                searchable: true,
+                control: {
+                  key: 'autocompletionAcceptKey',
+                  type: 'dropdown',
+                  options: {
+                    enter: 'Enter',
+                    tab: 'Tab',
+                    tabAndEnter: 'Tab and Enter'
+                  } satisfies Record<AutocompleteAcceptKey, string>
+                }
+              },
+              {
+                name: 'When picking a key, insert',
+                desc: 'Insert the selected key with or without jumping to the next line.',
+                searchable: true,
+                control: {
+                  key: 'autocompletionKeyInsert',
+                  type: 'dropdown',
+                  options: {
+                    keyAndNextLine: 'Key and next line',
+                    keyOnly: 'Key only'
+                  } satisfies Record<AutocompleteKeyInsert, string>
+                }
+              },
+              {
+                name: 'Offer suggestions after inserting a key',
+                desc: 'After inserting a key, show suggestions for the next item or value.',
+                searchable: true,
+                control: {
+                  key: 'autocompletionSuggestAfterKeyInsertion',
+                  type: 'toggle'
+                }
+              }
+            ]
           },
-          {
-            name: 'When picking a key, insert',
-            desc: 'What to add after a key picked from the suggestions.',
-            searchable: true,
-            visible: () => this.plugin.settings.autocomplete !== 'off',
-            control: {
-              key: 'autocompleteKeyInsert',
-              type: 'dropdown',
-              options: {
-                structure: 'Key and value structure',
-                colon: 'Key and colon'
-              } satisfies Record<AutocompleteKeyInsert, string>
-            }
-          },
-          {
-            name: 'Suggest what comes after a key',
-            desc: 'After picking a key, show the suggestions for its value or first item.',
-            searchable: true,
-            visible: () => this.plugin.settings.autocomplete !== 'off',
-            control: {
-              key: 'autocompleteSuggestAfterKey',
-              type: 'toggle'
-            }
-          }
         ]
       },
       {
@@ -199,10 +204,11 @@ export class BasesSourceEditorPluginSettingsTab extends PluginSettingTab {
             }
           },
           {
-            name: 'Indentation guide style',
-            desc: 'Set indentation guide colour and opacity.',
+            name: 'Indentation guide appearance',
+            desc: '',
             searchable: true,
             type: 'page',
+            visible: () => this.plugin.settings.indentationGuides,
             items: [
               {
                 name: 'Enable custom indentation guide style',
@@ -210,8 +216,7 @@ export class BasesSourceEditorPluginSettingsTab extends PluginSettingTab {
                 searchable: true,
                 control: {
                   key: 'indentationGuideCustomStyle',
-                  type: 'toggle',
-                  disabled: () => this.plugin.settings.indentationGuides === false
+                  type: 'toggle'
                 }
               },
               {
@@ -221,8 +226,7 @@ export class BasesSourceEditorPluginSettingsTab extends PluginSettingTab {
                 control: {
                   key: 'indentationGuideColour',
                   type: 'color',
-                  defaultValue: PLUGIN_DEFAULT_SETTINGS.indentationGuideColour,
-                  disabled: () => (this.plugin.settings.indentationGuides && this.plugin.settings.indentationGuideCustomStyle) === false
+                  defaultValue: PLUGIN_DEFAULT_SETTINGS.indentationGuideColour
                 }
               },
               {
@@ -236,12 +240,10 @@ export class BasesSourceEditorPluginSettingsTab extends PluginSettingTab {
                   min: 10,
                   max: 100,
                   step: 5,
-                  displayFormat: (value: number): string => `${value}%`,
-                  disabled: () => (this.plugin.settings.indentationGuides && this.plugin.settings.indentationGuideCustomStyle) === false
+                  displayFormat: (value: number): string => `${value}%`
                 }
               }
-            ],
-            visible: () => this.plugin.settings.indentationGuides
+            ]
           },
         ]
       },

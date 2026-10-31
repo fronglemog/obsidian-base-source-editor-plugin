@@ -17,20 +17,20 @@ import type { AutocompleteKeyInsert } from 'src/Settings/PluginSettings';
  * Gets the text inserted for a key picked from the suggestions, by the "When picking a key, insert" setting.
  *
  * @remarks
- * - Key and value structure: the key, plus what its value needs. A single value gets `: `.
+ * - Key and next line: the key, plus what its value needs. A single value gets `: `.
  *   Other keys get `:` and a new line, indented one level deeper than the key; a list gets the same, plus `- `.
  *   Obsidian saves a Base with lists indented the same way: `views:`, then `  - type: table`.
- * - Key and colon: the key, plus `: `.
+ * - Key only: the key, plus `: `.
  *
  * @param state - The editor state, for its indent unit.
  * @param key - The key, as it's written in the file.
  * @param keyFrom - Where the key starts, for its column.
  * @param kind - What the key's value holds.
- * @param keyInsert - The setting's value. An unknown value counts as "Key and value structure".
+ * @param keyInsert - The setting's value. An unknown value counts as "Key and next line".
  * @returns The text to insert in place of the key being typed.
  */
 export function getKeyInsertText(state: EditorState, key: string, keyFrom: number, kind: KeyValueKind, keyInsert: AutocompleteKeyInsert): string {
-  if (keyInsert === 'colon' || kind === 'value') {
+  if (keyInsert === 'keyOnly' || kind === 'value') {
     return `${key}: `;
   }
 

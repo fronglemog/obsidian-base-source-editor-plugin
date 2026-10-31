@@ -30,29 +30,29 @@ const STATE: EditorState = EditorState.create({ doc: DOCUMENT });
 
 describe('getKeyInsertText', () => {
   test('a single value: the key and ": ", in both modes', () => {
-    expect(getKeyInsertText(STATE, 'type', DASH_KEY_FROM, 'value', 'structure')).toBe('type: ');
-    expect(getKeyInsertText(STATE, 'type', DASH_KEY_FROM, 'value', 'colon')).toBe('type: ');
+    expect(getKeyInsertText(STATE, 'type', DASH_KEY_FROM, 'value', 'keyAndNextLine')).toBe('type: ');
+    expect(getKeyInsertText(STATE, 'type', DASH_KEY_FROM, 'value', 'keyOnly')).toBe('type: ');
   });
 
   test('other keys: ":" and a new line, one level deeper than the key', () => {
-    expect(getKeyInsertText(STATE, 'groupBy', KEY_FROM, 'mapping', 'structure')).toBe('groupBy:\n      ');
+    expect(getKeyInsertText(STATE, 'groupBy', KEY_FROM, 'mapping', 'keyAndNextLine')).toBe('groupBy:\n      ');
   });
 
   test('a list: ":" and a new line with "- ", one level deeper than the key', () => {
-    expect(getKeyInsertText(STATE, 'sort', KEY_FROM, 'list', 'structure')).toBe('sort:\n      - ');
-    expect(getKeyInsertText(STATE, 'views', 0, 'list', 'structure')).toBe('views:\n  - ');
+    expect(getKeyInsertText(STATE, 'sort', KEY_FROM, 'list', 'keyAndNextLine')).toBe('sort:\n      - ');
+    expect(getKeyInsertText(STATE, 'views', 0, 'list', 'keyAndNextLine')).toBe('views:\n  - ');
   });
 
   test('a key after a list item\'s "- " is indented from the key, not the "-"', () => {
-    expect(getKeyInsertText(STATE, 'filters', DASH_KEY_FROM, 'mapping', 'structure')).toBe('filters:\n      ');
+    expect(getKeyInsertText(STATE, 'filters', DASH_KEY_FROM, 'mapping', 'keyAndNextLine')).toBe('filters:\n      ');
   });
 
-  test('"Key and colon": the key and ": ", whatever its value holds', () => {
-    expect(getKeyInsertText(STATE, 'groupBy', KEY_FROM, 'mapping', 'colon')).toBe('groupBy: ');
-    expect(getKeyInsertText(STATE, 'views', 0, 'list', 'colon')).toBe('views: ');
+  test('"Key only": the key and ": ", whatever its value holds', () => {
+    expect(getKeyInsertText(STATE, 'groupBy', KEY_FROM, 'mapping', 'keyOnly')).toBe('groupBy: ');
+    expect(getKeyInsertText(STATE, 'views', 0, 'list', 'keyOnly')).toBe('views: ');
   });
 
-  test('an unknown setting value counts as "Key and value structure"', () => {
+  test('an unknown setting value counts as "Key and next line"', () => {
     expect(getKeyInsertText(STATE, 'views', 0, 'list', 'only' as AutocompleteKeyInsert)).toBe('views:\n  - ');
   });
 });

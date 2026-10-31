@@ -208,12 +208,12 @@ export function getAutocompleteExtensions(plugin: BasesSourceEditorPlugin): Exte
   // Created once: CodeMirror tells a source's earlier results apart by the source function
   // Read when a key is picked, so changing these settings needs no rebuild, which would close an open popup
   const readKeyInsertSettings: ReadKeyInsertSettings = (): KeyInsertSettings => ({
-    keyInsert: plugin.settings.autocompleteKeyInsert,
-    suggestAfterKey: plugin.settings.autocompleteSuggestAfterKey
+    keyInsert: plugin.settings.autocompletionKeyInsert,
+    suggestAfterKey: plugin.settings.autocompletionSuggestAfterKeyInsertion
   });
 
   const yamlCompletionSource: CompletionSource = createYamlCompletionSource(plugin.app, readPropertyType, readSummaryIcon, readPropertyIcon, readKeyInsertSettings);
-  const acceptKeyOptions: AcceptKeyOptions = getAcceptKeyOptions(plugin.settings.autocompleteAcceptKey);
+  const acceptKeyOptions: AcceptKeyOptions = getAcceptKeyOptions(plugin.settings.autocompletionAcceptKey);
 
   const extensions: Extension[] = [
     // Same popup configuration as Obsidian's formula editor, so the popup looks the same.
@@ -285,12 +285,12 @@ function readNoPropertyIcon(): null {
  * @returns `true` if autocomplete is enabled.
  */
 export function isAutocompleteEnabled(settings: PluginSettings): boolean {
-  if (settings.autocomplete === 'allDevices') {
+  if (settings.autocompletion === 'allDevices') {
     return true;
   }
 
   // Off on phones, like Obsidian's formula editor
-  if (settings.autocomplete === 'desktopAndTablet') {
+  if (settings.autocompletion === 'desktopAndTablet') {
     return Platform.isPhone === false;
   }
 

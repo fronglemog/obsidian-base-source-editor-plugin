@@ -517,7 +517,7 @@ export class BaseSourceView extends TextFileView {
    */
   updateAutocomplete(): void {
     const isEnabled: boolean = isAutocompleteEnabled(this.plugin.settings);
-    const acceptKey: AutocompleteAcceptKey | null = isEnabled ? this.plugin.settings.autocompleteAcceptKey : null;
+    const acceptKey: AutocompleteAcceptKey | null = isEnabled ? this.plugin.settings.autocompletionAcceptKey : null;
 
     if (isEnabled === this.hasAutocomplete && acceptKey === this.autocompleteAcceptKey) {
       return;
@@ -535,7 +535,7 @@ export class BaseSourceView extends TextFileView {
    */
   private getAutocompleteExtensionsForSettings(): Extension[] {
     this.hasAutocomplete = isAutocompleteEnabled(this.plugin.settings);
-    this.autocompleteAcceptKey = this.hasAutocomplete ? this.plugin.settings.autocompleteAcceptKey : null;
+    this.autocompleteAcceptKey = this.hasAutocomplete ? this.plugin.settings.autocompletionAcceptKey : null;
     return this.hasAutocomplete ? getAutocompleteExtensions(this.plugin) : [];
   }
 

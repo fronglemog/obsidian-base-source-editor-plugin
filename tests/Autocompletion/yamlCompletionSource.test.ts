@@ -76,8 +76,8 @@ const DOCUMENT: string = [
 /** Position right after `price: f`, where the summary names are suggested. */
 const SUMMARY_POSITION: number = DOCUMENT.indexOf('price: f') + 'price: f'.length;
 
-/** The default settings for picked keys: "Key and value structure", and the suggestions open after a key. */
-const STRUCTURE_SETTINGS: KeyInsertSettings = { keyInsert: 'structure', suggestAfterKey: true };
+/** The default settings for picked keys: "Key and next line", and the suggestions open after a key. */
+const KEY_AND_NEXT_LINE_SETTINGS: KeyInsertSettings = { keyInsert: 'keyAndNextLine', suggestAfterKey: true };
 
 /** The start of a view, with its type and name, for the keys typed after it. */
 const VIEW: string = 'views:\n  - type: table\n    name: All\n';
@@ -147,7 +147,7 @@ function createCompletionSource(settings: KeyInsertSettings): CompletionSource {
  * @param settings - The settings for picked keys.
  * @returns The suggestions.
  */
-function getCompletionsAt(state: EditorState, pos: number, settings: KeyInsertSettings = STRUCTURE_SETTINGS): CompletionResult {
+function getCompletionsAt(state: EditorState, pos: number, settings: KeyInsertSettings = KEY_AND_NEXT_LINE_SETTINGS): CompletionResult {
   const result = createCompletionSource(settings)(new CompletionContext(state, pos, true)) as CompletionResult | null;
   if (result == null) {
     throw new Error('Expected suggestions.');
@@ -204,7 +204,7 @@ function pickTextCompletion(state: EditorState, result: CompletionResult, label:
  * @param settings - The settings for picked keys.
  * @returns The editor state of the document, and the suggestions.
  */
-function getCompletionsAtEnd(document: string, settings: KeyInsertSettings = STRUCTURE_SETTINGS): { state: EditorState; result: CompletionResult } {
+function getCompletionsAtEnd(document: string, settings: KeyInsertSettings = KEY_AND_NEXT_LINE_SETTINGS): { state: EditorState; result: CompletionResult } {
   const state: EditorState = EditorState.create({ doc: document, extensions: yamlLanguage });
   return { state, result: getCompletionsAt(state, document.length, settings) };
 }
@@ -284,8 +284,8 @@ describe('createYamlCompletionSource: property ids', () => {
     expect(pickCompletion(state, result, 'note.film - year')).toBe('properties:\n  note.film - year:\n    ');
   });
 
-  test('a key under properties, with "Key and colon": inserted in full, with its colon', () => {
-    const { state, result } = getCompletionsAtEnd(`properties:\n  fi`, { keyInsert: 'colon', suggestAfterKey: true });
+  test('a key under properties, with "Key only": inserted in full, with its colon', () => {
+    const { state, result } = getCompletionsAtEnd(`properties:\n  fi`, { keyInsert: 'keyOnly', suggestAfterKey: true });
     expect(pickCompletion(state, result, 'note.film - year')).toBe('properties:\n  note.film - year: ');
   });
 
@@ -297,28 +297,28 @@ describe('createYamlCompletionSource: property ids', () => {
 });
 
 describe('createYamlCompletionSource: picked keys', () => {
-  test('"Key and value structure": a list gets a new line with "- "', () => {
-    expect(pickKeyAtEnd('vi', 'views', STRUCTURE_SETTINGS).doc).toBe('views:\n  - ');
-    expect(pickKeyAtEnd(`${VIEW}    so`, 'sort', STRUCTURE_SETTINGS).doc).toBe(`${VIEW}    sort:\n      - `);
+  test('"Key and next line": a list gets a new line with "- "', () => {
+    expect(pickKeyAtEnd('vi', 'views', KEY_AND_NEXT_LINE_SETTINGS).doc).toBe('views:\n  - ');
+    expect(pickKeyAtEnd(`${VIEW}    so`, 'sort', KEY_AND_NEXT_LINE_SETTINGS).doc).toBe(`${VIEW}    sort:\n      - `);
   });
 
-  test('"Key and value structure": other keys get a new, indented line', () => {
-    expect(pickKeyAtEnd(`${VIEW}    gr`, 'groupBy', STRUCTURE_SETTINGS).doc).toBe(`${VIEW}    groupBy:\n      `);
+  test('"Key and next line": other keys get a new, indented line', () => {
+    expect(pickKeyAtEnd(`${VIEW}    gr`, 'groupBy', KEY_AND_NEXT_LINE_SETTINGS).doc).toBe(`${VIEW}    groupBy:\n      `);
   });
 
-  test('"Key and value structure": a single value gets ": "', () => {
-    expect(pickKeyAtEnd('views:\n  - ty', 'type', STRUCTURE_SETTINGS).doc).toBe('views:\n  - type: ');
+  test('"Key and next line": a single value gets ": "', () => {
+    expect(pickKeyAtEnd('views:\n  - ty', 'type', KEY_AND_NEXT_LINE_SETTINGS).doc).toBe('views:\n  - type: ');
   });
 
-  test('"Key and colon": every key gets ": "', () => {
-    expect(pickKeyAtEnd('vi', 'views', { keyInsert: 'colon', suggestAfterKey: true }).doc).toBe('views: ');
-    expect(pickKeyAtEnd(`${VIEW}    gr`, 'groupBy', { keyInsert: 'colon', suggestAfterKey: true }).doc).toBe(`${VIEW}    groupBy: `);
+  test('"Key only": every key gets ": "', () => {
+    expect(pickKeyAtEnd('vi', 'views', { keyInsert: 'keyOnly', suggestAfterKey: true }).doc).toBe('views: ');
+    expect(pickKeyAtEnd(`${VIEW}    gr`, 'groupBy', { keyInsert: 'keyOnly', suggestAfterKey: true }).doc).toBe(`${VIEW}    groupBy: `);
   });
 
   test('"Suggest what comes after a key": the suggestions open after the pick only while it\'s on, in both modes', () => {
-    expect(pickKeyAtEnd('vi', 'views', STRUCTURE_SETTINGS).status).toBe('pending');
-    expect(pickKeyAtEnd('vi', 'views', { keyInsert: 'colon', suggestAfterKey: true }).status).toBe('pending');
-    expect(pickKeyAtEnd('vi', 'views', { keyInsert: 'structure', suggestAfterKey: false }).status).toBeNull();
+    expect(pickKeyAtEnd('vi', 'views', KEY_AND_NEXT_LINE_SETTINGS).status).toBe('pending');
+    expect(pickKeyAtEnd('vi', 'views', { keyInsert: 'keyOnly', suggestAfterKey: true }).status).toBe('pending');
+    expect(pickKeyAtEnd('vi', 'views', { keyInsert: 'keyAndNextLine', suggestAfterKey: false }).status).toBeNull();
   });
 
   test('renaming a key replaces only its name', () => {
