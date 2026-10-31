@@ -32,7 +32,6 @@
     }
   },
   "include": [
-    "version-bump.mjs",
     "esbuild.config.mjs",
     "eslint.config.mjs",
     "vitest.config.ts",
