@@ -23,6 +23,7 @@
     "build:nocheck:watch": "node esbuild.config.mjs --production --watch",
     "dev": "node esbuild.config.mjs",
     "dev:watch": "node esbuild.config.mjs --watch",
+    "copy-to-obsidian": "tsx scripts/copy-build-to-obsidian.mts",
     "ts-check": "tsc --noEmit --skipLibCheck",
     "lint": "eslint .",
     "test": "vitest run --config vitest.config.ts",

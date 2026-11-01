@@ -27,6 +27,7 @@ An [Obsidian](https://obsidian.md) plugin that adds a feature-rich text editor f
 	- Indentation guides
 	- Rendering of whitespace characters (spaces, tabs)
 - **Mobile command toolbar**
+	- Configurable command toolbar on mobile devices.
 
 View the [Roadmap](./ROADMAP.md) to see planned features.
 
@@ -39,7 +40,7 @@ View the [Roadmap](./ROADMAP.md) to see planned features.
 
 ### Obsidian Community Directory
 
-1. Go to the plugin page on the community directory [here](https://community.obsidian.md/plugins/base-source-editor).
+1. Go to the plugin page on the [Obsidian community directory](https://community.obsidian.md/plugins/base-source-editor).
 2. Click `Add to Obsidian`.
 
 ### Inside Obsidian
@@ -56,17 +57,56 @@ A Base can be opened in the Base Source Editor by:
 
 ## Developing
 
+### Requirements
+
+- Node.js: Version `24.22.2` or newer
+- pnpm version: Version `12`, `12.14` or later
+
 This project uses the [pnpm](https://pnpm.io) package manager instead of `npm`.
 
 1. [Install pnpm](https://pnpm.io/installation).
 2. Clone this repo:
-   
-   ```
-	 git clone https://github.com/fronglemog/obsidian-base-source-editor-plugin
-	 cd obsidian-base-source-editor-plugin
-	 ```
 
-3. Run `pnpm install` to install dependencies.
+	```sh
+	git clone https://github.com/fronglemog/obsidian-base-source-editor-plugin
+	cd obsidian-base-source-editor-plugin
+	```
+
+3. Run command `pnpm install` to install dependencies.
+
+### Linting
+
+Lint using `pnpm run lint`.
+
+### Testing
+
+Run tests with `pnpm run test`.
+
+### Building
+
+New builds are created at `build/main.js`.
+
+| Command                        | Type checks | Minified               | Watches for changes |
+| ------------------------------ | ----------- | ---------------------- | ------------------- |
+| `pnpm run build`               | yes         | yes                    | no                  |
+| `pnpm run build:nocheck`       | no          | yes                    | no                  |
+| `pnpm run build:nocheck:watch` | no          | yes                    | yes                 |
+| `pnpm run dev`                 | no          | no (inline source map) | no                  |
+| `pnpm run dev:watch`           | no          | no (inline source map) | yes                 |
+
+After creating a new build, copy the `build/main.js`, `styles/styles.css` and `manifest.json` to your Obsidian vault using this command, replacing `<VAULT_PATH>` with the full/absolute path to the folder containing your Obsidian vault.
+
+Re-run this command after every build, then reload the plugin in Obsidian.
+
+(If your vault does not contain an `.obsidian` folder, the command will fail.)
+
+```sh
+pnpm run copy-to-obsidian <VAULT_PATH>
+```
+
+For example:
+- `pnpm run copy-to-obsidian "C:\Users\fronglemog\Documents\MyVault"`
+- `pnpm run copy-to-obsidian ~/Documents/MyVault`
 
 ## Contributing
 
@@ -76,9 +116,9 @@ I'm more than happy to accept feedback, issues, bug reports and pull requests.
 
 I use AI as a tool to support development. I welcome contributions or feedback from those who have done so with considered and appropriate use of AI.
 
-However, AI **slop** is not welcome. Contributions written or submitted by AI agents are not welcome.
+However, AI **slop** is not welcome. Contributions 100% authored or submitted by AI agents are not welcome.
 
-I reserve the right to decline, reject or otherwise ignore any contributions that I judge to be **AI slop**.  
+I reserve the right to decline, reject or otherwise ignore any contributions that I judge to be **AI slop**.
 
 ## License
 
