@@ -1,20 +1,25 @@
 /*
-This script copies the latest plugin build into an Obsidian vault, so you can test it in the app.
+This script copies the latest plugin build into an Obsidian vault.
 
 Usage: `pnpm run copy-to-obsidian "<VAULT_PATH>"`
 
-It copies `build/main.js`, `manifest.json` and `styles/styles.css` into `<vault>/.obsidian/plugins/base-source-editor`.
-It creates that folder if it doesn't exist, and overwrites any copies of those three files already in it.
+It copies `build/main.js`, `manifest.json` and `styles/styles.css` into `<vault>/.obsidian/plugins/<PLUGIN_ID>`.
+<PLUGIN_ID> is the `id` read from `manifest.json`.
+
+It creates the plugin folder if it doesn't exist, and overwrites any copies of those three files already in it.
 Other files in the folder, such as the plugin's saved settings in `data.json`, are left alone.
 
 Run a build first. This script copies whatever is in `build/` and doesn't build anything itself.
 */
-
+/* ========================= IMPORTS ========================= */
 import { copyFileSync, existsSync, mkdirSync, statSync } from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
+import { getPluginManifest } from './script-lib';
 
+/* ================================================= */
 const obsidianVaultPath = process.argv[2];
+const pluginManifest = getPluginManifest();
 
 const pluginFilePaths = {
   mainJs: 'build/main.js',
@@ -26,7 +31,7 @@ if (obsidianVaultPath == null || obsidianVaultPath === '') {
   throw new Error('No vault path given. Usage: pnpm run copy-to-obsidian "<VAULT_PATH>"');
 }
 
-const pluginPathInObsidianVault = path.join(obsidianVaultPath, '.obsidian', 'plugins', 'base-source-editor');
+const pluginPathInObsidianVault = path.join(obsidianVaultPath, '.obsidian', 'plugins', `${pluginManifest.id}`);
 
 checkIsObsidianVault(obsidianVaultPath);
 checkPluginFilesExist(Object.values(pluginFilePaths));

@@ -13,4 +13,9 @@ minimumReleaseAgeExcludePrune: true
 
 # Override dependencies (including transitive dependencies)
 overrides:
+  # Obsidian 1.14.5 ships @lezer/lr@1.4.10
   '@lezer/lr': 1.4.10
+
+# By default, tags created with the command `pnpm version` are prefixed with `v`.
+# Setting the prefix to an empty string removes the prefix entirely.
+tagVersionPrefix: ""

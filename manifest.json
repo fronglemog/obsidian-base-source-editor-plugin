@@ -1,10 +1,10 @@
 {
-	"id": "base-source-editor",
-	"name": "Base Source Editor",
-	"version": "0.7.0",
-	"minAppVersion": "1.14.4",
-	"description": "Edit Bases as YAML in source mode.",
-	"author": "fronglemog",
-	"authorUrl": "https://github.com/fronglemog",
-	"isDesktopOnly": false
+  "id": "base-source-editor",
+  "name": "Base Source Editor",
+  "version": "0.9.5",
+  "minAppVersion": "1.14.4",
+  "description": "Edit Bases as YAML in source mode.",
+  "author": "fronglemog",
+  "authorUrl": "https://github.com/fronglemog",
+  "isDesktopOnly": false
 }
