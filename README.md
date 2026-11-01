@@ -60,7 +60,7 @@ A Base can be opened in the Base Source Editor by:
 ### Requirements
 
 - Node.js: Version `24.22.2` or newer
-- pnpm version: Version `12`, `12.14` or later
+- pnpm version: Version `12`, `12.14` or newer
 
 This project uses the [pnpm](https://pnpm.io) package manager instead of `npm`.
 
