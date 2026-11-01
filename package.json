@@ -18,10 +18,12 @@
     }
   },
   "scripts": {
-    "build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
-    "build:dev": "node esbuild.config.mjs production",
+    "build": "tsc --noEmit --skipLibCheck && node esbuild.config.mjs --production",
+    "build:nocheck": "node esbuild.config.mjs --production",
+    "build:nocheck:watch": "node esbuild.config.mjs --production --watch",
     "dev": "node esbuild.config.mjs",
-    "ts-check": "tsc -noEmit -skipLibCheck",
+    "dev:watch": "node esbuild.config.mjs --watch",
+    "ts-check": "tsc --noEmit --skipLibCheck",
     "lint": "eslint .",
     "test": "vitest run --config vitest.config.ts",
     "version": "tsx version-bump.mts && git add manifest.json versions.json"
