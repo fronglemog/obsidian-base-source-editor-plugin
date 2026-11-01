@@ -144,6 +144,7 @@ export default class BasesSourceEditorPlugin extends Plugin {
         leaf.view.updateIndentationGuides();
         leaf.view.updateRenderWhitespace();
         leaf.view.updateAutocomplete();
+        leaf.view.updateLinting();
       }
     }
   }

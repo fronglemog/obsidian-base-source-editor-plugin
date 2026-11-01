@@ -14,6 +14,7 @@ export const PLUGIN_DEFAULT_SETTINGS: PluginSettings = {
   autocompletionAcceptKey: 'enter',
   autocompletionKeyInsert: 'keyAndNextLine',
   autocompletionSuggestAfterKeyInsertion: true,
+  lintingYamlErrors: true,
   mobileToolbarCommands: [
     'command-palette:open',
     'base-source-editor:show-suggestions',
@@ -45,6 +46,7 @@ export interface PluginSettings {
   autocompletionAcceptKey: AutocompleteAcceptKey;
   autocompletionKeyInsert: AutocompleteKeyInsert;
   autocompletionSuggestAfterKeyInsertion: boolean;
+  lintingYamlErrors: boolean;
   mobileToolbarCommands: string[];
 }
 

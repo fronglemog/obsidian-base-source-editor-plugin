@@ -74,6 +74,7 @@ import {
   isAutocompleteEnabled
 } from 'src/EditorExtensions/autocompleteExtension';
 import type { AutocompleteAcceptKey } from 'src/Settings/PluginSettings';
+import { getLintingExtensions } from 'src/EditorExtensions/lintingExtension';
 
 import { getDocumentChange } from 'src/getDocumentChange';
 import { fixMouseSelectionScroll } from 'src/mouseSelectionScroll';
@@ -99,6 +100,9 @@ export class BaseSourceView extends TextFileView {
   private hasAutocomplete: boolean = false;
   /** The accept key the autocomplete extensions were built with, or `null` while autocomplete is off. */
   private autocompleteAcceptKey: AutocompleteAcceptKey | null = null;
+  private lintingCompartment: Compartment = new Compartment();
+  /** Whether the linting extensions were built with "Show YAML errors" on. */
+  private hasLinting: boolean = false;
 
   constructor(plugin: BasesSourceEditorPlugin, leaf: WorkspaceLeaf) {
     super(leaf);
@@ -366,6 +370,7 @@ export class BaseSourceView extends TextFileView {
         closeBrackets(),
         this.autocompleteCompartment.of(this.getAutocompleteExtensionsForSettings()),
         this.tooltipCompartment.of(getTooltipParentExtensions(this.contentEl.doc)),
+        this.lintingCompartment.of(this.getLintingExtensionsForSettings()),
         lineNumbers(),
         activeLineHighlight,
         textScrollMargins,
@@ -530,6 +535,33 @@ export class BaseSourceView extends TextFileView {
     this.hasAutocomplete = isAutocompleteEnabled(this.plugin.settings);
     this.autocompleteAcceptKey = this.hasAutocomplete ? this.plugin.settings.autocompletionAcceptKey : null;
     return this.hasAutocomplete ? getAutocompleteExtensions(this.plugin) : [];
+  }
+
+  /**
+   * Applies the "Show YAML errors" setting.
+   *
+   * @remarks
+   * Only reconfigures when the setting is turned on or off: every settings change calls this, and reconfiguring
+   * would remove the underlines until the next check.
+   */
+  updateLinting(): void {
+    if (this.plugin.settings.lintingYamlErrors === this.hasLinting) {
+      return;
+    }
+
+    this.editor?.dispatch({
+      effects: this.lintingCompartment.reconfigure(this.getLintingExtensionsForSettings())
+    });
+  }
+
+  /**
+   * Gets the linting extensions for the current settings, and records whether linting is on.
+   *
+   * @returns The extensions, or none if "Show YAML errors" is off.
+   */
+  private getLintingExtensionsForSettings(): Extension[] {
+    this.hasLinting = this.plugin.settings.lintingYamlErrors;
+    return getLintingExtensions(this.hasLinting, Platform.isMobile);
   }
 
   /**

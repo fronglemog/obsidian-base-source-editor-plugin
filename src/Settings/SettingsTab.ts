@@ -136,6 +136,21 @@ export class BasesSourceEditorPluginSettingsTab extends PluginSettingTab {
         ]
       },
       {
+        heading: 'Errors',
+        type: 'group',
+        items: [
+          {
+            name: 'Show YAML errors',
+            desc: 'Underline mistakes in the YAML that stop Obsidian reading the Base.',
+            searchable: true,
+            control: {
+              key: 'lintingYamlErrors',
+              type: 'toggle'
+            }
+          }
+        ]
+      },
+      {
         heading: 'Font size',
         type: 'group',
         items: [

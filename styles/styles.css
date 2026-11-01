@@ -250,4 +250,17 @@ eg:
       font-size: calc(var(--bse-font-size) * 0.75);
     }
   }
+
+  /* YAML errors: the browser's own spelling-mistake squiggle, as in Markdown notes, instead of the lint package's red wavy image */
+  .cm-lintRange-error {
+    background-image: none;
+    padding-bottom: 0;
+    text-decoration-line: spelling-error;
+  }
+
+  @supports not (text-decoration-line: spelling-error) {
+    .cm-lintRange-error {
+      text-decoration: underline wavy var(--text-error);
+    }
+  }
 }
