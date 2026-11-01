@@ -3,7 +3,7 @@ This script is run by `npm version` after `package.json` has been bumped. It:
 1. Sets `version` in `manifest.json` to the new package version.
 2. Adds a `version: minAppVersion` entry to `versions.json` if it is not already there.
 
-It can also be run directly (`tsx version-bump.ts`), in which case the version is read from `package.json`.
+It can also be run directly (`tsx scripts/version-bump.ts`), in which case the version is read from `package.json`.
 */
 /* ========================= IMPORTS ========================= */
 import { getPackageJson, getPluginManifest, isSemverString, readJson, writeJson } from './script-lib';

@@ -63,17 +63,14 @@ A Base can be opened in the Base Source Editor by:
 - pnpm: Version `12.14.0` or newer
 	- See here for pnpm installation instructions: [Install pnpm](https://pnpm.io/installation)
 
-This project uses the [pnpm](https://pnpm.io) package manager instead of `npm`.
-
-1. [Install pnpm](https://pnpm.io/installation).
-2. Clone this repo:
+1. Clone this repo:
 
 	```sh
 	git clone https://github.com/fronglemog/obsidian-base-source-editor-plugin
 	cd obsidian-base-source-editor-plugin
 	```
 
-3. Run command `pnpm install` to install dependencies.
+2. Run command `pnpm install` to install dependencies.
 
 ### Linting
 
