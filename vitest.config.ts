@@ -6,7 +6,7 @@ import {
 export default defineConfig({
   test: {
     alias: {
-      'src/': '/src/', 
+      '#src/': '/src/', 
       'obsidian': '/tests/_mocks/obsidian.ts'
     },
     include : [

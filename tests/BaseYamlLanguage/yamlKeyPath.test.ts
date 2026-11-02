@@ -42,7 +42,7 @@ import {
   isFormulaPath,
   isInSummaryFormula,
   isSummaryFormulaPath
-} from 'src/BaseYamlLanguage/yamlKeyPath';
+} from '#src/BaseYamlLanguage/yamlKeyPath';
 
 /* ========================= HELPERS ========================= */
 

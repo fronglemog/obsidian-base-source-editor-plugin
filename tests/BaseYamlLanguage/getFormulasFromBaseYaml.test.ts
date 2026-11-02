@@ -40,8 +40,8 @@ import {
   getFormulasFromBaseYaml,
   getPropertyDisplayNamesFromBaseYaml,
   getSummariesFromBaseYaml
-} from 'src/BaseYamlLanguage/getFormulasFromBaseYaml';
-import type { ReadDocumentText } from 'src/BaseYamlLanguage/yamlKeyPath';
+} from '#src/BaseYamlLanguage/getFormulasFromBaseYaml';
+import type { ReadDocumentText } from '#src/BaseYamlLanguage/yamlKeyPath';
 
 /* ========================= TEST DATA ========================= */
 

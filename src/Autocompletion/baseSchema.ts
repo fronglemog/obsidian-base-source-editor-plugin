@@ -11,9 +11,9 @@ import type {
   KeyPosition,
   ListItemPosition,
   ValuePosition
-} from 'src/Autocompletion/cursorContext';
+} from '#src/Autocompletion/cursorContext';
 
-import type { ViewType } from 'src/Autocompletion/viewRegistrations';
+import type { ViewType } from '#src/Autocompletion/viewRegistrations';
 
 import {
   getShownDisplayName,
@@ -22,17 +22,17 @@ import {
   isSortableProperty,
   toFullPropertyId,
   toShortPropertyId
-} from 'src/Autocompletion/propertyIds';
+} from '#src/Autocompletion/propertyIds';
 
 import type {
   PropertyCandidate,
   PropertyType
-} from 'src/Autocompletion/propertyIds';
+} from '#src/Autocompletion/propertyIds';
 
-import { getSummarySuggestions } from 'src/Autocompletion/summaries';
-import type { SummarySuggestion } from 'src/Autocompletion/summaries';
-import { toYamlText } from 'src/Autocompletion/yamlText';
-import { isFilterMappingPath } from 'src/BaseYamlLanguage/yamlKeyPath';
+import { getSummarySuggestions } from '#src/Autocompletion/summaries';
+import type { SummarySuggestion } from '#src/Autocompletion/summaries';
+import { toYamlText } from '#src/Autocompletion/yamlText';
+import { isFilterMappingPath } from '#src/BaseYamlLanguage/yamlKeyPath';
 
 /* ================================================== */
 

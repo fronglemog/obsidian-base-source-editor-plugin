@@ -6,7 +6,7 @@ import type {
 } from 'obsidian';
 
 /* PLUGIN */
-import { SHOW_SUGGESTIONS_COMMAND_ID } from 'src/EditorCommands/showSuggestions';
+import { SHOW_SUGGESTIONS_COMMAND_ID } from '#src/EditorCommands/showSuggestions';
 
 /* ========================= TOOLBAR COMMANDS ========================= */
 

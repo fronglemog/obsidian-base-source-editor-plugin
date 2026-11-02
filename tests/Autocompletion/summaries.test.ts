@@ -6,8 +6,8 @@ import {
 } from 'vitest';
 
 /* PLUGIN */
-import { getSummarySuggestions } from 'src/Autocompletion/summaries';
-import type { SummarySuggestion } from 'src/Autocompletion/summaries';
+import { getSummarySuggestions } from '#src/Autocompletion/summaries';
+import type { SummarySuggestion } from '#src/Autocompletion/summaries';
 
 /* ========================= HELPERS ========================= */
 

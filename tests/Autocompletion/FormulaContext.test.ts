@@ -50,11 +50,11 @@ import {
 } from '@codemirror/state';
 
 /* PLUGIN */
-import { FormulaContext } from 'src/Autocompletion/FormulaContext';
+import { FormulaContext } from '#src/Autocompletion/FormulaContext';
 import type {
   BasesIdentifierContext,
   DateValueConstructor
-} from 'src/obsidian-types';
+} from '#src/obsidian-types';
 
 /* ========================= TEST DATA ========================= */
 

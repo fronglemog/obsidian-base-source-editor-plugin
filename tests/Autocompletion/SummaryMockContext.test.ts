@@ -12,7 +12,7 @@ import {
   NumberValue
 } from 'obsidian';
 
-import { SummaryMockContext } from 'src/Autocompletion/SummaryMockContext';
+import { SummaryMockContext } from '#src/Autocompletion/SummaryMockContext';
 
 /* ========================= TESTS ========================= */
 

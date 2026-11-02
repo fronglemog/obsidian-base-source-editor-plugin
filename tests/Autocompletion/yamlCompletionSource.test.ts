@@ -55,9 +55,9 @@ import type { TransactionSpec } from '@codemirror/state';
 import type { EditorView } from '@codemirror/view';
 
 /* PLUGIN */
-import { createYamlCompletionSource } from 'src/Autocompletion/yamlCompletionSource';
-import type { KeyInsertSettings } from 'src/Autocompletion/keyInserts';
-import type { PropertyType } from 'src/Autocompletion/propertyIds';
+import { createYamlCompletionSource } from '#src/Autocompletion/yamlCompletionSource';
+import type { KeyInsertSettings } from '#src/Autocompletion/keyInserts';
+import type { PropertyType } from '#src/Autocompletion/propertyIds';
 
 /* ========================= TEST DATA ========================= */
 

@@ -22,12 +22,12 @@ import {
   toFullPropertyId,
   toPropertyExpression,
   toShortPropertyId
-} from 'src/Autocompletion/propertyIds';
+} from '#src/Autocompletion/propertyIds';
 
 import type {
   NoteProperty,
   PropertyCandidate
-} from 'src/Autocompletion/propertyIds';
+} from '#src/Autocompletion/propertyIds';
 
 /* ========================= HELPERS ========================= */
 

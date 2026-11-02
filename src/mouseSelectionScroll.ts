@@ -5,12 +5,12 @@ import type {
 } from '@codemirror/view';
 
 /* PLUGIN */
-import { logError } from 'src/Util/logError';
+import { logError } from '#src/Util/logError';
 
 import type {
   EditorInputState,
   EditorMouseSelection
-} from 'src/obsidian-types';
+} from '#src/obsidian-types';
 
 /* ========================= MOUSE SELECTION SCROLL ========================= */
 

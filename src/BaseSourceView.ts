@@ -55,29 +55,29 @@ import {
 } from '@codemirror/autocomplete';
 
 /* PLUGIN */
-import type BasesSourceEditorPlugin from 'src/main';
-import { yamlSyntaxHighlighting } from 'src/BaseYamlLanguage/yamlSyntaxHighlighting';
+import type BasesSourceEditorPlugin from '#src/main';
+import { yamlSyntaxHighlighting } from '#src/BaseYamlLanguage/yamlSyntaxHighlighting';
 
 import {
   BaseSourceSearchBar,
   searchHighlightField
-} from 'src/BaseSourceSearchBar';
+} from '#src/BaseSourceSearchBar';
 
-import { activeLineHighlight } from 'src/EditorExtensions/activeLine';
-import { getIndentationGuidesExtensions } from 'src/EditorExtensions/indentationGuides';
-import { getLineWrapExtensions } from 'src/EditorExtensions/lineWrap';
-import { getRenderWhitespaceExtensions } from 'src/EditorExtensions/renderWhitespace';
-import { getTooltipParentExtensions } from 'src/EditorExtensions/tooltipParent';
-import { textScrollMargins } from 'src/EditorExtensions/scrollMargins';
+import { activeLineHighlight } from '#src/EditorExtensions/activeLine';
+import { getIndentationGuidesExtensions } from '#src/EditorExtensions/indentationGuides';
+import { getLineWrapExtensions } from '#src/EditorExtensions/lineWrap';
+import { getRenderWhitespaceExtensions } from '#src/EditorExtensions/renderWhitespace';
+import { getTooltipParentExtensions } from '#src/EditorExtensions/tooltipParent';
+import { textScrollMargins } from '#src/EditorExtensions/scrollMargins';
 import {
   getAutocompleteExtensions,
   isAutocompleteEnabled
-} from 'src/EditorExtensions/autocompleteExtension';
-import type { AutocompleteAcceptKey } from 'src/Settings/PluginSettings';
+} from '#src/EditorExtensions/autocompleteExtension';
+import type { AutocompleteAcceptKey } from '#src/Settings/PluginSettings';
 
-import { getDocumentChange } from 'src/getDocumentChange';
-import { fixMouseSelectionScroll } from 'src/mouseSelectionScroll';
-import { handleTouchEditorScroll } from 'src/Mobile/handleTouchEditorScroll';
+import { getDocumentChange } from '#src/getDocumentChange';
+import { fixMouseSelectionScroll } from '#src/mouseSelectionScroll';
+import { handleTouchEditorScroll } from '#src/Mobile/handleTouchEditorScroll';
 
 /* ========================= BaseSourceView ========================= */
 

@@ -1,6 +1,6 @@
 /* ========================= IMPORTS ========================= */
 /* PLUGIN */
-import { logError } from 'src/Util/logError';
+import { logError } from '#src/Util/logError';
 
 /* ================================================== */
 

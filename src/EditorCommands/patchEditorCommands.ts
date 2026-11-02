@@ -23,15 +23,15 @@ import {
 } from '@codemirror/commands';
 
 /* PLUGIN */
-import type BasesSourceEditorPlugin from 'src/main';
-import { BaseSourceView } from 'src/BaseSourceView';
+import type BasesSourceEditorPlugin from '#src/main';
+import { BaseSourceView } from '#src/BaseSourceView';
 
 import {
   copySelection,
   cutSelection,
   pasteClipboard,
   toggleKeyboard
-} from 'src/EditorCommands/editorCommands';
+} from '#src/EditorCommands/editorCommands';
 
 /* ========================= PATCHED COMMANDS ========================= */
 

@@ -9,13 +9,13 @@ import type {
 } from 'obsidian';
 
 /* PLUGIN */
-import type BasesSourceEditorPlugin from 'src/main';
+import type BasesSourceEditorPlugin from '#src/main';
 import {
   VIEW_TYPE_BASES,
   VIEW_TYPE_BASES_SOURCE
-} from 'src/BaseSourceView';
+} from '#src/BaseSourceView';
 
-import { toggleSourceMode } from 'src/toggleSourceMode';
+import { toggleSourceMode } from '#src/toggleSourceMode';
 
 /* ========================= ViewActionsManager ========================= */
 

@@ -13,26 +13,26 @@ import type {
 } from 'obsidian';
 
 /* PLUGIN */
-import type BasesSourceEditorPlugin from 'src/main';
+import type BasesSourceEditorPlugin from '#src/main';
 import {
   getPluginSettingPath,
   PLUGIN_DEFAULT_SETTINGS,
   setPluginSettingPath
-} from 'src/Settings/PluginSettings';
+} from '#src/Settings/PluginSettings';
 import type {
   AutocompleteAcceptKey,
   AutocompleteDevices,
   AutocompleteKeyInsert,
   PluginSettingPath
-} from 'src/Settings/PluginSettings';
+} from '#src/Settings/PluginSettings';
 
-import { commandSuggester } from 'src/Mobile/CommandSuggester';
+import { commandSuggester } from '#src/Mobile/CommandSuggester';
 
 import {
   getMobileToolbarCommands,
   getGlobalCommandsForToolbar,
   getToolbarCommandIds
-} from 'src/Mobile/toolbarCommands';
+} from '#src/Mobile/toolbarCommands';
 
 /* ========================= BasesSourceEditorPluginSettingsTab ========================= */
 

@@ -6,7 +6,7 @@ import {
 } from 'vitest';
 
 /* PLUGIN */
-import { toYamlText } from 'src/Autocompletion/yamlText';
+import { toYamlText } from '#src/Autocompletion/yamlText';
 
 /* ========================= TESTS ========================= */
 

@@ -8,7 +8,7 @@ import type {
 } from 'obsidian';
 
 /* PLUGIN */
-import type BasesSourceEditorPlugin from 'src/main';
+import type BasesSourceEditorPlugin from '#src/main';
 
 /* ========================= CommandSuggester ========================= */
 

@@ -6,7 +6,7 @@ import type { IconName } from 'obsidian';
 import type { EditorState } from '@codemirror/state';
 
 /* PLUGIN */
-import type { PropertyType } from 'src/Autocompletion/propertyIds';
+import type { PropertyType } from '#src/Autocompletion/propertyIds';
 
 /* ========================= SUMMARIES ========================= */
 

@@ -3,13 +3,13 @@
 import type { App } from 'obsidian';
 
 /* PLUGIN */
-import type { NoteProperty } from 'src/Autocompletion/propertyIds';
-import { logError } from 'src/Util/logError';
+import type { NoteProperty } from '#src/Autocompletion/propertyIds';
+import { logError } from '#src/Util/logError';
 
 import type {
   PropertyInfo,
   PropertyWidget
-} from 'src/obsidian-types';
+} from '#src/obsidian-types';
 
 /* ========================= VAULT PROPERTIES ========================= */
 

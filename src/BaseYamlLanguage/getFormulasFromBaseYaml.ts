@@ -10,10 +10,10 @@ import type {
 } from '@lezer/common';
 
 /* PLUGIN */
-import { getQuotedLiteralRanges } from 'src/BaseYamlLanguage/quotedLiteralRanges';
-import type { DocumentRange } from 'src/BaseYamlLanguage/quotedLiteralRanges';
-import { getYamlKeyPath } from 'src/BaseYamlLanguage/yamlKeyPath';
-import type { ReadDocumentText } from 'src/BaseYamlLanguage/yamlKeyPath';
+import { getQuotedLiteralRanges } from '#src/BaseYamlLanguage/quotedLiteralRanges';
+import type { DocumentRange } from '#src/BaseYamlLanguage/quotedLiteralRanges';
+import { getYamlKeyPath } from '#src/BaseYamlLanguage/yamlKeyPath';
+import type { ReadDocumentText } from '#src/BaseYamlLanguage/yamlKeyPath';
 
 /* ============================================================ */
 

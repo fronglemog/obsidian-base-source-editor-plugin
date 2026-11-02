@@ -16,7 +16,7 @@ import {
   getGlobalCommandsForToolbar,
   getToolbarCommandIds,
   TOOLBAR_COMMAND_IDS
-} from 'src/Mobile/toolbarCommands';
+} from '#src/Mobile/toolbarCommands';
 
 /* ========================= HELPERS ========================= */
 

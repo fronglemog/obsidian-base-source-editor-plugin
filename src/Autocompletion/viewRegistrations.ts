@@ -15,8 +15,8 @@ import type {
 } from 'obsidian';
 
 /* PLUGIN */
-import type { BasesPluginInstance } from 'src/obsidian-types';
-import { logError } from 'src/Util/logError';
+import type { BasesPluginInstance } from '#src/obsidian-types';
+import { logError } from '#src/Util/logError';
 
 /* ========================= VIEW REGISTRATIONS ========================= */
 

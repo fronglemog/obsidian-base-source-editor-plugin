@@ -33,12 +33,12 @@ import {
   getListItemSuggestions,
   getPropertyKeySuggestions,
   getValueSuggestions
-} from 'src/Autocompletion/baseSchema';
+} from '#src/Autocompletion/baseSchema';
 
 import type {
   ValueSources,
   ValueSuggestion
-} from 'src/Autocompletion/baseSchema';
+} from '#src/Autocompletion/baseSchema';
 
 import {
   getKeyPosition,
@@ -46,48 +46,48 @@ import {
   getPropertyKeyPosition,
   getValuePosition,
   getViewOrder
-} from 'src/Autocompletion/cursorContext';
+} from '#src/Autocompletion/cursorContext';
 
 import type {
   KeyPosition,
   ListItemPosition,
   ValuePosition
-} from 'src/Autocompletion/cursorContext';
+} from '#src/Autocompletion/cursorContext';
 
 import {
   getViewOptionKeys,
   getViewOptions,
   getViewTypes
-} from 'src/Autocompletion/viewRegistrations';
+} from '#src/Autocompletion/viewRegistrations';
 
-import type { ViewType } from 'src/Autocompletion/viewRegistrations';
-import { getPropertyCandidates } from 'src/Autocompletion/propertyIds';
+import type { ViewType } from '#src/Autocompletion/viewRegistrations';
+import { getPropertyCandidates } from '#src/Autocompletion/propertyIds';
 
 import type {
   PropertyCandidate,
   PropertyType,
   ReadPropertyIcon,
   ReadPropertyType
-} from 'src/Autocompletion/propertyIds';
+} from '#src/Autocompletion/propertyIds';
 
-import { getFilePropertyNames } from 'src/Autocompletion/filePropertyNames';
-import { getKeyInsertText } from 'src/Autocompletion/keyInserts';
+import { getFilePropertyNames } from '#src/Autocompletion/filePropertyNames';
+import { getKeyInsertText } from '#src/Autocompletion/keyInserts';
 
 import type {
   KeyInsertSettings,
   ReadKeyInsertSettings
-} from 'src/Autocompletion/keyInserts';
+} from '#src/Autocompletion/keyInserts';
 
-import type { ReadSummaryIcon } from 'src/Autocompletion/summaries';
-import { getNoteProperties } from 'src/Autocompletion/vaultProperties';
+import type { ReadSummaryIcon } from '#src/Autocompletion/summaries';
+import { getNoteProperties } from '#src/Autocompletion/vaultProperties';
 
 import {
   getFormulasFromBaseYaml,
   getPropertyDisplayNamesFromBaseYaml,
   getSummariesFromBaseYaml
-} from 'src/BaseYamlLanguage/getFormulasFromBaseYaml';
+} from '#src/BaseYamlLanguage/getFormulasFromBaseYaml';
 
-import type { ReadDocumentText } from 'src/BaseYamlLanguage/yamlKeyPath';
+import type { ReadDocumentText } from '#src/BaseYamlLanguage/yamlKeyPath';
 
 /* ============================================================ */
 

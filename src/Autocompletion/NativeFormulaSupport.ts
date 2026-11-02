@@ -14,17 +14,17 @@ import { StateField } from '@codemirror/state';
 import type { Extension } from '@codemirror/state';
 
 /* PLUGIN */
-import type { BaseYamlLanguage } from 'src/BaseYamlLanguage/BaseYamlLanguage';
+import type { BaseYamlLanguage } from '#src/BaseYamlLanguage/BaseYamlLanguage';
 
 import {
   createEmptyFormulaCompletionSource,
   createFormulaCompletionSource
-} from 'src/Autocompletion/formulaCompletionSource';
+} from '#src/Autocompletion/formulaCompletionSource';
 
-import { FallbackMockContext } from 'src/Autocompletion/FallbackMockContext';
-import { FormulaContext } from 'src/Autocompletion/FormulaContext';
-import type { MockContextClass } from 'src/Autocompletion/FormulaContext';
-import { logError } from 'src/Util/logError';
+import { FallbackMockContext } from '#src/Autocompletion/FallbackMockContext';
+import { FormulaContext } from '#src/Autocompletion/FormulaContext';
+import type { MockContextClass } from '#src/Autocompletion/FormulaContext';
+import { logError } from '#src/Util/logError';
 
 import type {
   BasesFormulaLanguageSupport,
@@ -33,7 +33,7 @@ import type {
   BasesMockContext,
   BasesMockContextConstructor,
   QueryControllerConstructor
-} from 'src/obsidian-types';
+} from '#src/obsidian-types';
 
 /* ========================= NativeFormulaSupport ========================= */
 

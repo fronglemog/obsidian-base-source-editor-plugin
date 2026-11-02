@@ -18,9 +18,9 @@ import {
   getAcceptKeyOptions,
   getCompletionInfoPositionConfig,
   getInfoPanelOptions
-} from 'src/EditorExtensions/autocompleteExtension';
+} from '#src/EditorExtensions/autocompleteExtension';
 
-import type { AutocompleteAcceptKey } from 'src/Settings/PluginSettings';
+import type { AutocompleteAcceptKey } from '#src/Settings/PluginSettings';
 
 /* ========================= TESTS ========================= */
 

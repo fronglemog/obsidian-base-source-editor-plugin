@@ -5,8 +5,8 @@ import type {
 } from '@codemirror/view';
 
 /* PLUGIN */
-import { getVisibleTextBounds } from 'src/EditorExtensions/scrollMargins';
-import type { TextBounds } from 'src/EditorExtensions/scrollMargins';
+import { getVisibleTextBounds } from '#src/EditorExtensions/scrollMargins';
+import type { TextBounds } from '#src/EditorExtensions/scrollMargins';
 
 /* ============================================================ */
 

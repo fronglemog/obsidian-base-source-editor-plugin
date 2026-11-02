@@ -8,7 +8,7 @@ import {
 } from 'vitest';
 
 /* PLUGIN */
-import { getFilePropertyNames } from 'src/Autocompletion/filePropertyNames';
+import { getFilePropertyNames } from '#src/Autocompletion/filePropertyNames';
 
 /* ========================= TESTS ========================= */
 

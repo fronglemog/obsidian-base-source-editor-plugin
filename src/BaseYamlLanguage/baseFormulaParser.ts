@@ -6,7 +6,7 @@ import { QueryController } from 'obsidian';
 import type { Parser } from '@lezer/common';
 
 /* PLUGIN */
-import { logError } from 'src/Util/logError';
+import { logError } from '#src/Util/logError';
 
 /* ========================= getBaseFormulaParser ========================= */
 

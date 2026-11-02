@@ -16,12 +16,12 @@ import type {
 } from 'obsidian';
 
 /* PLUGIN */
-import type BasesSourceEditorPlugin from 'src/main';
+import type BasesSourceEditorPlugin from '#src/main';
 import {
   BaseSourceView,
   VIEW_TYPE_BASES_SOURCE
-} from 'src/BaseSourceView';
-import { getMobileToolbarCommands } from 'src/Mobile/toolbarCommands';
+} from '#src/BaseSourceView';
+import { getMobileToolbarCommands } from '#src/Mobile/toolbarCommands';
 
 /* ========================= BaseSourceMobileToolbar ========================= */
 

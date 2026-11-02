@@ -33,19 +33,19 @@ import type {
 } from '@codemirror/state';
 
 /* PLUGIN */
-import { SummaryMockContext } from 'src/Autocompletion/SummaryMockContext';
-import { toPropertyExpression } from 'src/Autocompletion/propertyIds';
-import type { PropertyType } from 'src/Autocompletion/propertyIds';
-import { NO_RESULT_ICON } from 'src/Autocompletion/summaries';
-import { getFormulasFromBaseYaml } from 'src/BaseYamlLanguage/getFormulasFromBaseYaml';
-import { isInSummaryFormula } from 'src/BaseYamlLanguage/yamlKeyPath';
-import { logError } from 'src/Util/logError';
+import { SummaryMockContext } from '#src/Autocompletion/SummaryMockContext';
+import { toPropertyExpression } from '#src/Autocompletion/propertyIds';
+import type { PropertyType } from '#src/Autocompletion/propertyIds';
+import { NO_RESULT_ICON } from '#src/Autocompletion/summaries';
+import { getFormulasFromBaseYaml } from '#src/BaseYamlLanguage/getFormulasFromBaseYaml';
+import { isInSummaryFormula } from '#src/BaseYamlLanguage/yamlKeyPath';
+import { logError } from '#src/Util/logError';
 
 import type {
   BasesFormula,
   BasesIdentifierContext,
   BasesMockContext
-} from 'src/obsidian-types';
+} from '#src/obsidian-types';
 
 /* ========================= FormulaContext ========================= */
 
