@@ -19,24 +19,24 @@ import {
   getPropertyKeySuggestions,
   getSchemaKeys,
   getValueSuggestions
-} from 'src/Autocompletion/baseSchema';
+} from '#src/Autocompletion/baseSchema';
 
 import type {
   ValueSources,
   ValueSuggestion
-} from 'src/Autocompletion/baseSchema';
+} from '#src/Autocompletion/baseSchema';
 
 import type {
   KeyPosition,
   ListItemPosition,
   ValuePosition
-} from 'src/Autocompletion/cursorContext';
+} from '#src/Autocompletion/cursorContext';
 
-import type { ViewType } from 'src/Autocompletion/viewRegistrations';
+import type { ViewType } from '#src/Autocompletion/viewRegistrations';
 import type {
   PropertyCandidate,
   PropertyType
-} from 'src/Autocompletion/propertyIds';
+} from '#src/Autocompletion/propertyIds';
 
 /* ========================= TEST DATA ========================= */
 

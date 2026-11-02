@@ -13,14 +13,14 @@ import { syntaxTree } from '@codemirror/language';
 import type { EditorState } from '@codemirror/state';
 
 /* PLUGIN */
-import type { FormulaContext } from 'src/Autocompletion/FormulaContext';
+import type { FormulaContext } from '#src/Autocompletion/FormulaContext';
 
 import {
   getQuoteAt,
   getQuotedResult
-} from 'src/Autocompletion/quotedInserts';
+} from '#src/Autocompletion/quotedInserts';
 
-import type { QuoteCharacter } from 'src/Autocompletion/quotedInserts';
+import type { QuoteCharacter } from '#src/Autocompletion/quotedInserts';
 
 import {
   getEmptyValueKeyPath,
@@ -28,11 +28,11 @@ import {
   isFilterGroupPath,
   isFiltersValuePath,
   isFormulaPath
-} from 'src/BaseYamlLanguage/yamlKeyPath';
+} from '#src/BaseYamlLanguage/yamlKeyPath';
 
-import type { ReadDocumentText } from 'src/BaseYamlLanguage/yamlKeyPath';
-import type { BasesFormulaLanguageSupport } from 'src/obsidian-types';
-import { logError } from 'src/Util/logError';
+import type { ReadDocumentText } from '#src/BaseYamlLanguage/yamlKeyPath';
+import type { BasesFormulaLanguageSupport } from '#src/obsidian-types';
+import { logError } from '#src/Util/logError';
 
 /* ============================================================ */
 

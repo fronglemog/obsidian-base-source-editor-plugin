@@ -9,7 +9,7 @@ import type {
 import {
   VIEW_TYPE_BASES,
   VIEW_TYPE_BASES_SOURCE
-} from 'src/BaseSourceView';
+} from '#src/BaseSourceView';
 
 /* ============================================================ */
 

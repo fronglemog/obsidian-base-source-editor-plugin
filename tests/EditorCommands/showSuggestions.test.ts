@@ -11,7 +11,7 @@ import { EditorState } from '@codemirror/state';
 import type { EditorView } from '@codemirror/view';
 
 /* PLUGIN */
-import { showSuggestions } from 'src/EditorCommands/showSuggestions';
+import { showSuggestions } from '#src/EditorCommands/showSuggestions';
 
 /* ========================= HELPERS ========================= */
 

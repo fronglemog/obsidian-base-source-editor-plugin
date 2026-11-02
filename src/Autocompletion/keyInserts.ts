@@ -8,8 +8,8 @@ import {
 import type { EditorState } from '@codemirror/state';
 
 /* PLUGIN */
-import type { KeyValueKind } from 'src/Autocompletion/baseSchema';
-import type { AutocompleteKeyInsert } from 'src/Settings/PluginSettings';
+import type { KeyValueKind } from '#src/Autocompletion/baseSchema';
+import type { AutocompleteKeyInsert } from '#src/Settings/PluginSettings';
 
 /* ================================================== */
 

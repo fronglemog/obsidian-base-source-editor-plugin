@@ -6,7 +6,7 @@ import {
 } from 'vitest';
 
 /* PLUGIN */
-import { getYamlErrorMessage } from 'src/Linting/yamlErrorMessages';
+import { getYamlErrorMessage } from '#src/Linting/yamlErrorMessages';
 
 /* ========================= TESTS ========================= */
 

@@ -10,7 +10,7 @@ import {
 import type { App } from 'obsidian';
 
 /* PLUGIN */
-import { getNoteProperties } from 'src/Autocompletion/vaultProperties';
+import { getNoteProperties } from '#src/Autocompletion/vaultProperties';
 
 /* ========================= HELPERS ========================= */
 

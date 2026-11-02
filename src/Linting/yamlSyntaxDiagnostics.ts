@@ -8,10 +8,10 @@ import type {
 } from 'yaml';
 
 /* PLUGIN */
-import { getYamlErrorMessage } from 'src/Linting/yamlErrorMessages';
-import { getYamlErrorRange } from 'src/Linting/yamlErrorRange';
-import type { TextRange } from 'src/Linting/yamlErrorRange';
-import { logError } from 'src/Util/logError';
+import { getYamlErrorMessage } from '#src/Linting/yamlErrorMessages';
+import { getYamlErrorRange } from '#src/Linting/yamlErrorRange';
+import type { TextRange } from '#src/Linting/yamlErrorRange';
+import { logError } from '#src/Util/logError';
 
 /* ========================= YAML SYNTAX DIAGNOSTICS ========================= */
 

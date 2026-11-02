@@ -24,8 +24,8 @@ import type {
 } from '@lezer/common';
 
 /* PLUGIN */
-import type { ReadDocumentText } from 'src/BaseYamlLanguage/yamlKeyPath';
-import { logError } from 'src/Util/logError';
+import type { ReadDocumentText } from '#src/BaseYamlLanguage/yamlKeyPath';
+import { logError } from '#src/Util/logError';
 
 /* ============================================================ */
 

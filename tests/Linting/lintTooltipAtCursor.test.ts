@@ -16,7 +16,7 @@ import type { Tooltip } from '@codemirror/view';
 import {
   getDiagnosticsAt,
   lintTooltipAtCursorField
-} from 'src/Linting/lintTooltipAtCursor';
+} from '#src/Linting/lintTooltipAtCursor';
 
 /* ========================= HELPERS ========================= */
 

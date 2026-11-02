@@ -9,8 +9,8 @@ import {
 import { EditorState } from '@codemirror/state';
 
 /* PLUGIN */
-import { getKeyInsertText } from 'src/Autocompletion/keyInserts';
-import type { AutocompleteKeyInsert } from 'src/Settings/PluginSettings';
+import { getKeyInsertText } from '#src/Autocompletion/keyInserts';
+import type { AutocompleteKeyInsert } from '#src/Settings/PluginSettings';
 
 /* ========================= TEST DATA ========================= */
 

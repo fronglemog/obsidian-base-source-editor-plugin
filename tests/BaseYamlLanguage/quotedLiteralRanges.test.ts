@@ -5,8 +5,8 @@ import {
   test
 } from 'vitest';
 
-import { getQuotedLiteralRanges } from 'src/BaseYamlLanguage/quotedLiteralRanges';
-import type { DocumentRange } from 'src/BaseYamlLanguage/quotedLiteralRanges';
+import { getQuotedLiteralRanges } from '#src/BaseYamlLanguage/quotedLiteralRanges';
+import type { DocumentRange } from '#src/BaseYamlLanguage/quotedLiteralRanges';
 
 
 /* ========================= HELPERS ========================= */

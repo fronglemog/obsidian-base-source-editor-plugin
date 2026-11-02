@@ -8,9 +8,9 @@ import type { Extension } from '@codemirror/state';
 import { EditorView } from '@codemirror/view';
 
 /* PLUGIN */
-import { lintTooltipAtCursorField } from 'src/Linting/lintTooltipAtCursor';
-import { getYamlSyntaxDiagnostics } from 'src/Linting/yamlSyntaxDiagnostics';
-import type { YamlSyntaxDiagnostic } from 'src/Linting/yamlSyntaxDiagnostics';
+import { lintTooltipAtCursorField } from '#src/Linting/lintTooltipAtCursor';
+import { getYamlSyntaxDiagnostics } from '#src/Linting/yamlSyntaxDiagnostics';
+import type { YamlSyntaxDiagnostic } from '#src/Linting/yamlSyntaxDiagnostics';
 
 /* ========================= LINTING ========================= */
 

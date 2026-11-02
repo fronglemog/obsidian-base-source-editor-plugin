@@ -14,9 +14,9 @@ import type {
 import {
   getNodeBeforeSpaces,
   getYamlKeyPath
-} from 'src/BaseYamlLanguage/yamlKeyPath';
+} from '#src/BaseYamlLanguage/yamlKeyPath';
 
-import type { ReadDocumentText } from 'src/BaseYamlLanguage/yamlKeyPath';
+import type { ReadDocumentText } from '#src/BaseYamlLanguage/yamlKeyPath';
 
 /* ================================================== */
 

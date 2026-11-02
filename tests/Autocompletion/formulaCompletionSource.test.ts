@@ -10,7 +10,7 @@ import {
 import type { Platform } from 'obsidian';
 
 
-import { setIsPhoneFalseAndCall } from 'src/Autocompletion/formulaCompletionSource';
+import { setIsPhoneFalseAndCall } from '#src/Autocompletion/formulaCompletionSource';
 
 /* ========================= HELPERS ========================= */
 

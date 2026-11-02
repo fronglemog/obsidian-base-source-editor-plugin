@@ -19,13 +19,13 @@ import type {
 } from '@lezer/common';
 
 /* PLUGIN */
-import { getBaseFormulaParser } from 'src/BaseYamlLanguage/baseFormulaParser';
-import { getQuotedLiteralRanges } from 'src/BaseYamlLanguage/quotedLiteralRanges';
-import type { DocumentRange } from 'src/BaseYamlLanguage/quotedLiteralRanges';
+import { getBaseFormulaParser } from '#src/BaseYamlLanguage/baseFormulaParser';
+import { getQuotedLiteralRanges } from '#src/BaseYamlLanguage/quotedLiteralRanges';
+import type { DocumentRange } from '#src/BaseYamlLanguage/quotedLiteralRanges';
 import {
   getYamlKeyPath,
   isFormulaPath
-} from 'src/BaseYamlLanguage/yamlKeyPath';
+} from '#src/BaseYamlLanguage/yamlKeyPath';
 
 /* ========================= BaseYamlLanguage ========================= */
 

@@ -6,7 +6,7 @@ import {
 } from 'vitest';
 
 /* PLUGIN */
-import { PLUGIN_DEFAULT_SETTINGS } from 'src/Settings/PluginSettings';
+import { PLUGIN_DEFAULT_SETTINGS } from '#src/Settings/PluginSettings';
 
 /* ========================= TESTS ========================= */
 

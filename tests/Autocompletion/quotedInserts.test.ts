@@ -59,9 +59,9 @@ import {
   getQuotedCompletion,
   getQuotedSpec,
   mapPositionThroughEscape
-} from 'src/Autocompletion/quotedInserts';
+} from '#src/Autocompletion/quotedInserts';
 
-import type { ApplyCompletion } from 'src/Autocompletion/quotedInserts';
+import type { ApplyCompletion } from '#src/Autocompletion/quotedInserts';
 
 /* ========================= TEST DATA ========================= */
 

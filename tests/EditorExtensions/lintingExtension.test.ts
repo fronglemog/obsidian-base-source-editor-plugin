@@ -9,9 +9,9 @@ import {
 import {
   getLintingExtensions,
   getYamlLintDiagnostics
-} from 'src/EditorExtensions/lintingExtension';
+} from '#src/EditorExtensions/lintingExtension';
 
-import { lintTooltipAtCursorField } from 'src/Linting/lintTooltipAtCursor';
+import { lintTooltipAtCursorField } from '#src/Linting/lintTooltipAtCursor';
 
 /* ========================= TESTS ========================= */
 

@@ -8,7 +8,7 @@ import {
 import type { Value } from 'obsidian';
 
 /* PLUGIN */
-import type { BasesIdentifierContext } from 'src/obsidian-types';
+import type { BasesIdentifierContext } from '#src/obsidian-types';
 
 /* ========================= SummaryMockContext ========================= */
 

@@ -28,32 +28,32 @@ import type {
 } from '@codemirror/view';
 
 /* PLUGIN */
-import { createYamlCompletionSource } from 'src/Autocompletion/yamlCompletionSource';
-import type { FormulaEditorExtensions } from 'src/Autocompletion/NativeFormulaSupport';
+import { createYamlCompletionSource } from '#src/Autocompletion/yamlCompletionSource';
+import type { FormulaEditorExtensions } from '#src/Autocompletion/NativeFormulaSupport';
 
 import type {
   KeyInsertSettings,
   ReadKeyInsertSettings
-} from 'src/Autocompletion/keyInserts';
+} from '#src/Autocompletion/keyInserts';
 
 import type {
   PropertyType,
   ReadPropertyIcon,
   ReadPropertyType
-} from 'src/Autocompletion/propertyIds';
-import { NO_RESULT_ICON } from 'src/Autocompletion/summaries';
-import type { ReadSummaryIcon } from 'src/Autocompletion/summaries';
-import type BasesSourceEditorPlugin from 'src/main';
+} from '#src/Autocompletion/propertyIds';
+import { NO_RESULT_ICON } from '#src/Autocompletion/summaries';
+import type { ReadSummaryIcon } from '#src/Autocompletion/summaries';
+import type BasesSourceEditorPlugin from '#src/main';
 
 import type {
   AutocompleteAcceptKey,
   PluginSettings
-} from 'src/Settings/PluginSettings';
+} from '#src/Settings/PluginSettings';
 
 import {
   renderCompletionDetail,
   renderCompletionIcon
-} from 'src/Autocompletion/renderOption';
+} from '#src/Autocompletion/renderOption';
 
 /* ========================= AUTOCOMPLETE ========================= */
 

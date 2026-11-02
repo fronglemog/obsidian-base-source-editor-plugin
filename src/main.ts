@@ -12,25 +12,25 @@ import type {
 } from 'obsidian';
 
 /* PLUGIN */
-import { PLUGIN_DEFAULT_SETTINGS } from 'src/Settings/PluginSettings';
-import type { PluginSettings } from 'src/Settings/PluginSettings';
-import { BasesSourceEditorPluginSettingsTab } from 'src/Settings/SettingsTab';
+import { PLUGIN_DEFAULT_SETTINGS } from '#src/Settings/PluginSettings';
+import type { PluginSettings } from '#src/Settings/PluginSettings';
+import { BasesSourceEditorPluginSettingsTab } from '#src/Settings/SettingsTab';
 import {
   VIEW_TYPE_BASES_SOURCE,
   BaseSourceView
-} from 'src/BaseSourceView';
-import { ViewActionsManager } from 'src/ViewActionsManager';
-import { toggleSourceMode } from 'src/toggleSourceMode';
-import { BaseYamlLanguage } from 'src/BaseYamlLanguage/BaseYamlLanguage';
-import { NativeFormulaSupport } from 'src/Autocompletion/NativeFormulaSupport';
-import { BaseSourceMobileToolbar } from 'src/Mobile/BaseSourceMobileToolbar';
-import { patchEditorCommands } from 'src/EditorCommands/patchEditorCommands';
+} from '#src/BaseSourceView';
+import { ViewActionsManager } from '#src/ViewActionsManager';
+import { toggleSourceMode } from '#src/toggleSourceMode';
+import { BaseYamlLanguage } from '#src/BaseYamlLanguage/BaseYamlLanguage';
+import { NativeFormulaSupport } from '#src/Autocompletion/NativeFormulaSupport';
+import { BaseSourceMobileToolbar } from '#src/Mobile/BaseSourceMobileToolbar';
+import { patchEditorCommands } from '#src/EditorCommands/patchEditorCommands';
 import {
   SHOW_SUGGESTIONS_COMMAND_ID,
   showSuggestions
-} from 'src/EditorCommands/showSuggestions';
-import { isAutocompleteEnabled } from 'src/EditorExtensions/autocompleteExtension';
-import { objectMerge } from 'src/Util/objectMerge';
+} from '#src/EditorCommands/showSuggestions';
+import { isAutocompleteEnabled } from '#src/EditorExtensions/autocompleteExtension';
+import { objectMerge } from '#src/Util/objectMerge';
 
 /* ========================= BasesSourceEditorPlugin ========================= */
 export default class BasesSourceEditorPlugin extends Plugin {

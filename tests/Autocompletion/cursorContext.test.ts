@@ -38,13 +38,13 @@ import {
   getPropertyKeyPosition,
   getValuePosition,
   getViewOrder
-} from 'src/Autocompletion/cursorContext';
+} from '#src/Autocompletion/cursorContext';
 
 import type {
   KeyPosition,
   ListItemPosition,
   ValuePosition
-} from 'src/Autocompletion/cursorContext';
+} from '#src/Autocompletion/cursorContext';
 
 /* ========================= TEST DATA ========================= */
 

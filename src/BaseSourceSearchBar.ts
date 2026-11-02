@@ -39,7 +39,7 @@ import {
 import type { DecorationSet } from '@codemirror/view';
 
 /* PLUGIN */
-import type BasesSourceEditorPlugin from 'src/main';
+import type BasesSourceEditorPlugin from '#src/main';
 
 /* ========================= BaseSourceSearchBar ========================= */
 

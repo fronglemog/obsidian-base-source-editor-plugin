@@ -10,8 +10,8 @@ import { parseDocument } from 'yaml';
 import type { Document } from 'yaml';
 
 /* PLUGIN */
-import { getYamlErrorRange } from 'src/Linting/yamlErrorRange';
-import type { TextRange } from 'src/Linting/yamlErrorRange';
+import { getYamlErrorRange } from '#src/Linting/yamlErrorRange';
+import type { TextRange } from '#src/Linting/yamlErrorRange';
 
 /* ========================= HELPERS ========================= */
 

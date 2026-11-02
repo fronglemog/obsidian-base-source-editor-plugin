@@ -25,7 +25,7 @@ import type {
   FileValueConstructor,
   ObjectValueConstructor,
   PropertyInfo
-} from 'src/obsidian-types';
+} from '#src/obsidian-types';
 
 /* ========================= FallbackMockContext ========================= */
 

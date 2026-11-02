@@ -7,8 +7,8 @@ import {
 } from 'vitest';
 
 /* PLUGIN */
-import { getYamlSyntaxDiagnostics } from 'src/Linting/yamlSyntaxDiagnostics';
-import type { YamlSyntaxDiagnostic } from 'src/Linting/yamlSyntaxDiagnostics';
+import { getYamlSyntaxDiagnostics } from '#src/Linting/yamlSyntaxDiagnostics';
+import type { YamlSyntaxDiagnostic } from '#src/Linting/yamlSyntaxDiagnostics';
 
 /* ========================= TESTS ========================= */
 
