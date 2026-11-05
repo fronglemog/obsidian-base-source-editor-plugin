@@ -10,6 +10,11 @@ import eslintPluginUnicorn from 'eslint-plugin-unicorn';
 import eslintPluginObsidianmd from 'eslint-plugin-obsidianmd';
 
 /* ========================= ESLINT CONFIG ========================= */
+
+// FILE GLOB PATTERNS
+const JS_TS = '**/*.{js,mjs,cjs,ts,mts,cts}';
+const OBSIDIAN_PLUGIN_SOURCE = 'src/**/*.ts';
+
 export default defineConfig([
   globalIgnores([
     '**/node_modules/',
@@ -17,15 +22,16 @@ export default defineConfig([
     '_local/**',
   ]),
 
-  /* GLOBAL: ALL FILES */
+  /* BASE PRESETS */
   {
+    name: 'presets/base',
     files: [
-      '**/*.{js,mjs,cjs,ts,mts,cts}',
+      JS_TS
     ],
     plugins: {
       js,
       '@typescript-eslint': tseslint.plugin,
-      unicorn: eslintPluginUnicorn
+      unicorn: eslintPluginUnicorn,
     },
     extends: [
       js.configs.recommended,
@@ -50,26 +56,26 @@ export default defineConfig([
     rules: {},
   },
 
-  /* OBSIDIAN: PLUGIN SOURCE CODE ONLY */
+  /* OBSIDIAN PRESETS */
   {
+    name: 'presets/obsidian',
     files: [
-      'src/**/*.ts'
+      OBSIDIAN_PLUGIN_SOURCE
     ],
     plugins: {
       obsidianmd: eslintPluginObsidianmd
     },
     extends: [
-      eslintPluginObsidianmd.configs.recommended,
+      eslintPluginObsidianmd.configs.recommended
     ],
-    languageOptions: {},
     rules: {}
   },
 
-  /* RULE OVERRIDES */
-  // ALL FILES
+  /* RULES: ALL */
   {
+    name: 'rules/all',
     files: [
-      '**/*.{js,mjs,cjs,ts,mts,cts}',
+      JS_TS
     ],
     rules: {
       // ESLint
@@ -87,7 +93,7 @@ export default defineConfig([
       '@typescript-eslint/consistent-type-imports': 'error',
       '@typescript-eslint/no-deprecated': 'warn',
       '@typescript-eslint/no-empty-function' : 'off',
-      '@typescript-eslint/no-empty-object-type' : 'error',
+      '@typescript-eslint/no-empty-object-type' : 'warn',
       '@typescript-eslint/no-explicit-any' : 'off',
       '@typescript-eslint/no-misused-promises' : 'warn',
       '@typescript-eslint/no-namespace' : 'warn',
@@ -164,5 +170,5 @@ export default defineConfig([
       'unicorn/require-module-specifiers': 'error',
       'unicorn/single-line-block-comment-style': 'off',
     }
-  }
+  },
 ]);
