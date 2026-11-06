@@ -161,6 +161,7 @@ export default defineConfig([
       'unicorn/prefer-optional-catch-binding': 'off',
       'unicorn/prefer-set-has': 'off',
       'unicorn/prefer-simple-condition-first': 'off',
+      'unicorn/prefer-smaller-scope': 'off',
       'unicorn/prefer-split-limit': 'warn',
       'unicorn/prefer-string-raw': 'warn',
       'unicorn/prefer-string-replace-all': 'warn',
