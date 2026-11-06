@@ -225,8 +225,8 @@ importers:
         specifier: 4.17.1
         version: 4.17.1(@typescript-eslint/utils@8.72.1(eslint@10.13.0)(typescript@6.0.3))(eslint-import-resolver-node@0.3.9)(eslint@10.13.0)
       eslint-plugin-obsidianmd:
-        specifier: 0.5.0
-        version: 0.5.0(@typescript-eslint/parser@8.72.1(eslint@10.13.0)(typescript@6.0.3))(eslint@10.13.0)(typescript-eslint@8.72.1(eslint@10.13.0)(typescript@6.0.3))(typescript@6.0.3)
+        specifier: 0.5.1
+        version: 0.5.1(@typescript-eslint/parser@8.72.1(eslint@10.13.0)(typescript@6.0.3))(eslint@10.13.0)(typescript-eslint@8.72.1(eslint@10.13.0)(typescript@6.0.3))(typescript@6.0.3)
       eslint-plugin-unicorn:
         specifier: 79.0.0
         version: 79.0.0(eslint@10.13.0)(typescript@6.0.3)
@@ -1443,8 +1443,8 @@ packages:
     peerDependencies:
       eslint: ^9 || ^10
 
-  eslint-plugin-obsidianmd@0.5.0:
-    resolution: {integrity: sha512-SSVIDq5xzIDezd9jsDuPbHZuKt/UAzcDwwgvOI+Vx16tI1aj7i68H/oJ+euHB+zFK/SNqnK0tadajdWQiUicww==}
+  eslint-plugin-obsidianmd@0.5.1:
+    resolution: {integrity: sha512-pocDy3OfOAQyT6hd1cMj1JqJvGgVQSR84337Dve44YO4YcjZsmG7+jzd93nnB1Ke8PenLTwGDzRpzaS+ftvDgw==}
     engines: {node: ^20.19.0 || ^22.13.0 || >=24}
     peerDependencies:
       eslint: '>=9.19.0'
@@ -3571,7 +3571,7 @@ snapshots:
     dependencies:
       eslint: 10.13.0
 
-  eslint-plugin-obsidianmd@0.5.0(@typescript-eslint/parser@8.72.1(eslint@10.13.0)(typescript@6.0.3))(eslint@10.13.0)(typescript-eslint@8.72.1(eslint@10.13.0)(typescript@6.0.3))(typescript@6.0.3):
+  eslint-plugin-obsidianmd@0.5.1(@typescript-eslint/parser@8.72.1(eslint@10.13.0)(typescript@6.0.3))(eslint@10.13.0)(typescript-eslint@8.72.1(eslint@10.13.0)(typescript@6.0.3))(typescript@6.0.3):
     dependencies:
       '@eslint-community/eslint-plugin-eslint-comments': 4.7.2(eslint@10.13.0)
       '@eslint/config-helpers': 0.7.0
