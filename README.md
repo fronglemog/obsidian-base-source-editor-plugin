@@ -99,12 +99,12 @@ Re-run this command after every build, then reload the plugin in Obsidian.
 (If your vault does not contain an `.obsidian` folder, the command will fail.)
 
 ```sh
-pnpm run copy-to-obsidian <VAULT_PATH>
+pnpm run copy-plugin-to-obsidian <VAULT_PATH>
 ```
 
 For example:
-- `pnpm run copy-to-obsidian "C:\Users\fronglemog\Documents\MyVault"`
-- `pnpm run copy-to-obsidian ~/Documents/MyVault`
+- `pnpm run copy-plugin-to-obsidian "C:\Users\fronglemog\Documents\MyVault"`
+- `pnpm run copy-plugin-to-obsidian ~/Documents/MyVault`
 
 ## Contributing
 
