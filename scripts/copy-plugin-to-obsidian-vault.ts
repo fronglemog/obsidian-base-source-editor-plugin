@@ -15,59 +15,73 @@ Run a build first. This script copies whatever is in `build/` and doesn't build 
 import { copyFileSync, existsSync, mkdirSync, statSync } from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
-import { getPluginManifest } from './script-lib';
+import { styleText } from 'node:util';
+
+import { readPluginManifest } from '#scripts/_util';
 
 /* ================================================= */
 const obsidianVaultPath = process.argv[2];
-const pluginManifest = getPluginManifest();
-
-const pluginFilePaths = {
-  mainJs: 'build/main.js',
-  manifest: 'manifest.json',
-  styles: 'styles/styles.css',
-};
 
 if (obsidianVaultPath == null || obsidianVaultPath === '') {
   throw new Error('No vault path given. Usage: pnpm run copy-to-obsidian "<VAULT_PATH>"');
 }
 
-const pluginPathInObsidianVault = path.join(obsidianVaultPath, '.obsidian', 'plugins', `${pluginManifest.id}`);
+const REPO_ROOT = path.resolve(import.meta.dirname, '..');
 
-checkIsObsidianVault(obsidianVaultPath);
-checkPluginFilesExist(Object.values(pluginFilePaths));
+const PLUGIN_FILE_PATHS = {
+  mainJs: path.resolve(REPO_ROOT, 'build/main.js'),
+  manifest: path.resolve(REPO_ROOT, 'manifest.json'),
+  styles: path.resolve(REPO_ROOT, 'styles/styles.css'),
+} as const;
+
+const vaultPath = path.resolve(obsidianVaultPath);
+
+const pluginManifest = readPluginManifest(PLUGIN_FILE_PATHS.manifest);
+const pluginPathInObsidianVault = path.resolve(vaultPath, '.obsidian', 'plugins', pluginManifest.id);
+
+assertPathIsObsidianVault(vaultPath);
+assertAllFilesExist(Object.values(PLUGIN_FILE_PATHS));
 
 mkdirSync(pluginPathInObsidianVault, { recursive: true });
 
-for (const filePath of Object.values(pluginFilePaths)) {
-  const destinationPath = path.join(pluginPathInObsidianVault, path.basename(filePath));
+console.log(styleText('green', '\n===== Copying plugin files to Obsidian vault ====='));
+console.log(styleText('yellow', 'Destination:'), styleText('cyan', `${pluginPathInObsidianVault}\n`));
+
+for (const filePath of Object.values(PLUGIN_FILE_PATHS)) {
+  const fileName: string = path.basename(filePath);
+
+  const destinationPath: string = path.join(pluginPathInObsidianVault, fileName);
   copyFileSync(filePath, destinationPath);
-  console.log(`Copied ${filePath} -> ${destinationPath}`);
+
+  console.log(styleText('cyan', `${path.relative(REPO_ROOT, filePath)}`), styleText('green', '-->'), styleText('cyan', `${fileName}`));
 }
+
+console.log('');
 
 /* ================================================= */
 
 /**
- * Exits with an error if `vaultPath` isn't a folder, or if it has no `.obsidian` folder inside it.
+ * Throws an error if `vaultPath` isn't a folder, or if it has no `.obsidian` folder inside it.
  *
  * @remarks
  * Every Obsidian vault has a `.obsidian` folder. Checking for it stops a mistyped path
  * from creating a new `.obsidian/plugins` folder somewhere that isn't a vault.
  */
-function checkIsObsidianVault(vaultPath: string): void {
-  if (!existsSync(vaultPath) || !statSync(vaultPath).isDirectory()) {
-    throw new Error(`Vault folder not found: ${vaultPath}`);
+function assertPathIsObsidianVault(folderPath: string): void {
+  if (!existsSync(folderPath) || !statSync(folderPath).isDirectory()) {
+    throw new Error(`Vault folder not found: ${folderPath}`);
   }
 
-  const obsidianConfigPath = path.join(vaultPath, '.obsidian');
+  const obsidianConfigPath = path.join(folderPath, '.obsidian');
   if (!existsSync(obsidianConfigPath)) {
-    throw new Error(`${vaultPath} is not an Obsidian vault, because it has no .obsidian folder`);
+    throw new Error(`${folderPath} is not an Obsidian vault, because it has no .obsidian folder`);
   }
 }
 
 /**
- * Throws if any of `filePaths` is missing, listing every missing file in the error message.
+ * Throws an error if any of `filePaths` is missing, listing every missing file in the error message.
  */
-function checkPluginFilesExist(filePaths: string[]): void {
+function assertAllFilesExist(filePaths: string[]): void {
   const missingFilePaths = filePaths.filter((filePath) => !existsSync(filePath));
 
   if (missingFilePaths.length > 0) {

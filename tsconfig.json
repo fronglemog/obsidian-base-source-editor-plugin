@@ -28,7 +28,8 @@
     ],
     "outDir": "build",
     "paths": {
-      "#src/*": ["./src/*"]
+      "#src/*": ["./src/*"],
+      "#scripts/*": ["./scripts/*"]
     }
   },
   "include": [
