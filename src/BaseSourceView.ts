@@ -57,21 +57,12 @@ import {
 /* PLUGIN */
 import type BasesSourceEditorPlugin from '#src/main';
 import { yamlSyntaxHighlighting } from '#src/BaseYamlLanguage/yamlSyntaxHighlighting';
-import type BasesSourceEditorPlugin from '#src/main';
-import { yamlSyntaxHighlighting } from '#src/BaseYamlLanguage/yamlSyntaxHighlighting';
 
 import {
   BaseSourceSearchBar,
   searchHighlightField
 } from '#src/BaseSourceSearchBar';
-} from '#src/BaseSourceSearchBar';
 
-import { activeLineHighlight } from '#src/EditorExtensions/activeLine';
-import { getIndentationGuidesExtensions } from '#src/EditorExtensions/indentationGuides';
-import { getLineWrapExtensions } from '#src/EditorExtensions/lineWrap';
-import { getRenderWhitespaceExtensions } from '#src/EditorExtensions/renderWhitespace';
-import { getTooltipParentExtensions } from '#src/EditorExtensions/tooltipParent';
-import { textScrollMargins } from '#src/EditorExtensions/scrollMargins';
 import { activeLineHighlight } from '#src/EditorExtensions/activeLine';
 import { getIndentationGuidesExtensions } from '#src/EditorExtensions/indentationGuides';
 import { getLineWrapExtensions } from '#src/EditorExtensions/lineWrap';
