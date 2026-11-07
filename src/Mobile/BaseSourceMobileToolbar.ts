@@ -117,7 +117,7 @@ export class BaseSourceMobileToolbar extends Component {
    */
   private update(): void {
     const app: App = this.plugin.app;
-    this.lastKeyboardHeight = getKeyboardHeight();
+    this.lastKeyboardHeight = getMobileKeyboardHeight();
 
     let shouldShow: boolean = this.hasBaseSourceEditorFocus();
     if (Platform.isAndroidApp && shouldShow) {
@@ -168,7 +168,7 @@ export class BaseSourceMobileToolbar extends Component {
     app.mobileNavbar?.hide();
     app.dom.appContainerEl.appendChild(this.spacerEl);
     app.dom.appContainerEl.appendChild(this.wrapperEl);
-    document.body.addClass(TOOLBAR_OPEN_CLASS);
+    activeDocument.body.addClass(TOOLBAR_OPEN_CLASS);
   }
 
   /**
@@ -187,7 +187,7 @@ export class BaseSourceMobileToolbar extends Component {
     // When focus moves to a markdown editor, Obsidian's own toolbar shows first. Leave its class in place.
     const isNativeToolbarVisible: boolean = app.mobileToolbar?.isVisible ?? false;
     if (!isNativeToolbarVisible) {
-      document.body.removeClass(TOOLBAR_OPEN_CLASS);
+      activeDocument.body.removeClass(TOOLBAR_OPEN_CLASS);
     }
   }
 
@@ -221,7 +221,7 @@ export class BaseSourceMobileToolbar extends Component {
       return;
     }
 
-    const keyboardHeight: number = getKeyboardHeight();
+    const keyboardHeight: number = getMobileKeyboardHeight();
     const offset: number = keyboardHeight - this.lastKeyboardHeight;
     this.lastKeyboardHeight = keyboardHeight;
 
@@ -264,13 +264,13 @@ function createMobileToolbarOption(plugin: BasesSourceEditorPlugin, parentEl: HT
 /**
  * Gets the height of the on-screen keyboard, from Obsidian's `--keyboard-height` CSS variable.
  *
- * @returns The height in pixels, or 0 if it isn't set.
+ * @returns The mobile keyboard height in pixels, or 0 if it isn't set.
  */
-function getKeyboardHeight(): number {
-  const documentStyle: CSSStyleDeclaration = getComputedStyle(document.documentElement);
-  const keyboardHeightValue: string = documentStyle.getPropertyValue('--keyboard-height');
-
-  const keyboardHeight: number = Number.parseFloat(keyboardHeightValue) || 0;
+export function getMobileKeyboardHeight(): number {
+  const activeDocumentStyle: CSSStyleDeclaration = getComputedStyle(activeDocument.documentElement);
+  const keyboardHeightCssValue: string = activeDocumentStyle.getPropertyValue('--keyboard-height');
+  const keyboardHeight: number = Number.parseFloat(keyboardHeightCssValue) || 0;
+  
   return keyboardHeight;
 }
 

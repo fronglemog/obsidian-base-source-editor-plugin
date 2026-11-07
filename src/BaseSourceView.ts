@@ -79,6 +79,7 @@ import { getLintingExtensions } from '#src/EditorExtensions/lintingExtension';
 import { getDocumentChange } from '#src/getDocumentChange';
 import { fixMouseSelectionScroll } from '#src/mouseSelectionScroll';
 import { handleTouchEditorScroll } from '#src/Mobile/handleTouchEditorScroll';
+import { getMobileKeyboardHeight } from '#src/Mobile/BaseSourceMobileToolbar';
 
 /* ========================= BaseSourceView ========================= */
 
@@ -294,10 +295,7 @@ export class BaseSourceView extends TextFileView {
 
     let viewHeight: number = this.containerEl.clientHeight;
     if (Platform.isMobile) {
-      const documentStyle: CSSStyleDeclaration = getComputedStyle(document.documentElement);
-      const keyboardHeightValue: string = documentStyle.getPropertyValue('--keyboard-height');
-
-      const keyboardHeight: number = Number.parseFloat(keyboardHeightValue) || 0;
+      const keyboardHeight: number = getMobileKeyboardHeight();
       viewHeight += keyboardHeight;
     }
 
