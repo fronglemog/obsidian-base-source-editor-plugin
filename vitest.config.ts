@@ -6,12 +6,11 @@ import {
 export default defineConfig({
   test: {
     alias: {
-      '#src/': '/src/', 
-      'obsidian': '/tests/_mocks/obsidian.ts'
+      '#src/': 'src/', 
+      'obsidian': 'tests/_mocks/obsidian.ts'
     },
     include : [
-      ...configDefaults.include,
-      '/tests/**'
+      'tests/**/*.{test,spec}.?(c|m)[jt]s?(x)'
     ],
     exclude: [
       ...configDefaults.exclude,
