@@ -13,8 +13,7 @@ export default defineConfig({
       'tests/**/*.{test,spec}.?(c|m)[jt]s?(x)'
     ],
     exclude: [
-      ...configDefaults.exclude,
-      '/build/**',
+      ...configDefaults.exclude
     ]
   }
 });
