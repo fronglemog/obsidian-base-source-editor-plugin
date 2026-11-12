@@ -152,6 +152,7 @@ export default defineConfig([
       'unicorn/prefer-global-this': 'off',
       'unicorn/prefer-hoisting-branch-code': 'off',
       'unicorn/prefer-includes-over-repeated-comparisons': 'off',
+      'unicorn/prefer-iterator-to-array': 'off',
       'unicorn/prefer-logical-operator-over-ternary': 'off',
       'unicorn/prefer-modern-dom-apis': 'warn',
       'unicorn/prefer-node-protocol': 'warn',
