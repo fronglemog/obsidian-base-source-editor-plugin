@@ -143,7 +143,7 @@ export default defineConfig([
       'unicorn/prefer-code-point': 'warn',
       'unicorn/prefer-combined-guards': 'off',
       'unicorn/prefer-continue': 'off',
-      'unicorn/prefer-default-parameters': 'warn',
+      'unicorn/prefer-default-parameters': 'off',
       'unicorn/prefer-dom-node-append': 'off',
       'unicorn/prefer-early-return': 'off',
       'unicorn/prefer-else-if': 'off',
