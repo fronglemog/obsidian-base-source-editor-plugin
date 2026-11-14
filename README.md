@@ -70,15 +70,23 @@ A Base can be opened in the Base Source Editor by:
 	cd obsidian-base-source-editor-plugin
 	```
 
-2. Run command `pnpm install` to install dependencies.
+2. Install dependencies:
+
+	```sh
+	pnpm install
+	```
 
 ### Linting
 
-Lint using `pnpm run lint`.
+```sh
+pnpm run lint
+```
 
 ### Testing
 
-Run tests with `pnpm run test`.
+```sh
+pnpm run test
+```
 
 ### Building
 
@@ -92,11 +100,18 @@ New builds are created at `build/main.js`.
 | `pnpm run dev`                 | no          | no (inline source map) | no                  |
 | `pnpm run dev:watch`           | no          | no (inline source map) | yes                 |
 
-After creating a new build, copy the `build/main.js`, `styles/styles.css` and `manifest.json` to your Obsidian vault using this command, replacing `<VAULT_PATH>` with the full/absolute path to the folder containing your Obsidian vault.
+### Installing a new build
 
-Re-run this command after every build, then reload the plugin in Obsidian.
+#### Manual installation
 
-(If your vault does not contain an `.obsidian` folder, the command will fail.)
+After creating a new build, copy the `build/main.js`, `styles/styles.css` and `manifest.json` to `.obsidian/plugins/base-source-editor` in your Obsidian vault, and reload the Obsidian app.
+
+#### Using installation script
+
+After creating a new build, run this command (replace `<VAULT_PATH>` with the path to your Obsidian vault) and reload the Obsidian app.
+
+> [!WARNING]
+> Before copying any files, the script looks for an `.obsidian` folder inside `<VAULT_PATH>` to determine if it's an Obsidian vault. The script will throw an error if it can't be found.
 
 ```sh
 pnpm run copy-plugin-to-obsidian <VAULT_PATH>
